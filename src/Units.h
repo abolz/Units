@@ -139,6 +139,9 @@ class Quantity;
         constexpr friend auto operator/(Exponents, Exponents<L2, M2, T2, J2>) noexcept {
             return Exponents<L - L2, M - M2, T - T2, J - J2>{};
         }
+
+        constexpr friend auto Pow2(Exponents e) noexcept { return e * e; }
+        constexpr friend auto Pow3(Exponents e) noexcept { return e * e * e; }
     };
 //}
 
@@ -148,8 +151,8 @@ namespace dimensions
     struct Mass :                Dimension< Mass,                Exponents<0, 1, 0, 0>> {};
     struct Time :                Dimension< Time,                Exponents<0, 0, 1, 0>> {};
     // struct LuminousIntensity :   Dimension< LuminousIntensity,   Exponents<0, 0, 0, 1>> {};
-    struct Area :                Dimension< Area,                decltype(Length::exponents{} * Length::exponents{})> {};
-    struct Volume :              Dimension< Volume,              decltype(Length::exponents{} * Area::exponents{})> {};
+    struct Area :                Dimension< Area,                decltype(Pow2(Length::exponents{}))> {};
+    struct Volume :              Dimension< Volume,              decltype(Pow3(Length::exponents{}))> {};
     struct PlaneAngle :          Dimension< PlaneAngle,          decltype(Length::exponents{} / Length::exponents{})> {};
     struct SolidAngle :          Dimension< SolidAngle,          decltype(Area::exponents{} / Area::exponents{})> {};
     struct Velocity :            Dimension< Velocity,            decltype(Length::exponents{} / Time::exponents{})> {};

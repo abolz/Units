@@ -249,5 +249,9 @@ int main()
     //Incomplet<decltype(Q3)>{};
     using XXXXX = decltype(Q3);
 
+    constexpr auto area1 = 1_m * 1_m;
+    constexpr auto area2 = 1_cm * 1_cm;
+    constexpr auto area3 = area1 + area2 + 1_mi * 1_yd;
+
     return 0;
 }
