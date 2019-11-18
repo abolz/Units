@@ -807,9 +807,9 @@ namespace prefixes
     }
 
     using Inch   = decltype(Ratio<254, 100>{} * Centimeter{}); // (international)
-    using Foot   = decltype(Ratio<12, 1>{} * Inch{});             // (international)
-    using Yard   = decltype(Ratio<3, 1>{} * Foot{});              // (international)
-    using Mile   = decltype(Ratio<1760, 1>{} * Yard{});           // (international)
+    using Foot   = decltype(Ratio<12, 1>{} * Inch{});          // (international)
+    using Yard   = decltype(Ratio<3, 1>{} * Foot{});           // (international)
+    using Mile   = decltype(Ratio<1760, 1>{} * Yard{});        // (international)
 
     using Inches = Quantity< Inch >;
     using Feet   = Quantity< Foot >;
