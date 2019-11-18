@@ -256,21 +256,79 @@ namespace dimensions
 //namespace impl
 //{
     constexpr auto Gcd(Natural a, Natural b) noexcept {
-        UNITS_ASSERT(a > 0); // static_assert
-        UNITS_ASSERT(b > 0); // static_assert
+        UNITS_ASSERT(a >= 1); // static_assert
+        UNITS_ASSERT(b >= 1); // static_assert
         while (b > 0) {
             const auto r = a % b;
             a = b;
             b = r;
         }
-        UNITS_ASSERT(a > 0); // static_assert
+        UNITS_ASSERT(a >= 1); // static_assert
         return a;
     }
 
     constexpr auto Lcm(Natural a, Natural b) noexcept {
-        const auto g = Gcd(a, b);
-        UNITS_ASSERT(g > 0); // static_assert
-        return (a / g) * b;
+        return (a / Gcd(a, b)) * b;
+    }
+
+    constexpr auto Power(Natural x, Natural n) noexcept {
+        UNITS_ASSERT(x >= 1);
+        UNITS_ASSERT(n >= 0);
+
+        Natural p = 1;
+        if (x > 1) {
+            for ( ; n > 0; --n) {
+                UNITS_ASSERT(p <= INT64_MAX / x);
+                p *= x;
+            }
+        }
+
+        return p;
+    }
+
+    // Returns x^n > lower (without overflow).
+    constexpr bool IsPowerGreaterThan(Natural x, Natural n, Natural lower) noexcept {
+        UNITS_ASSERT(x >= 1);
+        UNITS_ASSERT(n >= 0);
+
+        const auto lim = INT64_MAX / x;
+        const auto max = lim < lower ? lim : lower; // = min(lim, lower)
+
+        Natural p = 1;
+        for ( ; n > 0; --n) {
+            if (p > max) // p*x will overflow, or p > lower
+                return true;
+            p *= x;
+        }
+
+        return p > lower;
+    }
+
+    // Computes the n-th root y of x,
+    // i.e. y = [x^(1/n)]
+    // i.e. returns the largest y, such that y^n <= x
+    constexpr auto Root(Natural x, Natural n) noexcept {
+        UNITS_ASSERT(x >= 1);
+        UNITS_ASSERT(n >= 1);
+
+        if (x <= 1 || n <= 1)
+            return x;
+
+        Natural lo = 1;
+        Natural hi = 1 + x / n;
+        // Bernoulli  ==>  x^(1/n) <= 1 + (x - 1)/n < 1 + x/n
+        // Since n >= 2, hi will not overflow here.
+
+        for (;;)
+        {
+            const auto y = lo + (hi - lo) / 2;
+            if (y == lo)                           // hi - lo <= 1
+                return y;
+            else if (IsPowerGreaterThan(y, n, x))  // x < y^n
+                hi = y;
+            else                                   // y^n <= x
+                lo = y;
+        }
     }
 //}
 

@@ -39,6 +39,38 @@ namespace units {
     }
 }
 
+namespace units {
+    static_assert(Root(1, 1) == 1, "");
+    static_assert(Root(1, 2) == 1, "");
+    static_assert(Root(1, 10) == 1, "");
+    static_assert(Root(1, INT64_MAX) == 1, "");
+    static_assert(Root(1, INT64_MAX / 2) == 1, "");
+    static_assert(Root(2, INT64_MAX) == 1, "");
+    static_assert(Root(2, INT64_MAX / 2) == 1, "");
+    static_assert(Root(2, 2) == 1, "");
+    static_assert(Root(2, 1) == 2, "");
+    static_assert(Root(3, 2) == 1, "");
+    static_assert(Root(4, 2) == 2, "");
+    static_assert(Root(5, 2) == 2, "");
+    static_assert(Root(8, 2) == 2, "");
+    static_assert(Root(9, 2) == 3, "");
+    static_assert(Root(10, 2) == 3, "");
+    static_assert(Root(15, 2) == 3, "");
+    static_assert(Root(16, 2) == 4, "");
+    static_assert(Root(27, 3) == 3, "");
+    static_assert(Root(152399025, 2) == 12345, "");
+    static_assert(Root(1881365963625, 3) == 12345, "");
+    static_assert(Root(23225462820950625, 4) == 12345, "");
+    static_assert(Root(3530945043777457216, 6) == 1234, "");
+    static_assert(Root(8650415919381337933, 17) == 13, "");
+    static_assert(Root(8650415919381337934, 17) == 13, "");
+    static_assert(Root(INT64_MAX, 17) == 13, "");
+    static_assert(Root(INT64_MAX, INT64_MAX) == 1, "");
+    static_assert(Root(INT64_MAX, 2) == 3037000499, "");
+    static_assert(Root(INT64_MAX, 3) == 2097151, "");
+    static_assert(Root(INT64_MAX, 4) == 55108, "");
+}
+
 int main()
 {
     using namespace units;
