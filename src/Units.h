@@ -328,8 +328,13 @@ namespace dimensions
     }
 //}
 
-// template <Natural Num, Natural Den = 1, Natural Pow10 = 0, Natural PowPi = 0>
-// struct Conversion;
+template <Natural Num, Natural Den>
+using Ratio
+    = Rational<Num / Gcd(Num, Den), Den / Gcd(Num, Den)>;
+
+template <typename Rat1, typename Rat2> // TODO: CommonConversion
+using CommonRatio
+    = Rational<Gcd(Rat1::num, Rat2::num), Lcm(Rat1::den, Rat2::den)>;
 
 template <Natural Num, Natural Den>
 struct Rational {
@@ -406,14 +411,6 @@ struct Rational {
     constexpr friend auto Pow2(Rational r) noexcept { return r * r; }
     constexpr friend auto Pow3(Rational r) noexcept { return r * r * r; }
 };
-
-template <Natural Num, Natural Den>
-using Ratio
-    = Rational<Num / Gcd(Num, Den), Den / Gcd(Num, Den)>;
-
-template <typename Rat1, typename Rat2> // TODO: CommonConversion
-using CommonRatio
-    = Rational<Gcd(Rat1::num, Rat2::num), Lcm(Rat1::den, Rat2::den)>;
 
 //--------------------------------------------------------------------------------------------------
 // Unit
