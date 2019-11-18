@@ -19,7 +19,7 @@ template <typename...> struct Incomplet;
 
 namespace units {
     namespace dimensions {
-        struct Rainfall : Dimension<Rainfall, decltype(Volume::exponents{} - Area::exponents{})> {};
+        struct Rainfall : Dimension<Rainfall, decltype(Volume::exponents{} / Area::exponents{})> {};
 
         //constexpr auto operator/(Volume, Area) { return Rainfall{}; }
     }
@@ -30,7 +30,7 @@ namespace units {
 
 namespace units {
     namespace dimensions {
-        struct LengthTime : Dimension<LengthTime, decltype(Length::exponents{} + Time::exponents{})> {};
+        struct LengthTime : Dimension<LengthTime, decltype(Length::exponents{} * Time::exponents{})> {};
 
         constexpr auto operator*(Time, Length) { return LengthTime{}; }
         constexpr auto operator*(Length, Time) { return LengthTime{}; }

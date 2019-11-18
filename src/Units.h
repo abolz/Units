@@ -130,17 +130,13 @@ class Quantity;
         //--------------------------------------------------------------------------
         // Type constructors
 
-        constexpr friend auto operator-(Exponents) noexcept {
-            return Exponents<-L, -M, -T, -J>{};
-        }
-
         template <Exponent L2, Exponent M2, Exponent T2, Exponent J2>
-        constexpr friend auto operator+(Exponents, Exponents<L2, M2, T2, J2>) noexcept {
+        constexpr friend auto operator*(Exponents, Exponents<L2, M2, T2, J2>) noexcept {
             return Exponents<L + L2, M + M2, T + T2, J + J2>{};
         }
 
         template <Exponent L2, Exponent M2, Exponent T2, Exponent J2>
-        constexpr friend auto operator-(Exponents, Exponents<L2, M2, T2, J2>) noexcept {
+        constexpr friend auto operator/(Exponents, Exponents<L2, M2, T2, J2>) noexcept {
             return Exponents<L - L2, M - M2, T - T2, J - J2>{};
         }
     };
@@ -152,46 +148,46 @@ namespace dimensions
     struct Mass :                Dimension< Mass,                Exponents<0, 1, 0, 0>> {};
     struct Time :                Dimension< Time,                Exponents<0, 0, 1, 0>> {};
     // struct LuminousIntensity :   Dimension< LuminousIntensity,   Exponents<0, 0, 0, 1>> {};
-    struct Area :                Dimension< Area,                decltype(Length::exponents{} + Length::exponents{})> {};
-    struct Volume :              Dimension< Volume,              decltype(Length::exponents{} + Area::exponents{})> {};
-    struct PlaneAngle :          Dimension< PlaneAngle,          decltype(Length::exponents{} - Length::exponents{})> {};
-    struct SolidAngle :          Dimension< SolidAngle,          decltype(Area::exponents{} - Area::exponents{})> {};
-    struct Velocity :            Dimension< Velocity,            decltype(Length::exponents{} - Time::exponents{})> {};
-    struct Acceleration :        Dimension< Acceleration,        decltype(Velocity::exponents{} - Time::exponents{})> {};
-    struct Impulse :             Dimension< Impulse,             decltype(Mass::exponents{} + Velocity::exponents{})> {}; // XXX: (Force * Time) ?
-    struct Frequency :           Dimension< Frequency,           decltype(-Time::exponents{})> {};
-    struct Density :             Dimension< Density,             decltype(Mass::exponents{} - Volume::exponents{})> {};
-    // struct SurfaceDensity :      Dimension< SurfaceDensity,      decltype(Mass::exponents{} - Area::exponents{})> {};
-    // struct MassConcentration :   Dimension< MassConcentration,   decltype(Mass::exponents{} - Volume::exponents{})> {};
-    // struct SpecificVolume :      Dimension< SpecificVolume,      decltype(Volume::exponents{} - Mass::exponents{})> {};
-    struct Force :               Dimension< Force,               decltype(Mass::exponents{} + Acceleration::exponents{})> {};
-    struct Energy :              Dimension< Energy,              decltype(Force::exponents{} + Length::exponents{})> {};
-    struct Torque :              Dimension< Torque,              decltype(Force::exponents{} + Length::exponents{})> {};
-    // struct SpecificEnergy :      Dimension< SpecificEnergy,      decltype(Energy::exponents{} - Mass::exponents{})> {};
-    struct Power :               Dimension< Power,               decltype(Energy::exponents{} - Time::exponents{})> {};
-    struct Pressure :            Dimension< Pressure,            decltype(Force::exponents{} - Area::exponents{})> {};
-    struct AngularVelocity :     Dimension< AngularVelocity,     decltype(PlaneAngle::exponents{} - Time::exponents{})> {};
-    struct AngularAcceleration : Dimension< AngularAcceleration, decltype(AngularVelocity::exponents{} - Time::exponents{})> {};
-    // struct Wavenumber :          Dimension< Wavenumber,          decltype(-Length::exponents{}) > {};
-    // struct SurfaceTension :      Dimension< SurfaceTension,      decltype(Force::exponents{} - Length::exponents{})> {};
-    // struct RadiantFlux :         Dimension< RadiantFlux,         decltype(Energy::exponents{} - Time::exponents{})> {};
-    // struct LuminousFlux :        Dimension< LuminousFlux,        decltype(LuminousIntensity::exponents{} + SolidAngle::exponents{})> {};
-    // struct Illuminance :         Dimension< Illuminance,         decltype(LuminousFlux::exponents{} - Area::exponents{})> {};
-    // struct Irradiance :          Dimension< Irradiance,          decltype(RadiantFlux::exponents{} - Area::exponents{})> {};
-    // struct RadiantEmiitance :    Dimension< RadiantEmiitance,    decltype(RadiantFlux::exponents{} - Area::exponents{})> {};
-    // struct Radiance :            Dimension< Radiance,            decltype(RadiantFlux::exponents{} - SolidAngle::exponents{})> {};
+    struct Area :                Dimension< Area,                decltype(Length::exponents{} * Length::exponents{})> {};
+    struct Volume :              Dimension< Volume,              decltype(Length::exponents{} * Area::exponents{})> {};
+    struct PlaneAngle :          Dimension< PlaneAngle,          decltype(Length::exponents{} / Length::exponents{})> {};
+    struct SolidAngle :          Dimension< SolidAngle,          decltype(Area::exponents{} / Area::exponents{})> {};
+    struct Velocity :            Dimension< Velocity,            decltype(Length::exponents{} / Time::exponents{})> {};
+    struct Acceleration :        Dimension< Acceleration,        decltype(Velocity::exponents{} / Time::exponents{})> {};
+    struct Impulse :             Dimension< Impulse,             decltype(Mass::exponents{} * Velocity::exponents{})> {}; // XXX: (Force * Time) ?
+    struct Frequency :           Dimension< Frequency,           decltype(Exponents{} / Time::exponents{})> {};
+    struct Density :             Dimension< Density,             decltype(Mass::exponents{} / Volume::exponents{})> {};
+    // struct SurfaceDensity :      Dimension< SurfaceDensity,      decltype(Mass::exponents{} / Area::exponents{})> {};
+    // struct MassConcentration :   Dimension< MassConcentration,   decltype(Mass::exponents{} / Volume::exponents{})> {};
+    // struct SpecificVolume :      Dimension< SpecificVolume,      decltype(Volume::exponents{} / Mass::exponents{})> {};
+    struct Force :               Dimension< Force,               decltype(Mass::exponents{} * Acceleration::exponents{})> {};
+    struct Energy :              Dimension< Energy,              decltype(Force::exponents{} * Length::exponents{})> {};
+    struct Torque :              Dimension< Torque,              decltype(Force::exponents{} * Length::exponents{})> {};
+    // struct SpecificEnergy :      Dimension< SpecificEnergy,      decltype(Energy::exponents{} / Mass::exponents{})> {};
+    struct Power :               Dimension< Power,               decltype(Energy::exponents{} / Time::exponents{})> {};
+    struct Pressure :            Dimension< Pressure,            decltype(Force::exponents{} / Area::exponents{})> {};
+    struct AngularVelocity :     Dimension< AngularVelocity,     decltype(PlaneAngle::exponents{} / Time::exponents{})> {};
+    struct AngularAcceleration : Dimension< AngularAcceleration, decltype(AngularVelocity::exponents{} / Time::exponents{})> {};
+    // struct Wavenumber :          Dimension< Wavenumber,          decltype(Exponents{} / Length::exponents{}) > {};
+    // struct SurfaceTension :      Dimension< SurfaceTension,      decltype(Force::exponents{} / Length::exponents{})> {};
+    // struct RadiantFlux :         Dimension< RadiantFlux,         decltype(Energy::exponents{} / Time::exponents{})> {};
+    // struct LuminousFlux :        Dimension< LuminousFlux,        decltype(LuminousIntensity::exponents{} * SolidAngle::exponents{})> {};
+    // struct Illuminance :         Dimension< Illuminance,         decltype(LuminousFlux::exponents{} / Area::exponents{})> {};
+    // struct Irradiance :          Dimension< Irradiance,          decltype(RadiantFlux::exponents{} / Area::exponents{})> {};
+    // struct RadiantEmiitance :    Dimension< RadiantEmiitance,    decltype(RadiantFlux::exponents{} / Area::exponents{})> {};
+    // struct Radiance :            Dimension< Radiance,            decltype(RadiantFlux::exponents{} / SolidAngle::exponents{})> {};
 
     template <typename Dim>
     struct Inv
-        : Dimension<Inv<Dim>, decltype(-(typename Dim::exponents{}))> {};
+        : Dimension<Inv<Dim>, decltype(Exponents{} / (typename Dim::exponents{}))> {};
 
     template <typename Dim1, typename Dim2>
     struct Mul
-        : Dimension<Mul<Dim1, Dim2>, decltype(typename Dim1::exponents{} + typename Dim2::exponents{})> {};
+        : Dimension<Mul<Dim1, Dim2>, decltype(typename Dim1::exponents{} * typename Dim2::exponents{})> {};
 
     template <typename Dim1, typename Dim2>
     struct Div
-        : Dimension<Div<Dim1, Dim2>, decltype(typename Dim1::exponents{} - typename Dim2::exponents{})> {};
+        : Dimension<Div<Dim1, Dim2>, decltype(typename Dim1::exponents{} / typename Dim2::exponents{})> {};
 
     template <typename Dim, typename Exp>
     constexpr auto Inverse(Dimension<Dim, Exp>) {
