@@ -110,25 +110,25 @@ namespace impl
     }
 
     template <
-        template <int> class L1, int ExpL, typename... Ln,
-        template <int> class R1, int ExpR, typename... Rn
+        template <int> class L1, int ExpL1, typename... Ln,
+        template <int> class R1, int ExpR1, typename... Rn
         >
-    constexpr auto Merge(Dimension<L1<ExpL>, Ln...> lhs, Dimension<R1<ExpR>, Rn...> rhs)
+    constexpr auto Merge(Dimension<L1<ExpL1>, Ln...> lhs, Dimension<R1<ExpR1>, Rn...> rhs)
     {
-        constexpr int id1 = L1<ExpL>::id;
-        constexpr int id2 = R1<ExpR>::id;
+        constexpr int id1 = L1<ExpL1>::id;
+        constexpr int id2 = R1<ExpR1>::id;
         if constexpr (id1 < id2)
         {
-            return Concat(Dimension<L1<ExpL>>{}, Merge(Dimension<Ln...>{}, rhs));
+            return Concat(Dimension<L1<ExpL1>>{}, Merge(Dimension<Ln...>{}, rhs));
         }
         else if constexpr (id2 < id1)
         {
-            return Concat(Dimension<R1<ExpR>>{}, Merge(lhs, Dimension<Rn...>{}));
+            return Concat(Dimension<R1<ExpR1>>{}, Merge(lhs, Dimension<Rn...>{}));
         }
         else
         {
-            if constexpr (ExpL + ExpR != 0)
-                return Concat(Dimension<L1<ExpL + ExpR>>{}, Merge(Dimension<Ln...>{}, Dimension<Rn...>{}));
+            if constexpr (ExpL1 + ExpR1 != 0)
+                return Concat(Dimension<L1<ExpL1 + ExpR1>>{}, Merge(Dimension<Ln...>{}, Dimension<Rn...>{}));
             else
                 return Merge(Dimension<Ln...>{}, Dimension<Rn...>{});
         }
