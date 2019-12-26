@@ -197,53 +197,6 @@ namespace kinds
         : Kind< KindQuotient<K1, K2>, DivDimensions<typename K1::dimension, typename K2::dimension> >
     {
     };
-
-#if 0
-    // // template <typename K>
-    // // struct KindQuotient<K, K>
-    // // {
-    // //     using type = kinds::One;
-    // // };
-
-    // template <typename K>
-    // struct KindQuotient<K, K>
-    // {
-    //     using type = Kind<K, Dimension<>>;
-    // };
-
-    template <typename K>
-    struct KindRatio : Kind< K, Dimension<> >
-    {
-    };
-
-    template <typename K>
-    struct KindQuotient<K, K>
-    {
-        using type = KindRatio<K>;
-    };
-#endif
-
-#if 0
-    template <> struct KindProduct  < Area,             Length          > { using type = Volume; };
-    template <> struct KindProduct  < Force,            Length          > { using type = Energy; };
-    template <> struct KindProduct  < Length,           Area            > { using type = Volume; };
-    template <> struct KindProduct  < Length,           Length          > { using type = Area; };
-    template <> struct KindProduct  < Mass,             Acceleration    > { using type = Force; };
-    template <> struct KindProduct  < Mass,             Velocity        > { using type = Impulse; };
-    template <> struct KindProduct  < Velocity,         Time            > { using type = Length; };
-
-    template <> struct KindQuotient < AngularVelocity,  Time            > { using type = AngularAcceleration; };
-    template <> struct KindQuotient < Area,             Length          > { using type = Length; };
-    template <> struct KindQuotient < Energy,           Time            > { using type = Power; };
-    template <> struct KindQuotient < Force,            Area            > { using type = Pressure; };
-    template <> struct KindQuotient < Impulse,          Time            > { using type = Force; };
-    template <> struct KindQuotient < Length,           Time            > { using type = Velocity; };
-    template <> struct KindQuotient < Mass,             Volume          > { using type = Density; };
-    template <> struct KindQuotient < PlaneAngle,       Time            > { using type = AngularVelocity; };
-    template <> struct KindQuotient < Velocity,         Time            > { using type = Acceleration; };
-    template <> struct KindQuotient < Volume,           Area            > { using type = Length; };
-    template <> struct KindQuotient < Volume,           Length          > { using type = Area; };
-#endif
 }
 
 template <typename K1, typename K2>
@@ -264,13 +217,6 @@ namespace impl
             return 0;
         return lhs < rhs ? -1 : 1;
     }
-
-    ////constexpr int Sgn(Natural x) noexcept {
-    ////    return x < 0 ? -1 : 1;
-    ////}
-    //constexpr int Sgn(Natural x) noexcept {
-    //    return CompareValues(x, static_cast<Natural>(0));
-    //}
 
     constexpr Natural Abs(Natural x) noexcept {
         return x < 0 ? -x : x;
@@ -432,9 +378,6 @@ namespace impl
     };
 }
 
-//template <typename C>
-//using InvRatio = Ratio<C::den, C::num, -C::exp>;
-
 template <typename C1, typename C2>
 using MulRatios = typename impl::RationalProduct<C1, C2>::type;
 
@@ -475,11 +418,6 @@ using MulUnits
 template <typename U1, typename U2>
 using DivUnits
     = Unit< DivRatios<typename U1::conversion, typename U2::conversion>, DivKinds<typename U1::kind, typename U2::kind> >;
-
-//namespace units
-//{
-//    using One = Unit<Ratio<1>, kinds::One>;
-//}
 
 //--------------------------------------------------------------------------------------------------
 // Quantity (value + compile-time unit)
@@ -794,19 +732,9 @@ public:
         return Quantity(std::fmin(lhs.count(), rhs.count()));
     }
 
-    //template <typename C2, typename Q = CommonTypeSfinae<C, C2, K>>
-    //friend auto Min(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-    //    return Min(Q(lhs), Q(rhs));
-    //}
-
     friend auto Max(Quantity lhs, Quantity rhs) noexcept {
         return Quantity(std::fmax(lhs.count(), rhs.count()));
     }
-
-    //template <typename C2, typename Q = CommonTypeSfinae<C, C2, K>>
-    //friend auto Max(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-    //    return Max(Q(lhs), Q(rhs));
-    //}
 
     template <typename U2>
     constexpr friend auto Fma(Quantity a, Quantity<U2> b, decltype(a * b) c) noexcept
