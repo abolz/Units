@@ -171,11 +171,23 @@ static void test001()
 {
     constexpr auto x1 = 1_mps;
     constexpr auto y1 = kind_cast<kinds::Velocity>(1_m / 1_s);
+    //constexpr auto y1 = 1_m / 1_s;
     static_assert(x1 == y1);
 
     constexpr auto x2 = 1_mps;
     constexpr auto y2 = 1_m / 1_s;
     //static_assert(x2 == y2);
+}
+
+static void test002()
+{
+    //constexpr auto x = 1_m / 1_m;
+    //constexpr auto y = 1_s / 1_s;
+    //constexpr auto z = x + y;
+
+    //constexpr auto x = 1_m;
+    //constexpr auto y = 1_s;
+    //constexpr auto z = x + y;
 }
 
 #if UNITS_HAS_ANY()
@@ -202,6 +214,7 @@ static void testFlatten()
 }
 #endif
 
+#if UNITS_HAS_MATH()
 static void testFma0()
 {
     constexpr auto sum0 = 3_mm * 1_s + 2_km * 1_s;
@@ -213,9 +226,9 @@ static void testFma0()
 
 static void testFma1()
 {
-    constexpr auto sum0 = 1_mm * 1_h + 2_km * 1_h;
+    constexpr auto sum0 = 1_mm * 1_h + 2_km * 1_s;
     //Incomplet<decltype(sum0)>{};
-    //constexpr auto sum1 = Fma(1_mm, 1_h, 2_km * 1_s);
+    constexpr auto sum1 = Fma(1_mm, 1_h, 2_km * 1_s);
     //Incomplet<decltype(sum1)>{};
     //static_assert(sum0.count() == sum1.count());
 }
@@ -237,6 +250,7 @@ static void testFma2()
     //Incomplet<decltype(sum1)>{};
     //static_assert(sum0.count() == sum1.count());
 }
+#endif
 
 #if 1
 static void test1()
@@ -251,12 +265,12 @@ static void test1()
     //constexpr Centimeters zzz3{1_s};
     //constexpr Meters z2 = Seconds{1}.convert_to(Meters{});
 
-    auto vel1 = 1_mps;
-    auto vel1a = 1_m * (1 / 1_s);
-    auto vel1b = vel1 + kind_cast<kinds::Velocity>(vel1a);
-    auto vel2 = 1_kmph;
-    //vel1 = vel2;
-    vel1 = MetersPerSecond{vel2};
+    ////auto vel1 = 1_mps;
+    ////auto vel1a = 1_m * (1 / 1_s);
+    ////auto vel1b = vel1 + kind_cast<kinds::Velocity>(vel1a);
+    ////auto vel2 = 1_kmph;
+    //////vel1 = vel2;
+    ////vel1 = MetersPerSecond{vel2};
 
     //auto len1 = 1_m;
     //len1 = 1_mm;
@@ -322,6 +336,18 @@ static void test1()
 #endif
 }
 #endif
+
+static void test999()
+{
+    constexpr auto bits01 = Bits{1};
+    constexpr auto bits02 = Bits{1} + Bytes{1} + Kilobytes{1};
+    //constexpr auto bits03 = Bits{1_rad};
+
+    constexpr auto bits04 = 1_MB / 1_s;
+    constexpr auto bits05 = bits04.convert_to(Gigabytes{1} / Hours{1});
+    constexpr auto bits06 = 1_GB / 1_h;
+    constexpr auto bits07 = bits06.convert_to(Megabytes{1} / Seconds{1});
+}
 
 int main()
 {
@@ -553,8 +579,8 @@ int main()
 
     //constexpr Micrometers imp01 = 1_in;
     //constexpr Millimeters imp02 = 1_in;
-    constexpr auto vel01 = 1_m / 1_s + 1_km / 1_h;
-    constexpr auto vel02 = kind_cast<kinds::Velocity>(1_m / 1_s) + 1_miph;
+    //////constexpr auto vel01 = 1_m / 1_s + 1_km / 1_h;
+    //////constexpr auto vel02 = kind_cast<kinds::Velocity>(1_m / 1_s) + 1_miph;
 
     auto xxxxx = 1_m / 1_s;
     auto yyyyy = MetersPerSecond{2_km / 1_h};

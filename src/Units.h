@@ -5,10 +5,10 @@
 #pragma once
 
 #define UNITS_DIMENSIONLESS_ARITHMETIC() 0
-#define UNITS_DELETE_EVERYTHING_ELSE() 1
-#define UNITS_HAS_ANY() 1
-#define UNITS_HAS_MATH() 1
-#define UNITS_USE_CXX17() 1
+#define UNITS_DELETE_EVERYTHING_ELSE() 0
+#define UNITS_HAS_ANY() 0
+#define UNITS_HAS_MATH() 0
+#define UNITS_SI_DIMENSION() 0
 
 #include <cassert>
 #if UNITS_HAS_MATH()
@@ -68,67 +68,123 @@ class Quantity;
 //      amount of substance             mole (mol)
 //      luminous intensity              candela (cd)
 
-//namespace impl
-//{
-    template <
-        Exponent Length = 0,
-        Exponent Mass = 0,
-        Exponent Time = 0,
-        Exponent ElectricCurrent = 0,
-        Exponent Temperature = 0,
-        Exponent AmountOfSubstance = 0,
-        Exponent LuminousIntensity = 0
-        >
-    struct Dimension
+template <typename... BaseQuantities>
+struct Dimension
+{
+};
+
+namespace impl
+{
+    template <template <int> class D, int E>
+    constexpr auto NegateExp(D<E>) noexcept {
+        return D<-E>{};
+    }
+
+    template <typename... Un>
+    constexpr auto Invert(Dimension<Un...>)
     {
-        static constexpr Exponent L = Length;
-        static constexpr Exponent M = Mass;
-        static constexpr Exponent T = Time;
-        static constexpr Exponent I = ElectricCurrent;
-        static constexpr Exponent O = Temperature;
-        static constexpr Exponent N = AmountOfSubstance;
-        static constexpr Exponent J = LuminousIntensity;
-    };
+        return Dimension<decltype(NegateExp(Un{}))...>{};
+    }
 
-    template <typename D1, typename D2>
-    using MulDimensions
-        = Dimension<D1::L + D2::L, D1::M + D2::M, D1::T + D2::T, D1::I + D2::I, D1::O + D2::O, D1::N + D2::N, D1::J + D2::J>;
+    template <typename... Ln, typename... Rn>
+    constexpr auto Concat(Dimension<Ln...>, Dimension<Rn...>)
+    {
+        return Dimension<Ln..., Rn...>{};
+    }
 
-    template <typename D1, typename D2>
-    using DivDimensions
-        = Dimension<D1::L - D2::L, D1::M - D2::M, D1::T - D2::T, D1::I - D2::I, D1::O - D2::O, D1::N - D2::N, D1::J - D2::J>;
-//}
+    constexpr auto Merge(Dimension<>, Dimension<>)
+    {
+        return Dimension<>{};
+    }
+
+    template <typename L1, typename... Ln>
+    constexpr auto Merge(Dimension<L1, Ln...> lhs, Dimension<>)
+    {
+        return lhs;
+    }
+
+    template <typename R1, typename... Rn>
+    constexpr auto Merge(Dimension<>, Dimension<R1, Rn...> rhs)
+    {
+        return rhs;
+    }
+
+    template <
+        template <int> class L1, int ExpL, typename... Ln,
+        template <int> class R1, int ExpR, typename... Rn
+        >
+    constexpr auto Merge(Dimension<L1<ExpL>, Ln...> lhs, Dimension<R1<ExpR>, Rn...> rhs)
+    {
+        constexpr int id1 = L1<ExpL>::id;
+        constexpr int id2 = R1<ExpR>::id;
+        if constexpr (id1 < id2)
+        {
+            return Concat(Dimension<L1<ExpL>>{}, Merge(Dimension<Ln...>{}, rhs));
+        }
+        else if constexpr (id2 < id1)
+        {
+            return Concat(Dimension<R1<ExpR>>{}, Merge(lhs, Dimension<Rn...>{}));
+        }
+        else
+        {
+            if constexpr (ExpL + ExpR != 0)
+                return Concat(Dimension<L1<ExpL + ExpR>>{}, Merge(Dimension<Ln...>{}, Dimension<Rn...>{}));
+            else
+                return Merge(Dimension<Ln...>{}, Dimension<Rn...>{});
+        }
+    }
+}
+
+template <typename D1, typename D2>
+using MulDimensions = decltype(impl::Merge(D1{}, D2{}));
+
+template <typename D1, typename D2>
+using DivDimensions = decltype(impl::Merge(D1{}, impl::Invert(D2{})));
+
+namespace dim // Base quantities
+{
+    template <int E> struct Length            { static constexpr int64_t id = 1; };
+    template <int E> struct Mass              { static constexpr int64_t id = 2; };
+    template <int E> struct Time              { static constexpr int64_t id = 3; };
+    template <int E> struct ElectricCurrent   { static constexpr int64_t id = 4; };
+    template <int E> struct Temperature       { static constexpr int64_t id = 5; };
+    template <int E> struct AmountOfSubstance { static constexpr int64_t id = 6; };
+    template <int E> struct LuminousIntensity { static constexpr int64_t id = 7; };
+    template <int E> struct Bit               { static constexpr int64_t id = 8; };
+    template <int E> struct Currency          { static constexpr int64_t id = 9; };
+}
 
 namespace kinds
 {
     struct Any {};
 
-    struct One :                    Kind< One,                  Dimension<>> {};
-    struct Length :                 Kind< Length,               Dimension< 1, 0, 0, 0, 0, 0, 0>> {};
-    struct Mass :                   Kind< Mass,                 Dimension< 0, 1, 0, 0, 0, 0, 0>> {};
-    struct Time :                   Kind< Time,                 Dimension< 0, 0, 1, 0, 0, 0, 0>> {};
-    struct ElectricCurrent :        Kind< ElectricCurrent,      Dimension< 0, 0, 0, 1, 0, 0, 0>> {};
-    struct Temperature :            Kind< Temperature,          Dimension< 0, 0, 0, 0, 1, 0, 0>> {};
-    struct AmountOfSubstance :      Kind< AmountOfSubstance,    Dimension< 0, 0, 0, 0, 0, 1, 0>> {};
-    struct LuminousIntensity :      Kind< LuminousIntensity,    Dimension< 0, 0, 0, 0, 0, 0, 1>> {};
+    struct One :                    Kind< One,                  Dimension<> > {};
 
-    struct Area :                   Kind< Area,                 Dimension< 2, 0, 0, 0, 0, 0, 0>> {};
-    struct Volume :                 Kind< Volume,               Dimension< 3, 0, 0, 0, 0, 0, 0>> {};
-    struct PlaneAngle :             Kind< PlaneAngle,           Dimension< 0, 0, 0, 0, 0, 0, 0>> {};
-    struct SolidAngle :             Kind< SolidAngle,           Dimension< 0, 0, 0, 0, 0, 0, 0>> {};
-    struct Velocity :               Kind< Velocity,             Dimension< 1, 0,-1, 0, 0, 0, 0>> {};
-    struct Acceleration :           Kind< Acceleration,         Dimension< 1, 0,-2, 0, 0, 0, 0>> {};
-    struct Frequency :              Kind< Frequency,            Dimension< 0, 0,-1, 0, 0, 0, 0>> {};
-    struct Density :                Kind< Density,              Dimension<-3, 1, 0, 0, 0, 0, 0>> {};
-    struct SurfaceDensity :         Kind< SurfaceDensity,       Dimension<-2, 1, 0, 0, 0, 0, 0>> {};
-    struct Impulse :                Kind< Impulse,              Dimension< 1, 1,-1, 0, 0, 0, 0>> {};
-    struct Force :                  Kind< Force,                Dimension< 1, 1,-2, 0, 0, 0, 0>> {};
-    struct Energy :                 Kind< Energy,               Dimension< 2, 1,-2, 0, 0, 0, 0>> {};
-    struct Torque :                 Kind< Torque,               Dimension< 2, 1,-2, 0, 0, 0, 0>> {};
-    struct Power :                  Kind< Power,                Dimension< 2, 1,-3, 0, 0, 0, 0>> {};
-    struct Pressure :               Kind< Pressure,             Dimension<-1, 1,-2, 0, 0, 0, 0>> {};
-    struct AngularVelocity :        Kind< AngularVelocity,      Dimension< 0, 0,-1, 0, 0, 0, 0>> {};
-    struct AngularAcceleration :    Kind< AngularAcceleration,  Dimension< 0, 0,-2, 0, 0, 0, 0>> {};
+    struct Length :                 Kind< Length,               Dimension<dim::Length<1>> > {};
+    struct Mass :                   Kind< Mass,                 Dimension<dim::Mass<1>> > {};
+    struct Time :                   Kind< Time,                 Dimension<dim::Time<1>> > {};
+    struct ElectricCurrent :        Kind< ElectricCurrent,      Dimension<dim::ElectricCurrent<1>> > {};
+    struct Temperature :            Kind< Temperature,          Dimension<dim::Temperature<1>> > {};
+    struct AmountOfSubstance :      Kind< AmountOfSubstance,    Dimension<dim::AmountOfSubstance<1>> > {};
+    struct LuminousIntensity :      Kind< LuminousIntensity,    Dimension<dim::LuminousIntensity<1>> > {};
+
+    struct Area :                   Kind< Area,                 MulDimensions<Length::dimension, Length::dimension> > {};
+    struct Volume :                 Kind< Volume,               MulDimensions<Length::dimension, Area::dimension> > {};
+    struct PlaneAngle :             Kind< PlaneAngle,           Dimension<> > {};
+    struct SolidAngle :             Kind< SolidAngle,           Dimension<> > {};
+    struct Velocity :               Kind< Velocity,             DivDimensions<Length::dimension, Time::dimension> > {};
+    struct Acceleration :           Kind< Acceleration,         DivDimensions<Velocity::dimension, Time::dimension> > {};
+    struct Frequency :              Kind< Frequency,            DivDimensions<One::dimension, Time::dimension> > {};
+    struct Density :                Kind< Density,              DivDimensions<Mass::dimension, Volume::dimension> > {};
+    struct SurfaceDensity :         Kind< SurfaceDensity,       DivDimensions<Mass::dimension, Area::dimension> > {};
+    struct Impulse :                Kind< Impulse,              MulDimensions<Mass::dimension, Velocity::dimension> > {};
+    struct Force :                  Kind< Force,                MulDimensions<Mass::dimension, Acceleration::dimension> > {};
+    struct Energy :                 Kind< Energy,               MulDimensions<Force::dimension, Length::dimension> > {};
+    struct Torque :                 Kind< Torque,               MulDimensions<Force::dimension, Length::dimension> > {};
+    struct Power :                  Kind< Power,                DivDimensions<Energy::dimension, Time::dimension> > {};
+    struct Pressure :               Kind< Pressure,             DivDimensions<Force::dimension, Area::dimension> > {};
+    struct AngularVelocity :        Kind< AngularVelocity,      DivDimensions<PlaneAngle::dimension, Time::dimension> > {};
+    struct AngularAcceleration :    Kind< AngularAcceleration,  DivDimensions<AngularVelocity::dimension, Time::dimension> > {};
 
     template <typename K1, typename K2>
     struct KindProduct
@@ -1143,11 +1199,9 @@ namespace literals
 //--------------------------------------------------------------------------------------------------
 // Data
 
-#if 0
-
 namespace kinds
 {
-    struct Bit : Kind< Bit, Dimension<> > {};
+    struct Bit : Kind< Bit, Dimension<dim::Bit<1>> > {};
 }
 
 namespace units
@@ -1155,136 +1209,56 @@ namespace units
     using Bit      = Unit< Ratio<1>, kinds::Bit >;
     using Nibble   = Unit< MulRatios<Ratio<4>, Bit::conversion>, kinds::Bit >;
     using Byte     = Unit< MulRatios<Ratio<8>, Bit::conversion>, kinds::Bit >;
+#if 1
     using Kilobyte = Unit< MulRatios<Ratio<1024>, Byte::conversion>, kinds::Bit >;
     using Megabyte = Unit< MulRatios<Ratio<1024>, Kilobyte::conversion>, kinds::Bit >;
     using Gigabyte = Unit< MulRatios<Ratio<1024>, Megabyte::conversion>, kinds::Bit >;
-}
-
-using Bits     = Quantity< units::Bit >;
-using Nibbles  = Quantity< units::Nibble >;
-using Bytes    = Quantity< units::Byte >;
-using Kilobyte = Quantity< units::Kilobyte >;
-using Megabyte = Quantity< units::Megabyte >;
-using Gigabyte = Quantity< units::Gigabyte >;
-
+#else
+    using Kilobyte = Unit< MulRatios<Ratio<1000>, Byte::conversion>, kinds::Bit >;
+    using Megabyte = Unit< MulRatios<Ratio<1000>, Kilobyte::conversion>, kinds::Bit >;
+    using Gigabyte = Unit< MulRatios<Ratio<1000>, Megabyte::conversion>, kinds::Bit >;
 #endif
-
-//--------------------------------------------------------------------------------------------------
-// Constants
-#if 0
-
-//namespace kinds
-//{
-//    struct SpeedOfLight : Kind< SpeedOfLight, Dimension< 1, 0,-1> > {};
-//}
-
-namespace units
-{
-    using SpeedOfLight = Unit< Ratio<299792458>, kinds::Velocity >;
-    //using SpeedOfLight = Unit< Ratio<1>, kinds::SpeedOfLight >;
 }
 
-using SpeedOfLight = Quantity< units::SpeedOfLight >;
+using Bits      = Quantity< units::Bit >;
+using Nibbles   = Quantity< units::Nibble >;
+using Bytes     = Quantity< units::Byte >;
+using Kilobytes = Quantity< units::Kilobyte >;
+using Megabytes = Quantity< units::Megabyte >;
+using Gigabytes = Quantity< units::Gigabyte >;
 
 namespace literals
 {
-    [[nodiscard]] constexpr auto operator""_c(long double x) noexcept {
-        return SpeedOfLight{static_cast<double>(x)};
+    [[nodiscard]] constexpr auto operator""_b(long double x) noexcept {
+        return Bits{static_cast<double>(x)};
     }
-    [[nodiscard]] constexpr auto operator""_c(unsigned long long x) noexcept {
-        return SpeedOfLight{static_cast<double>(x)};
+    [[nodiscard]] constexpr auto operator""_b(unsigned long long x) noexcept {
+        return Bits{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_B(long double x) noexcept {
+        return Bytes{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_B(unsigned long long x) noexcept {
+        return Bytes{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_kB(long double x) noexcept {
+        return Kilobytes{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_kB(unsigned long long x) noexcept {
+        return Kilobytes{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_MB(long double x) noexcept {
+        return Megabytes{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_MB(unsigned long long x) noexcept {
+        return Megabytes{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_GB(long double x) noexcept {
+        return Gigabytes{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_GB(unsigned long long x) noexcept {
+        return Gigabytes{static_cast<double>(x)};
     }
 }
-
-#endif
-
-//==================================================================================================
-// Math functions
-//==================================================================================================
-
-#if 0
-
-template <typename U>
-[[nodiscard]] auto abs(Quantity<U> q) noexcept {
-    return Quantity<U>(std::abs(q.count()));
-}
-
-template <typename U>
-[[nodiscard]] auto square(Quantity<U> q) noexcept {
-    return q * q;
-}
-
-// q^(1/2)
-// template <typename U>
-// [[nodiscard]] auto sqrt(Quantity<U> q) noexcept {
-//     // ???
-// }
-
-// q^n
-// template <typename U>
-// [[nodiscard]] auto pow(Quantity<U> q, int n) noexcept {
-//     // ???
-// }
-
-// q^(1/n)
-// template <typename U>
-// [[nodiscard]] auto root(Quantity<U> q, int n) noexcept {
-//     // ???
-// }
-
-//#if 0
-//template <typename U, std::enable_if_t< std::is_same_v<Dimension<>, typename U::dimension>, int > = 0>
-//[[nodiscard]] auto sqrt(Quantity<U> q) noexcept {
-//    return std::sqrt(q.count());
-//}
-//#else
-//template <typename U, std::enable_if_t< std::is_same_v<Dimension<>, typename U::dimension>, int > = 0>
-//[[nodiscard]] auto sqrt(Quantity<U> q) noexcept {
-//    return Quantity<U>(std::sqrt(q.count()));
-//}
-//#endif
-
-#if 0
-template <typename U, std::enable_if_t< std::is_same_v<Dimension<>, typename U::dimension>, int > = 0>
-[[nodiscard]] auto sin(Quantity<U> q) noexcept {
-    return Radians(std::sin(q.count()));
-}
-
-template <typename U, std::enable_if_t< std::is_same_v<Dimension<>, typename U::dimension>, int > = 0>
-[[nodiscard]] auto cos(Quantity<U> q) noexcept {
-    return Radians(std::cos(q.count()));
-}
-
-template <typename U, std::enable_if_t< std::is_same_v<Dimension<>, typename U::dimension>, int > = 0>
-[[nodiscard]] auto tan(Quantity<U> q) noexcept {
-    return Radians(std::tan(q.count()));
-}
-#endif
-
-#if 1
-#if 0
-template <typename U, std::enable_if_t< std::is_same_v<Dimension<>, typename U::dimension>, int > = 0>
-[[nodiscard]] auto log(Quantity<U> q) noexcept {
-    return std::log(q.count());
-}
-
-template <typename U, std::enable_if_t< std::is_same_v<Dimension<>, typename U::dimension>, int > = 0>
-[[nodiscard]] auto exp(Quantity<U> q) noexcept {
-    return std::exp(q.count());
-}
-#else
-template <typename U, std::enable_if_t< std::is_same_v<Dimension<>, typename U::dimension>, int > = 0>
-[[nodiscard]] auto log(Quantity<U> q) noexcept {
-    return Quantity<U>(std::log(q.count()));
-}
-
-template <typename U, std::enable_if_t< std::is_same_v<Dimension<>, typename U::dimension>, int > = 0>
-[[nodiscard]] auto exp(Quantity<U> q) noexcept {
-    return Quantity<U>(std::exp(q.count()));
-}
-#endif
-#endif
-
-#endif
 
 } // namespace sc
