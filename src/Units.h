@@ -4,111 +4,223 @@
 
 #pragma once
 
-#include <assert.h>
-#include <math.h>
-#include <stdint.h>
+#define UNITS_DIMENSIONLESS_ARITHMETIC() 0
+#define UNITS_DELETE_EVERYTHING_ELSE() 1
+#define UNITS_HAS_ANY() 1
+#define UNITS_HAS_MATH() 1
+#define UNITS_USE_CXX17() 1
+
+#include <cassert>
+#if UNITS_HAS_MATH()
+#include <cmath>
+#endif
+#include <cstdint>
 #include <type_traits>
 
 #ifndef UNITS_ASSERT
 #define UNITS_ASSERT(X) assert(X)
 #endif
 
-namespace units {
-
-// Number type for exponents in Exponents<>
-// TODO(???): rationals?
-using Exponent = int;
-
-// Integer type for (non-negative) compile-time fractions
-using Natural = int64_t;
+namespace sc {
 
 //==================================================================================================
 // Compile-time units
 //==================================================================================================
 
-//namespace impl
-//{
-    template <Exponent Length = 0, Exponent Time = 0, Exponent Mass = 0, Exponent LuminousIntensity = 0>
-    struct Exponents;
+using Exponent = int;
+using Natural = int64_t;
 
-    struct DimensionTag {};
+template <typename K, typename D>
+struct Kind
+{
+    using type = Kind;
+    using kind = K;
+    using dimension = D;
+};
 
-    template <typename Dim, typename Exp>
-    struct Dimension : DimensionTag {
-        using dimension = Dim;
-        using exponents = Exp;
-    };
-
-    struct UnknownDimensionTag : DimensionTag {};
-
-    template <typename Dim, typename Exp>
-    struct UnknownDimension : UnknownDimensionTag {
-        using dimension = Dim;
-        using exponents = Exp;
-    };
-
-    //template <typename T>
-    //struct IsExponents : std::false_type {};
-
-    //template <Exponent L, Exponent T, Exponent M>
-    //struct IsExponents<Exponents<L, T, M>>
-    //    : std::true_type
-    //{
-    //};
-
-    template <typename T>
-    using IsDimension = std::is_base_of<DimensionTag, T>;
-
-    template <typename T>
-    using IsUnknownDimension = std::is_base_of<UnknownDimensionTag, T>;
-//}
-
-template <Natural Num, Natural Den = 1>
+template <Natural Num, Natural Den, int Exp>
 struct Rational;
 
-template <typename Mul, typename Dim>
+template <typename C, typename K>
 struct Unit;
 
 template <typename U>
 class Quantity;
 
+//template <typename U>
+//class QuantityPoint;
+
+//template <typename T>
+//auto treat_as_floating_point(T&&) // never implemented!
+//    -> std::bool_constant<std::is_floating_point_v<std::remove_cv_t<T>>>;
+
+//--------------------------------------------------------------------------------------------------
+// Dimension
+//--------------------------------------------------------------------------------------------------
+
+// SI base units
+//    Base quantity:                  Name:
+//      time                            second (s)
+//      length                          metre (m)
+//      mass                            kilogram (kg)
+//      electric current                ampere (A)
+//      thermodynamic temperature       kelvin (K)
+//      amount of substance             mole (mol)
+//      luminous intensity              candela (cd)
+
 //namespace impl
 //{
-    template <typename T>
-    struct IsRational : std::false_type {};
-
-    template <Natural Num, Natural Den>
-    struct IsRational<Rational<Num, Den>>
-        : std::true_type
+    template <
+        Exponent Length = 0,
+        Exponent Mass = 0,
+        Exponent Time = 0,
+        Exponent ElectricCurrent = 0,
+        Exponent Temperature = 0,
+        Exponent AmountOfSubstance = 0,
+        Exponent LuminousIntensity = 0
+        >
+    struct Dimension
     {
+        static constexpr Exponent L = Length;
+        static constexpr Exponent M = Mass;
+        static constexpr Exponent T = Time;
+        static constexpr Exponent I = ElectricCurrent;
+        static constexpr Exponent O = Temperature;
+        static constexpr Exponent N = AmountOfSubstance;
+        static constexpr Exponent J = LuminousIntensity;
     };
 
-    template <typename T>
-    struct IsUnit : std::false_type {};
+    template <typename D1, typename D2>
+    using MulDimensions
+        = Dimension<D1::L + D2::L, D1::M + D2::M, D1::T + D2::T, D1::I + D2::I, D1::O + D2::O, D1::N + D2::N, D1::J + D2::J>;
 
-    template <typename Mul, typename Dim>
-    struct IsUnit<Unit<Mul, Dim>>
-        : std::bool_constant< IsRational<Mul>::value && IsDimension<Dim>::value >
-    {
-    };
-
-    template <typename T>
-    struct IsQuantity : std::false_type {};
-
-    template <typename U>
-    struct IsQuantity<Quantity<U>>
-        : IsUnit<U>
-    {
-    };
+    template <typename D1, typename D2>
+    using DivDimensions
+        = Dimension<D1::L - D2::L, D1::M - D2::M, D1::T - D2::T, D1::I - D2::I, D1::O - D2::O, D1::N - D2::N, D1::J - D2::J>;
 //}
 
+namespace kinds
+{
+    struct Any {};
+
+    struct One :                    Kind< One,                  Dimension<>> {};
+    struct Length :                 Kind< Length,               Dimension< 1, 0, 0, 0, 0, 0, 0>> {};
+    struct Mass :                   Kind< Mass,                 Dimension< 0, 1, 0, 0, 0, 0, 0>> {};
+    struct Time :                   Kind< Time,                 Dimension< 0, 0, 1, 0, 0, 0, 0>> {};
+    struct ElectricCurrent :        Kind< ElectricCurrent,      Dimension< 0, 0, 0, 1, 0, 0, 0>> {};
+    struct Temperature :            Kind< Temperature,          Dimension< 0, 0, 0, 0, 1, 0, 0>> {};
+    struct AmountOfSubstance :      Kind< AmountOfSubstance,    Dimension< 0, 0, 0, 0, 0, 1, 0>> {};
+    struct LuminousIntensity :      Kind< LuminousIntensity,    Dimension< 0, 0, 0, 0, 0, 0, 1>> {};
+
+    struct Area :                   Kind< Area,                 Dimension< 2, 0, 0, 0, 0, 0, 0>> {};
+    struct Volume :                 Kind< Volume,               Dimension< 3, 0, 0, 0, 0, 0, 0>> {};
+    struct PlaneAngle :             Kind< PlaneAngle,           Dimension< 0, 0, 0, 0, 0, 0, 0>> {};
+    struct SolidAngle :             Kind< SolidAngle,           Dimension< 0, 0, 0, 0, 0, 0, 0>> {};
+    struct Velocity :               Kind< Velocity,             Dimension< 1, 0,-1, 0, 0, 0, 0>> {};
+    struct Acceleration :           Kind< Acceleration,         Dimension< 1, 0,-2, 0, 0, 0, 0>> {};
+    struct Frequency :              Kind< Frequency,            Dimension< 0, 0,-1, 0, 0, 0, 0>> {};
+    struct Density :                Kind< Density,              Dimension<-3, 1, 0, 0, 0, 0, 0>> {};
+    struct SurfaceDensity :         Kind< SurfaceDensity,       Dimension<-2, 1, 0, 0, 0, 0, 0>> {};
+    struct Impulse :                Kind< Impulse,              Dimension< 1, 1,-1, 0, 0, 0, 0>> {};
+    struct Force :                  Kind< Force,                Dimension< 1, 1,-2, 0, 0, 0, 0>> {};
+    struct Energy :                 Kind< Energy,               Dimension< 2, 1,-2, 0, 0, 0, 0>> {};
+    struct Torque :                 Kind< Torque,               Dimension< 2, 1,-2, 0, 0, 0, 0>> {};
+    struct Power :                  Kind< Power,                Dimension< 2, 1,-3, 0, 0, 0, 0>> {};
+    struct Pressure :               Kind< Pressure,             Dimension<-1, 1,-2, 0, 0, 0, 0>> {};
+    struct AngularVelocity :        Kind< AngularVelocity,      Dimension< 0, 0,-1, 0, 0, 0, 0>> {};
+    struct AngularAcceleration :    Kind< AngularAcceleration,  Dimension< 0, 0,-2, 0, 0, 0, 0>> {};
+
+    template <typename K1, typename K2>
+    struct KindProduct
+        : Kind< KindProduct<K1, K2>, MulDimensions<typename K1::dimension, typename K2::dimension> >
+    {
+    };
+
+    template <typename K1, typename K2>
+    struct KindQuotient
+        : Kind< KindQuotient<K1, K2>, DivDimensions<typename K1::dimension, typename K2::dimension> >
+    {
+    };
+
+#if 0
+    // // template <typename K>
+    // // struct KindQuotient<K, K>
+    // // {
+    // //     using type = kinds::One;
+    // // };
+
+    // template <typename K>
+    // struct KindQuotient<K, K>
+    // {
+    //     using type = Kind<K, Dimension<>>;
+    // };
+
+    template <typename K>
+    struct KindRatio : Kind< K, Dimension<> >
+    {
+    };
+
+    template <typename K>
+    struct KindQuotient<K, K>
+    {
+        using type = KindRatio<K>;
+    };
+#endif
+
+#if 0
+    template <> struct KindProduct  < Area,             Length          > { using type = Volume; };
+    template <> struct KindProduct  < Force,            Length          > { using type = Energy; };
+    template <> struct KindProduct  < Length,           Area            > { using type = Volume; };
+    template <> struct KindProduct  < Length,           Length          > { using type = Area; };
+    template <> struct KindProduct  < Mass,             Acceleration    > { using type = Force; };
+    template <> struct KindProduct  < Mass,             Velocity        > { using type = Impulse; };
+    template <> struct KindProduct  < Velocity,         Time            > { using type = Length; };
+
+    template <> struct KindQuotient < AngularVelocity,  Time            > { using type = AngularAcceleration; };
+    template <> struct KindQuotient < Area,             Length          > { using type = Length; };
+    template <> struct KindQuotient < Energy,           Time            > { using type = Power; };
+    template <> struct KindQuotient < Force,            Area            > { using type = Pressure; };
+    template <> struct KindQuotient < Impulse,          Time            > { using type = Force; };
+    template <> struct KindQuotient < Length,           Time            > { using type = Velocity; };
+    template <> struct KindQuotient < Mass,             Volume          > { using type = Density; };
+    template <> struct KindQuotient < PlaneAngle,       Time            > { using type = AngularVelocity; };
+    template <> struct KindQuotient < Velocity,         Time            > { using type = Acceleration; };
+    template <> struct KindQuotient < Volume,           Area            > { using type = Length; };
+    template <> struct KindQuotient < Volume,           Length          > { using type = Area; };
+#endif
+}
+
+template <typename K1, typename K2>
+using MulKinds = typename kinds::KindProduct<K1, K2>::type;
+
+template <typename K1, typename K2>
+using DivKinds = typename kinds::KindQuotient<K1, K2>::type;
+
 //--------------------------------------------------------------------------------------------------
-//
+// Rational
 //--------------------------------------------------------------------------------------------------
 
-//namespace impl
-//{
-    constexpr auto Gcd(Natural a, Natural b) noexcept {
+namespace impl
+{
+    template <typename L, typename R>
+    constexpr int CompareValues(L lhs, R rhs) noexcept {
+        if (lhs == rhs)
+            return 0;
+        return lhs < rhs ? -1 : 1;
+    }
+
+    ////constexpr int Sgn(Natural x) noexcept {
+    ////    return x < 0 ? -1 : 1;
+    ////}
+    //constexpr int Sgn(Natural x) noexcept {
+    //    return CompareValues(x, static_cast<Natural>(0));
+    //}
+
+    constexpr Natural Abs(Natural x) noexcept {
+        return x < 0 ? -x : x;
+    }
+
+    constexpr Natural Gcd(Natural a, Natural b) noexcept {
         UNITS_ASSERT(a >= 1); // static_assert
         UNITS_ASSERT(b >= 1); // static_assert
         while (b > 0) {
@@ -120,11 +232,12 @@ class Quantity;
         return a;
     }
 
-    constexpr auto Lcm(Natural a, Natural b) noexcept {
+    constexpr Natural Lcm(Natural a, Natural b) noexcept {
         return (a / Gcd(a, b)) * b;
     }
 
-    constexpr auto Power(Natural x, Natural n) noexcept {
+#if 0
+    constexpr Natural Power(Natural x, Natural n) noexcept {
         UNITS_ASSERT(x >= 1);
         UNITS_ASSERT(n >= 0);
 
@@ -158,9 +271,8 @@ class Quantity;
     }
 
     // Computes the n-th root y of x,
-    // i.e. y = [x^(1/n)]
     // i.e. returns the largest y, such that y^n <= x
-    constexpr auto Root(Natural x, Natural n) noexcept {
+    constexpr Natural Root(Natural x, Natural n) noexcept {
         UNITS_ASSERT(x >= 1);
         UNITS_ASSERT(n >= 1);
 
@@ -183,324 +295,195 @@ class Quantity;
                 lo = y;
         }
     }
-//}
-
-//--------------------------------------------------------------------------------------------------
-// Exponents
-//--------------------------------------------------------------------------------------------------
-
-//--------------------------------------------------------------------------------------------------
-// SI base units
-//--------------------------------------------------------------------------------------------------
-//    Base quantity:                  Name:
-//      time                            second (s)
-//      length                          metre (m)
-//      mass                            kilogram (kg)
-//      electric current                ampere (A)
-//      thermodynamic temperature       kelvin (K)
-//      amount of substance             mole (mol)
-//      luminous intensity              candela (cd)
-
-//namespace impl
-//{
-    template <Exponent L, Exponent M, Exponent T, Exponent J>
-    struct Exponents {
-        static constexpr Exponent length = L;
-        static constexpr Exponent mass = M;
-        static constexpr Exponent time = T;
-        static constexpr Exponent luminous_intensity = J;
-
-        //--------------------------------------------------------------------------
-        // Type constructors
-
-        template <Exponent L2, Exponent M2, Exponent T2, Exponent J2>
-        constexpr friend auto operator*(Exponents, Exponents<L2, M2, T2, J2>) noexcept {
-            return Exponents<L + L2, M + M2, T + T2, J + J2>{};
-        }
-
-        template <Exponent L2, Exponent M2, Exponent T2, Exponent J2>
-        constexpr friend auto operator/(Exponents, Exponents<L2, M2, T2, J2>) noexcept {
-            return Exponents<L - L2, M - M2, T - T2, J - J2>{};
-        }
-
-        constexpr friend auto Pow2(Exponents e) noexcept { return e * e; }
-        constexpr friend auto Pow3(Exponents e) noexcept { return e * e * e; }
-    };
-//}
-
-namespace dimensions
-{
-    struct Length :              Dimension< Length,              Exponents<1, 0, 0, 0>> {};
-    struct Mass :                Dimension< Mass,                Exponents<0, 1, 0, 0>> {};
-    struct Time :                Dimension< Time,                Exponents<0, 0, 1, 0>> {};
-    // struct LuminousIntensity :   Dimension< LuminousIntensity,   Exponents<0, 0, 0, 1>> {};
-    struct Area :                Dimension< Area,                decltype(Pow2(Length::exponents{}))> {};
-    struct Volume :              Dimension< Volume,              decltype(Pow3(Length::exponents{}))> {};
-    struct PlaneAngle :          Dimension< PlaneAngle,          decltype(Length::exponents{} / Length::exponents{})> {};
-    struct SolidAngle :          Dimension< SolidAngle,          decltype(Area::exponents{} / Area::exponents{})> {};
-    struct Velocity :            Dimension< Velocity,            decltype(Length::exponents{} / Time::exponents{})> {};
-    struct Acceleration :        Dimension< Acceleration,        decltype(Velocity::exponents{} / Time::exponents{})> {};
-    struct Impulse :             Dimension< Impulse,             decltype(Mass::exponents{} * Velocity::exponents{})> {}; // XXX: (Force * Time) ?
-    struct Frequency :           Dimension< Frequency,           decltype(Exponents{} / Time::exponents{})> {};
-    struct Density :             Dimension< Density,             decltype(Mass::exponents{} / Volume::exponents{})> {};
-    // struct SurfaceDensity :      Dimension< SurfaceDensity,      decltype(Mass::exponents{} / Area::exponents{})> {};
-    // struct MassConcentration :   Dimension< MassConcentration,   decltype(Mass::exponents{} / Volume::exponents{})> {};
-    // struct SpecificVolume :      Dimension< SpecificVolume,      decltype(Volume::exponents{} / Mass::exponents{})> {};
-    struct Force :               Dimension< Force,               decltype(Mass::exponents{} * Acceleration::exponents{})> {};
-    struct Energy :              Dimension< Energy,              decltype(Force::exponents{} * Length::exponents{})> {};
-    struct Torque :              Dimension< Torque,              decltype(Force::exponents{} * Length::exponents{})> {};
-    // struct SpecificEnergy :      Dimension< SpecificEnergy,      decltype(Energy::exponents{} / Mass::exponents{})> {};
-    struct Power :               Dimension< Power,               decltype(Energy::exponents{} / Time::exponents{})> {};
-    struct Pressure :            Dimension< Pressure,            decltype(Force::exponents{} / Area::exponents{})> {};
-    struct AngularVelocity :     Dimension< AngularVelocity,     decltype(PlaneAngle::exponents{} / Time::exponents{})> {};
-    struct AngularAcceleration : Dimension< AngularAcceleration, decltype(AngularVelocity::exponents{} / Time::exponents{})> {};
-    // struct Wavenumber :          Dimension< Wavenumber,          decltype(Exponents{} / Length::exponents{}) > {};
-    // struct SurfaceTension :      Dimension< SurfaceTension,      decltype(Force::exponents{} / Length::exponents{})> {};
-    // struct RadiantFlux :         Dimension< RadiantFlux,         decltype(Energy::exponents{} / Time::exponents{})> {};
-    // struct LuminousFlux :        Dimension< LuminousFlux,        decltype(LuminousIntensity::exponents{} * SolidAngle::exponents{})> {};
-    // struct Illuminance :         Dimension< Illuminance,         decltype(LuminousFlux::exponents{} / Area::exponents{})> {};
-    // struct Irradiance :          Dimension< Irradiance,          decltype(RadiantFlux::exponents{} / Area::exponents{})> {};
-    // struct RadiantEmiitance :    Dimension< RadiantEmiitance,    decltype(RadiantFlux::exponents{} / Area::exponents{})> {};
-    // struct Radiance :            Dimension< Radiance,            decltype(RadiantFlux::exponents{} / SolidAngle::exponents{})> {};
-
-    template <typename Dim>
-    struct Inv
-        : Dimension<Inv<Dim>, decltype(Exponents{} / (typename Dim::exponents{}))> {};
-
-    template <typename Dim1, typename Dim2>
-    struct Mul
-        : Dimension<Mul<Dim1, Dim2>, decltype(typename Dim1::exponents{} * typename Dim2::exponents{})> {};
-
-    template <typename Dim1, typename Dim2>
-    struct Div
-        : Dimension<Div<Dim1, Dim2>, decltype(typename Dim1::exponents{} / typename Dim2::exponents{})> {};
-
-    template <typename Dim, typename Exp>
-    constexpr auto Inverse(Dimension<Dim, Exp>) {
-        return Inv<Dimension<Dim, Exp>>{};
-    }
-
-    // Known (and unabiguous) inverses
-    constexpr auto Inverse(Time) { return Frequency{}; }
-
-    template <typename Dim1, typename Exp1, typename Dim2, typename Exp2>
-    constexpr auto operator*(Dimension<Dim1, Exp1>, Dimension<Dim2, Exp2>) {
-        return Mul<Dimension<Dim1, Exp1>, Dimension<Dim2, Exp2>>{};
-    }
-
-    // Known (and unabiguous) products
-    constexpr auto operator*(Length, Length) { return Area{}; }
-    constexpr auto operator*(Length, Area) { return Volume{}; }
-    constexpr auto operator*(Area, Length) { return Volume{}; }
-    constexpr auto operator*(Mass, Velocity) { return Impulse{}; }
-    constexpr auto operator*(Mass, Acceleration) { return Force{}; }
-    constexpr auto operator*(Acceleration, Mass) { return Force{}; }
-    constexpr auto operator*(Force, Time) { return Impulse{}; } // XXX
-
-    template <typename Dim1, typename Exp1, typename Dim2, typename Exp2>
-    constexpr auto operator/(Dimension<Dim1, Exp1>, Dimension<Dim2, Exp2>) {
-        return Div<Dimension<Dim1, Exp1>, Dimension<Dim2, Exp2>>{};
-    }
-
-#if 0
-    // dimension / dimension => dimension-less
-    template <typename Dim, typename Exp>
-    constexpr auto operator/(Dimension<Dim, Exp>, Dimension<Dim, Exp>) {
-        return Dimension<Dim, Exponents<>>{};
-    }
 #endif
-
-    // Known (and unabiguous) quaotients
-    constexpr auto operator/(Length, Time) { return Velocity{}; }
-    constexpr auto operator/(Velocity, Time) { return Acceleration{}; }
-    constexpr auto operator/(Mass, Volume) { return Density{}; }
-    constexpr auto operator/(Impulse, Time) { return Force{}; } // XXX
-//  constexpr auto operator/(Mass, Area) { return SurfaceDensity{}; }
-    constexpr auto operator/(Energy, Time) { return Power{}; }
-    constexpr auto operator/(PlaneAngle, Time) { return AngularVelocity{}; }
-    constexpr auto operator/(AngularVelocity, Time) { return AngularAcceleration{}; }
-
-    // No:
-//  constexpr auto operator/(Length, Length) { return PlaneAngle{}; }
-//  constexpr auto operator/(Area, Area) { return SolidAngle{}; }
-
-    template <typename Dim, typename Exp>
-    constexpr auto Pow2(Dimension<Dim, Exp> d) noexcept { return d * d; }
-
-    template <typename Dim, typename Exp>
-    constexpr auto Pow3(Dimension<Dim, Exp> d) noexcept { return d * d * d; }
 }
 
-//--------------------------------------------------------------------------------------------------
-// Rational
-//--------------------------------------------------------------------------------------------------
+template <Natural Num, Natural Den = 1, Exponent Exp = 0>
+using Ratio = Rational< Num / impl::Gcd(Num, Den), Den / impl::Gcd(Num, Den), Exp >;
 
-template <Natural Num, Natural Den>
-using Ratio
-    = Rational<Num / Gcd(Num, Den), Den / Gcd(Num, Den)>;
+template <Natural Num, Natural Den, Exponent Exp>
+struct Rational // RatPi. Delicious.
+{
+    // value = (Num / Den) * pi^Exp
 
-template <typename Rat1, typename Rat2> // TODO: CommonConversion
-using CommonRatio
-    = Rational<Gcd(Rat1::num, Rat2::num), Lcm(Rat1::den, Rat2::den)>;
+    static constexpr Natural Two53 = 9007199254740992; // == 2^53
 
-template <Natural Num, Natural Den>
-struct Rational {
-    static_assert(Num > 0, "invalid argument");
-    static_assert(Den > 0, "invalid argument");
-    static_assert(Gcd(Num, Den) == 1, "use Ratio<> to construct (simplified) Rational's");
+    static_assert(Num > 0,
+        "invalid argument");
+    static_assert(Num <= Two53,
+        "invalid argument");
+    static_assert(Den > 0,
+        "invalid argument");
+    static_assert(Den <= Two53,
+        "invalid argument");
+    static_assert(impl::Abs(Exp) <= 4,
+        "argument out of range (sorry, not implemented...)");
+    static_assert(impl::Gcd(Num, Den) == 1,
+        "use Ratio<> to construct (reduced) Rational's");
 
     static constexpr Natural num = Num;
     static constexpr Natural den = Den;
-//  static constexpr double value = static_cast<double>(Num) / Den;
+    static constexpr Exponent exp = Exp;
 
-    constexpr double operator()(double x) const noexcept {
-        return x * *this;
+    [[nodiscard]] constexpr double operator()(double x) const noexcept {
+        return ApplyExp(ApplyRat(x));
     }
 
-    //--------------------------------------------------------------------------
-    // Arithmetic
-
-    constexpr friend double operator*(double lhs, Rational) noexcept {
-        if constexpr (Num == 1 && Den == 1)
-            return lhs;
-        else if constexpr (Num == 1)
-            return lhs / Den;
-        else if constexpr (Den == 1)
-            return lhs * Num;
+private:
+    [[nodiscard]] static constexpr double ApplyRat(double x) noexcept {
+        if constexpr (num == 1 && den == 1)
+            return x;
+        else if constexpr (num == 1)
+            return x / den;
+        else if constexpr (den == 1)
+            return x * num;
         else
-//          return (lhs * Num) / Den;
-            return lhs * (static_cast<double>(Num) / Den);
+            return x * num / den;
     }
 
-    constexpr friend double operator*(Rational, double rhs) noexcept {
-        return rhs * Rational{};
-    }
+    [[nodiscard]] static constexpr double ApplyExp(double x) noexcept {
+        constexpr double Powers[] = {
+            1,                 // pi^0
+            3.141592653589793, // pi^1
+            9.869604401089358, // pi^2
+            31.00627668029982, // pi^3
+            97.40909103400244, // pi^4
+        };
 
-    constexpr friend double operator/(double lhs, Rational) noexcept {
-        return lhs * Inverse(Rational{});
-    }
-
-    constexpr friend double operator/(Rational, double rhs) noexcept {
-#if 1
-        return (static_cast<double>(Num) / Den) / rhs;
-#else
-        if constexpr (Num == 1 && Den == 1)
-            return 1 / rhs;
-        else if constexpr (Num == 1)
-            return 1 / (Den * rhs);
-        else if constexpr (Den == 1)
-            return Num / rhs;
+        if constexpr (exp == 0)
+            return x;
+        else if constexpr (exp > 0)
+            return x * Powers[exp];
         else
-//          return Num / (Den * rhs);
-            return (static_cast<double>(Num) / Den) / rhs;
-#endif
+            return x / Powers[-exp];
     }
-
-    //--------------------------------------------------------------------------
-    // Type constructors
-
-    constexpr friend auto Inverse(Rational) noexcept {
-        return Rational<Den, Num>{};
-    }
-
-    template <Natural Num2, Natural Den2>
-    constexpr friend auto operator*(Rational, Rational<Num2, Den2>) noexcept {
-        constexpr auto S = Gcd(Num, Den2);
-        constexpr auto T = Gcd(Den, Num2);
-        return Rational<(Num / S) * (Num2 / T), (Den / T) * (Den2 / S)>{};
-    }
-
-    template <Natural Num2, Natural Den2>
-    constexpr friend auto operator/(Rational, Rational<Num2, Den2>) noexcept {
-        return Rational{} * Rational<Den2, Num2>{};
-    }
-
-    constexpr friend auto Pow2(Rational r) noexcept { return r * r; }
-    constexpr friend auto Pow3(Rational r) noexcept { return r * r * r; }
 };
+
+namespace impl
+{
+    template <typename R1, typename R2>
+    struct RationalProduct
+    {
+        static constexpr Natural Num1 = R1::num;
+        static constexpr Natural Den1 = R1::den;
+        static constexpr Natural Num2 = R2::num;
+        static constexpr Natural Den2 = R2::den;
+
+        static constexpr Natural S = Gcd(Num1, Den2);
+        static constexpr Natural T = Gcd(Den1, Num2);
+
+        using type = Rational< (Num1 / S) * (Num2 / T), (Den1 / T) * (Den2 / S), R1::exp + R2::exp >;
+    };
+}
+
+//template <typename C>
+//using InvRatio = Ratio<C::den, C::num, -C::exp>;
+
+template <typename C1, typename C2>
+using MulRatios = typename impl::RationalProduct<C1, C2>::type;
+
+template <typename C1, typename C2>
+using DivRatios = typename impl::RationalProduct<C1, Ratio<C2::den, C2::num, -C2::exp>>::type;
+
+namespace impl
+{
+    template <typename C1, typename C2>
+    struct CommonRational;
+
+    template <Natural Num1, Natural Den1, Natural Num2, Natural Den2, Exponent CommonExp>
+    struct CommonRational< Rational<Num1, Den1, CommonExp>, Rational<Num2, Den2, CommonExp> >
+    {
+        using type = Rational< Gcd(Num1, Num2), Lcm(Den1, Den2), CommonExp >;
+    };
+}
+
+template <typename C1, typename C2>
+using CommonRatio = typename impl::CommonRational<C1, C2>::type;
 
 //--------------------------------------------------------------------------------------------------
 // Unit
 //--------------------------------------------------------------------------------------------------
 
-template <typename Conv, typename Dim>
-struct Unit {
-    static_assert( IsRational<Conv>::value, "Conv must be a Rational type" ); // TODO... IsConversion!
-    static_assert( IsDimension<Dim>::value, "Dim must be a Dimension type" );
-
-    using conversion_type = Conv;
-    using dimension_type = Dim;
-
-    static constexpr conversion_type conversion{};
-    static constexpr dimension_type dimension{};
-
-    //--------------------------------------------------------------------------
-    // Type constructors
-
-    constexpr friend auto Inverse(Unit) noexcept {
-        return Unit<decltype(Inverse(Conv{})), decltype(Inverse(Dim{}))>{};
-    }
-
-    template <typename Conv2, typename Dim2>
-    constexpr friend auto operator*(Unit, Unit<Conv2, Dim2>) noexcept {
-        return Unit<decltype(Conv{} * Conv2{}), decltype(Dim{} * Dim2{})>{};
-    }
-
-    template <Natural Num, Natural Den>
-    constexpr friend auto operator*(Rational<Num, Den>, Unit) noexcept {
-        return Unit<decltype(Rational<Num, Den>{} * Conv{}), Dim>{};
-    }
-
-    template <Natural Num, Natural Den>
-    constexpr friend auto operator*(Unit, Rational<Num, Den>) noexcept {
-        return Unit<decltype(Conv{} * Rational<Num, Den>{}), Dim>{};
-    }
-
-    template <typename Conv2, typename Dim2>
-    constexpr friend auto operator/(Unit, Unit<Conv2, Dim2>) noexcept {
-        return Unit<decltype(Conv{} / Conv2{}), decltype(Dim{} / Dim2{})>{};
-    }
-
-    template <Natural Num, Natural Den>
-    constexpr friend auto operator/(Rational<Num, Den>, Unit) noexcept {
-        return Unit<decltype(Rational<Num, Den>{} / Conv{}), decltype(Inverse(Dim{}))>{};
-    }
-
-    template <Natural Num, Natural Den>
-    constexpr friend auto operator/(Unit, Rational<Num, Den>) noexcept {
-        return Unit<decltype(Conv{} / Rational<Num, Den>{}), Dim>{};
-    }
-
-    constexpr friend auto Pow2(Unit) noexcept { return Unit<decltype(Pow2(Conv{})), decltype(Pow2(Dim{}))>{}; }
-    constexpr friend auto Pow3(Unit) noexcept { return Unit<decltype(Pow3(Conv{})), decltype(Pow3(Dim{}))>{}; }
+template <typename C, typename K>
+struct Unit
+{
+    using conversion = C;
+    using kind = K;
+    using dimension = typename kind::dimension;
 };
+
+template <typename U1, typename U2>
+using MulUnits
+    = Unit< MulRatios<typename U1::conversion, typename U2::conversion>, MulKinds<typename U1::kind, typename U2::kind> >;
+
+template <typename U1, typename U2>
+using DivUnits
+    = Unit< DivRatios<typename U1::conversion, typename U2::conversion>, DivKinds<typename U1::kind, typename U2::kind> >;
+
+//namespace units
+//{
+//    using One = Unit<Ratio<1>, kinds::One>;
+//}
 
 //--------------------------------------------------------------------------------------------------
 // Quantity (value + compile-time unit)
 //--------------------------------------------------------------------------------------------------
 
-template <typename UnitType>
-class Quantity {
-    static_assert( IsUnit<UnitType>::value, "UnitType must be a Unit<> type");
+template </*typename R, */typename C, typename K>
+class Quantity</*R, */Unit<C, K>>
+{
+    //template <typename U2> friend class Quantity;
+    //template <typename U2> friend class QuantityPoint;
 
 public:
-    using quantity_type = Quantity;
-    using unit_type = UnitType;
-    using conversion_type = typename unit_type::conversion_type;
-    using dimension_type = typename unit_type::dimension_type;
+    using quantity = Quantity;
+    using rep = double;
+    using unit = Unit<C, K>;
+    using conversion = C;
+    using kind = K;
+    using dimension = typename kind::dimension;
 
 private:
     double count_ = 0;
 
 private:
-    template <typename Dim>
-    using IsCompatible = std::is_same<typename dimension_type::exponents, typename Dim::exponents>;
+    template <typename C2>
+    using IsNatural
+        = std::integral_constant< bool, C2::den == 1 && C2::exp == 0 >;
+
+    // C1 | C2
+    template <typename C1, typename C2>
+    using Divides
+        = IsNatural< DivRatios<C2, C1> >;
+
+    template <typename C1, typename C2, typename T = int>
+    using EnableIfDivides
+        = std::enable_if_t< Divides<C1, C2>::value, T >;
+
+    template <typename K1, typename K2>
+    using IsSameDimensionType
+        = std::is_same<typename K1::dimension, typename K2::dimension>;
+
+    template <typename K1, typename K2, typename T = int>
+    using EnableIfCompatible
+        = std::enable_if_t< IsSameDimensionType<K1, K2>::value, T >;
+
+    // PRE: K1 == K2
+    template <typename C1, typename C2, typename K2 = K>
+    using CommonTypeSfinae
+        = std::enable_if_t< C1::exp == C2::exp, Quantity<Unit<CommonRatio<C1, C2>, K2>> >;
+
+#if UNITS_HAS_ANY()
+    template <typename K2>
+    using IsAnyKind
+        = std::is_same< typename K2::kind, kinds::Any >;
+
+    template <typename C1, typename K1, typename C2, typename K2, typename T = int>
+    using EnableIfConvertibleFromAny
+        = std::enable_if_t< Divides<C1, C2>::value && IsSameDimensionType<K1, K2>::value && IsAnyKind<K2>::value, T >;
+#endif
 
 public:
-    static constexpr conversion_type conversion{};
-    static constexpr dimension_type dimension{};
-    static constexpr unit_type unit{};
-
     constexpr Quantity() noexcept = default;
     constexpr Quantity(const Quantity&) noexcept = default;
     constexpr Quantity& operator=(const Quantity&) noexcept = default;
@@ -510,809 +493,798 @@ public:
     {
     }
 
-    template <typename Conv>
-    constexpr /*implicit*/ Quantity(Quantity<Unit<Conv, dimension_type>> q) noexcept
-        : Quantity(q.convert_to(Quantity{}).count())
+    template <typename C2, EnableIfDivides<C, C2> = 0>
+    constexpr Quantity(Quantity<Unit<C2, K>> q) noexcept
+        : count_(DivRatios<C2, C>{}(q.count()))
     {
     }
 
-    template <typename Conv, typename Dim, std::enable_if_t< IsCompatible<Dim>::value, int > = 0>
-    constexpr explicit Quantity(Quantity<Unit<Conv, Dim>> q) noexcept
-        : Quantity(Quantity<Unit<Conv, dimension_type>>(q.count()))
+#if UNITS_HAS_ANY()
+    template <typename C2, typename K2, EnableIfConvertibleFromAny<C, K, C2, K2> = 0>
+    constexpr Quantity(Quantity<Unit<C2, K2>> q) noexcept
+        : count_(DivRatios<C2, C>{}(q.count()))
+    {
+    }
+#endif
+
+    template <typename C2, typename K2, EnableIfCompatible<K, K2> = 0>
+    constexpr explicit Quantity(Quantity<Unit<C2, K2>> q) noexcept
+        : count_(DivRatios<C2, C>{}(q.count()))
     {
     }
 
-    template <typename Conv, typename Dim, std::enable_if_t< !IsCompatible<Dim>::value, int > = 1>
-    constexpr explicit Quantity(Quantity<Unit<Conv, Dim>> q) noexcept
+#if UNITS_DELETE_EVERYTHING_ELSE()
+    template <typename U2>
+    constexpr Quantity(Quantity<U2> q) noexcept
         = delete;
+#endif
 
-    constexpr double count() const noexcept {
+    [[nodiscard]] constexpr double count() const noexcept {
         return count_;
     }
 
-    constexpr double value() const noexcept {
-        return count_ * conversion;
+#if 1 // DANGER!!!
+    [[nodiscard]] constexpr double value() const noexcept {
+        return conversion{}(count_);
+    }
+#endif
+
+    template <typename C2, typename K2, EnableIfCompatible<K, K2> = 0>
+    [[nodiscard]] constexpr auto convert_to(Quantity<Unit<C2, K2>>) const noexcept {
+        return Quantity<Unit<C2, K>>(DivRatios<C, C2>{}(count()));
     }
 
-    template <typename Dim = dimension_type, std::enable_if_t< !IsUnknownDimension<Dim>::value, int > = 0>
-    constexpr auto convert_to(unit_type) const noexcept {
-        return *this;
-    }
-
-    template <typename Conv, typename Dim = dimension_type, std::enable_if_t< !IsUnknownDimension<Dim>::value, int > = 0>
-    constexpr auto convert_to(Unit<Conv, dimension_type>) const noexcept {
-        constexpr auto convert = conversion / Conv{};
-        return Quantity<Unit<Conv, dimension_type>>(convert(count()));
-    }
-
-    template <typename Dim = dimension_type, std::enable_if_t< !IsUnknownDimension<Dim>::value, int > = 0>
-    constexpr auto convert_to(quantity_type) const noexcept {
-        return *this;
-    }
-
-    template <typename Conv, typename Dim = dimension_type, std::enable_if_t< !IsUnknownDimension<Dim>::value, int > = 0>
-    constexpr auto convert_to(Quantity<Unit<Conv, dimension_type>>) const noexcept {
-        constexpr auto convert = conversion / Conv{};
-        return Quantity<Unit<Conv, dimension_type>>(convert(count()));
-    }
+#if UNITS_DELETE_EVERYTHING_ELSE()
+    template <typename U2>
+    constexpr auto convert_to(Quantity<U2>) const noexcept
+        = delete;
+#endif
 
     //------------------------------------------------------------------------------
     // Arithmetic
 
-    constexpr friend auto operator+(Quantity q) noexcept {
+    [[nodiscard]] constexpr friend auto operator+(Quantity q) noexcept {
         return q;
     }
 
-    constexpr friend auto operator-(Quantity q) noexcept {
+    [[nodiscard]] constexpr friend auto operator-(Quantity q) noexcept {
         return Quantity(-q.count());
     }
 
-    //
-    // TBD:
-    //
-    // Should it really be possible to add ratio's of the same kind?
-    // E.g.: 1_m/1_m + 1_cm/1_cm
-    // ???
-    //
-
-    template <typename Conv>
-    constexpr friend auto operator+(Quantity lhs, Quantity<Unit<Conv, dimension_type>> rhs) noexcept {
-        using U = Unit<CommonRatio<conversion_type, Conv>, dimension_type>;
-        return Quantity<U>(lhs.convert_to(U{}).count() + rhs.convert_to(U{}).count());
+    template <typename C2, typename Q = CommonTypeSfinae<C, C2, K>>
+    [[nodiscard]] constexpr friend auto operator+(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
+        return Q(Q(lhs).count() + Q(rhs).count());
     }
 
-    template <typename Conv, typename Dim2>
-    constexpr friend auto operator+(Quantity, Quantity<Unit<Conv, Dim2>>) noexcept
-        = delete;
-
-    template <typename Conv>
-    constexpr friend auto operator-(Quantity lhs, Quantity<Unit<Conv, dimension_type>> rhs) noexcept {
-        using U = Unit<CommonRatio<conversion_type, Conv>, dimension_type>;
-        return Quantity<U>(lhs.convert_to(U{}).count() - rhs.convert_to(U{}).count());
+    template <typename C2, typename Q = CommonTypeSfinae<C, C2, K>>
+    [[nodiscard]] constexpr friend auto operator-(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
+        return Q(Q(lhs).count() - Q(rhs).count());
     }
 
-    template <typename Conv, typename Dim2>
-    constexpr friend auto operator-(Quantity, Quantity<Unit<Conv, Dim2>>) noexcept
-        = delete;
-
-    template <typename Conv, typename Dim2>
-    constexpr friend auto operator*(Quantity lhs, Quantity<Unit<Conv, Dim2>> rhs) noexcept {
-        using U = Unit<decltype(conversion * Conv{}), decltype(dimension * Dim2{})>;
-        return Quantity<U>(lhs.count() * rhs.count());
+    template <typename U2>
+    [[nodiscard]] constexpr friend auto operator*(Quantity lhs, Quantity<U2> rhs) noexcept {
+        using Q = Quantity<MulUnits<unit, U2>>;
+        return Q(lhs.count() * rhs.count());
     }
 
-    constexpr friend auto operator*(Quantity lhs, double rhs) noexcept {
+    template <typename U2>
+    [[nodiscard]] constexpr friend auto operator/(Quantity lhs, Quantity<U2> rhs) noexcept {
+        using Q = Quantity<DivUnits<unit, U2>>;
+        return Q(lhs.count() / rhs.count());
+    }
+
+    [[nodiscard]] constexpr friend auto operator*(Quantity lhs, double rhs) noexcept {
         return Quantity(lhs.count() * rhs);
     }
 
-    constexpr friend auto operator*(double lhs, Quantity rhs) noexcept {
-        return Quantity(lhs * rhs.count());
-    }
-
-    template <typename Conv, typename Dim2>
-    constexpr friend auto operator/(Quantity lhs, Quantity<Unit<Conv, Dim2>> rhs) noexcept {
-        using U = Unit<decltype(conversion / Conv{}), decltype(dimension / Dim2{})>;
-        return Quantity<U>(lhs.count() / rhs.count());
-    }
-
-    constexpr friend auto operator/(Quantity lhs, double rhs) noexcept {
-        UNITS_ASSERT(rhs != 0);
+    [[nodiscard]] constexpr friend auto operator/(Quantity lhs, double rhs) noexcept {
         return Quantity(lhs.count() / rhs);
     }
 
-    constexpr friend auto operator/(double lhs, Quantity rhs) noexcept {
-        using U = Unit<decltype(Inverse(conversion)), decltype(Inverse(dimension))>;
-        return Quantity<U>(lhs / rhs.count());
+    [[nodiscard]] constexpr friend auto operator*(double lhs, Quantity rhs) noexcept {
+        return Quantity(lhs * rhs.count());
     }
+
+    [[nodiscard]] constexpr friend auto operator/(double lhs, Quantity rhs) noexcept {
+        using U = Unit<Ratio<1>, kinds::One>;
+        using Q = Quantity<DivUnits<U, unit>>;
+        return Q(lhs / rhs.count());
+    }
+
+#if 0//UNITS_DELETE_EVERYTHING_ELSE()
+    template <typename U2>
+    constexpr friend void operator+(Quantity lhs, Quantity<U2> rhs) noexcept
+        = delete;
+
+    template <typename U2>
+    constexpr friend void operator-(Quantity lhs, Quantity<U2> rhs) noexcept
+        = delete;
+#endif
 
     //------------------------------------------------------------------------------
     // Assignment operators
 
-    template <typename Conv>
-    constexpr friend Quantity& operator+=(Quantity& lhs, Quantity<Unit<Conv, dimension_type>> rhs) noexcept {
-#if 0
-        return lhs = lhs + rhs.convert_to(unit);
-#else
-        return lhs = lhs + rhs; // (up to two conversions... but probably the more consistent form)
-#endif
+    template <typename C2, EnableIfDivides<C, C2> = 0>
+    constexpr friend Quantity& operator+=(Quantity& lhs, Quantity<Unit<C2, K>> rhs) noexcept {
+        //lhs.count_ += Quantity(rhs).count();
+        //lhs.count_ += DivRatios<C2, C>{}(rhs.count());
+        lhs.count_ += DivRatios<C2, C>::num * rhs.count();
+        return lhs;
     }
 
-    template <typename Conv>
-    constexpr friend Quantity& operator-=(Quantity& lhs, Quantity<Unit<Conv, dimension_type>> rhs) noexcept {
-#if 0
-        return lhs = lhs - rhs.convert_to(unit);
-#else
-        return lhs = lhs - rhs; // (up to two conversions... but probably the more consistent form)
-#endif
+    template <typename C2, EnableIfDivides<C, C2> = 0>
+    constexpr friend Quantity& operator-=(Quantity& lhs, Quantity<Unit<C2, K>> rhs) noexcept {
+        //lhs.count_ -= Quantity(rhs).count();
+        //lhs.count_ -= DivRatios<C2, C>{}(rhs.count());
+        lhs.count_ -= DivRatios<C2, C>::num * rhs.count();
+        return lhs;
     }
-
-    template <typename Conv, typename Dim2>
-    constexpr friend Quantity& operator*=(Quantity&, Quantity<Unit<Conv, Dim2>>) noexcept
-        = delete;
 
     constexpr friend Quantity& operator*=(Quantity& lhs, double rhs) noexcept {
         return lhs = lhs * rhs;
     }
 
-    template <typename Conv, typename Dim2>
-    constexpr friend Quantity& operator/=(Quantity&, Quantity<Unit<Conv, Dim2>>) noexcept
-        = delete;
-
     constexpr friend Quantity& operator/=(Quantity& lhs, double rhs) noexcept {
         return lhs = lhs / rhs;
     }
 
+#if UNITS_DELETE_EVERYTHING_ELSE()
+    template <typename U2>
+    constexpr friend void operator+=(Quantity& lhs, Quantity<U2> rhs) noexcept
+        = delete;
+
+    template <typename U2>
+    constexpr friend void operator-=(Quantity& lhs, Quantity<U2> rhs) noexcept
+        = delete;
+#endif
+
     //------------------------------------------------------------------------------
     // Comparisons
 
-    template <typename Conv>
-    constexpr friend bool operator==(Quantity lhs, Quantity<Unit<Conv, dimension_type>> rhs) noexcept {
-        using U = Unit<CommonRatio<conversion_type, Conv>, dimension_type>;
-        return lhs.convert_to(U{}).count() == rhs.convert_to(U{}).count();
+    template <typename C2, typename Q = CommonTypeSfinae<C, C2, K>>
+    [[nodiscard]] constexpr friend int Compare(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
+        return impl::CompareValues(Q(lhs).count(), Q(rhs).count());
     }
 
-    template <typename Conv, typename Dim2>
-    constexpr friend bool operator==(Quantity, Quantity<Unit<Conv, Dim2>>) noexcept
+#if UNITS_DELETE_EVERYTHING_ELSE()
+    template <typename U2>
+    constexpr friend void Compare(Quantity lhs, Quantity<U2> rhs) noexcept
         = delete;
+#endif
 
-    template <typename Conv>
-    constexpr friend bool operator!=(Quantity lhs, Quantity<Unit<Conv, dimension_type>> rhs) noexcept {
+    // lhs == rhs <==> lhs - rhs == 0
+    // lhs >= rhs <==> lhs - rhs >= 0
+    // etc...
+    // If you can add them, you can compare them...
+
+    template <typename C2, typename Q = CommonTypeSfinae<C, C2, K>>
+    [[nodiscard]] constexpr friend bool operator==(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
+        return Q(lhs).count() == Q(rhs).count();
+    }
+
+    template <typename C2, typename Q = CommonTypeSfinae<C, C2, K>>
+    [[nodiscard]] constexpr friend bool operator!=(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
         return !(lhs == rhs);
     }
 
-    template <typename Conv, typename Dim2>
-    constexpr friend bool operator!=(Quantity, Quantity<Unit<Conv, Dim2>>) noexcept
-        = delete;
-
-    template <typename Conv>
-    constexpr friend bool operator<(Quantity lhs, Quantity<Unit<Conv, dimension_type>> rhs) noexcept {
-        using U = Unit<CommonRatio<conversion_type, Conv>, dimension_type>;
-        return lhs.convert_to(U{}).count() < rhs.convert_to(U{}).count();
+    template <typename C2, typename Q = CommonTypeSfinae<C, C2, K>>
+    [[nodiscard]] constexpr friend bool operator<(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
+        return Q(lhs).count() < Q(rhs).count();
     }
 
-    template <typename Conv, typename Dim2>
-    constexpr friend bool operator<(Quantity, Quantity<Unit<Conv, Dim2>>) noexcept
-        = delete;
-
-    template <typename Conv>
-    constexpr friend bool operator>(Quantity lhs, Quantity<Unit<Conv, dimension_type>> rhs) noexcept {
+    template <typename C2, typename Q = CommonTypeSfinae<C, C2, K>>
+    [[nodiscard]] constexpr friend bool operator>(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
         return rhs < lhs;
     }
 
-    template <typename Conv, typename Dim2>
-    constexpr friend bool operator>(Quantity, Quantity<Unit<Conv, Dim2>>) noexcept
-        = delete;
-
-    template <typename Conv>
-    constexpr friend bool operator<=(Quantity lhs, Quantity<Unit<Conv, dimension_type>> rhs) noexcept {
+    template <typename C2, typename Q = CommonTypeSfinae<C, C2, K>>
+    [[nodiscard]] constexpr friend bool operator<=(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
         return !(rhs < lhs);
     }
 
-    template <typename Conv, typename Dim2>
-    constexpr friend bool operator<=(Quantity, Quantity<Unit<Conv, Dim2>>) noexcept
-        = delete;
-
-    template <typename Conv>
-    constexpr friend bool operator>=(Quantity lhs, Quantity<Unit<Conv, dimension_type>> rhs) noexcept {
+    template <typename C2, typename Q = CommonTypeSfinae<C, C2, K>>
+    [[nodiscard]] constexpr friend bool operator>=(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
         return !(lhs < rhs);
     }
 
-    template <typename Conv, typename Dim2>
-    constexpr friend bool operator>=(Quantity, Quantity<Unit<Conv, Dim2>>) noexcept
+#if UNITS_DELETE_EVERYTHING_ELSE()
+    template <typename U2>
+    constexpr friend void operator==(Quantity lhs, Quantity<U2> rhs) noexcept
         = delete;
+
+    template <typename U2>
+    constexpr friend void operator!=(Quantity lhs, Quantity<U2> rhs) noexcept
+        = delete;
+
+    template <typename U2>
+    constexpr friend void operator<(Quantity lhs, Quantity<U2> rhs) noexcept
+        = delete;
+
+    template <typename U2>
+    constexpr friend void operator>(Quantity lhs, Quantity<U2> rhs) noexcept
+        = delete;
+
+    template <typename U2>
+    constexpr friend void operator<=(Quantity lhs, Quantity<U2> rhs) noexcept
+        = delete;
+
+    template <typename U2>
+    constexpr friend void operator>=(Quantity lhs, Quantity<U2> rhs) noexcept
+        = delete;
+#endif
+
+    //------------------------------------------------------------------------------
+    // Math functions
+
+#if UNITS_HAS_MATH()
+
+    friend auto Abs(Quantity q) noexcept {
+        return Quantity(std::fabs(q.count()));
+    }
+
+    friend auto Floor(Quantity q) noexcept {
+        return Quantity(std::floor(q.count()));
+    }
+
+    friend auto Ceil(Quantity q) noexcept {
+        return Quantity(std::ceil(q.count()));
+    }
+
+    friend auto Round(Quantity q) noexcept {
+        return Quantity(std::round(q.count()));
+    }
+
+    friend auto Min(Quantity lhs, Quantity rhs) noexcept {
+        return Quantity(std::fmin(lhs.count(), rhs.count()));
+    }
+
+    //template <typename C2, typename Q = CommonTypeSfinae<C, C2, K>>
+    //friend auto Min(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
+    //    return Min(Q(lhs), Q(rhs));
+    //}
+
+    friend auto Max(Quantity lhs, Quantity rhs) noexcept {
+        return Quantity(std::fmax(lhs.count(), rhs.count()));
+    }
+
+    //template <typename C2, typename Q = CommonTypeSfinae<C, C2, K>>
+    //friend auto Max(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
+    //    return Max(Q(lhs), Q(rhs));
+    //}
+
+    template <typename U2>
+    constexpr friend auto Fma(Quantity a, Quantity<U2> b, decltype(a * b) c) noexcept
+        -> decltype(a * b)
+    {
+        //
+        // NB:
+        //
+        // This function only allows arguments as the third parameter, which are implicitly
+        // convertible to the exact type of the multiplication (a * b). This is more restrictive
+        // than the expression (a * b + c). But otherwise, we would need to convert the
+        // product (a * b) and the third argument (c) to their common type before the addition,
+        // which would defeat the application of std::fma.
+        //
+
+        using Q = decltype(a * b);
+        return Q(a.count() * b.count() + c.count());
+//      return Q(std::fma(a.count(), b.count(), c.count()));
+    }
+
+#endif
 };
 
-template <typename Q, typename Conv, typename Dim>
-constexpr auto quantity_cast(Quantity<Unit<Conv, Dim>> q) noexcept -> decltype( q.convert_to(Q::unit) ) {
-    return q.convert_to(Q::unit);
+template <typename T, typename U> // T = Quantity (or Unit)
+[[nodiscard]] constexpr auto quantity_cast(Quantity<U> q) noexcept -> decltype( q.convert_to(T{}) ) {
+    return q.convert_to(T{});
 }
+
+template <typename NewKind, typename C, typename K>
+[[nodiscard]] constexpr auto kind_cast(Quantity<Unit<C, K>> q) {
+    static_assert( std::is_same<typename K::dimension, typename NewKind::dimension>::value,
+        "incompatible dimensions" );
+    return Quantity<Unit<C, NewKind>>(q.count());
+}
+
+#if UNITS_HAS_ANY()
+template <typename C, typename K>
+[[nodiscard]] constexpr auto as_any_quantity(Quantity<Unit<C, K>> q) noexcept {
+    return Quantity<Unit<C, Kind<kinds::Any, typename K::dimension>>>(q.count());
+}
+
+template <typename C, typename K>
+[[nodiscard]] constexpr auto flatten(Quantity<Unit<C, K>> q) noexcept {
+    return as_any_quantity(q);
+}
+#endif
 
 //==================================================================================================
 // Typedefs
 //==================================================================================================
 
-namespace prefixes
+//namespace prefixes
+//{
+////  using Exa   = Ratio<1000000000000000000>;
+////  using Peta  = Ratio<1000000000000000>;
+////  using Tera  = Ratio<1000000000000>;
+//    using Giga  = Ratio<1000000000>;
+//    using Mega  = Ratio<1000000>;
+//    using Kilo  = Ratio<1000>;
+//    using Hecto = Ratio<100>;
+//    using Deca  = Ratio<10>;
+//    using One   = Ratio<1>;
+//    using Deci  = Ratio<1, 10>;
+//    using Centi = Ratio<1, 100>;
+//    using Milli = Ratio<1, 1000>;
+//    using Micro = Ratio<1, 1000000>;
+//    using Nano  = Ratio<1, 1000000000>;
+////  using Pico  = Ratio<1, 1000000000000>;
+////  using Femto = Ratio<1, 1000000000000000>;
+////  using Atto  = Ratio<1, 1000000000000000000>;
+//}
+
+//--------------------------------------------------------------------------------------------------
+// Length
+
+namespace units
 {
-//  using Exa   = Rational<1000000000000000000, 1>;
-//  using Peta  = Rational<1000000000000000, 1>;
-//  using Tera  = Rational<1000000000000, 1>;
-    using Giga  = Rational<1000000000, 1>;
-    using Mega  = Rational<1000000, 1>;
-    using Kilo  = Rational<1000, 1>;
-    using Hecto = Rational<100, 1>;
-    using Deca  = Rational<10, 1>;
-    using One   = Rational<1, 1>;
-    using Deci  = Rational<1, 10>;
-    using Centi = Rational<1, 100>;
-    using Milli = Rational<1, 1000>;
-    using Micro = Rational<1, 1000000>;
-    using Nano  = Rational<1, 1000000000>;
-//  using Pico  = Rational<1, 1000000000000>;
-//  using Femto = Rational<1, 1000000000000000>;
-//  using Atto  = Rational<1, 1000000000000000000>;
+#if 0
+    using Nanometer   = Unit< Ratio<1, 1000000>, kinds::Length >;
+    using Micrometer  = Unit< Ratio<1, 1000>, kinds::Length >;
+    using Millimeter  = Unit< Ratio<1>, kinds::Length >;
+    using Centimeter  = Unit< Ratio<10>, kinds::Length >;
+    using Decimeter   = Unit< Ratio<100>, kinds::Length >;
+    using Meter       = Unit< Ratio<1000>, kinds::Length >;
+    using Kilometer   = Unit< Ratio<1000000>, kinds::Length >;
+#else
+    using Nanometer   = Unit< Ratio<1, 1000000000>, kinds::Length >;
+    using Micrometer  = Unit< Ratio<1, 1000000>, kinds::Length >;
+    using Millimeter  = Unit< Ratio<1, 1000>, kinds::Length >;
+    using Centimeter  = Unit< Ratio<1, 100>, kinds::Length >;
+    using Decimeter   = Unit< Ratio<1, 10>, kinds::Length >;
+    using Meter       = Unit< Ratio<1>, kinds::Length >;
+    using Kilometer   = Unit< Ratio<1000>, kinds::Length >;
+#endif
 }
 
-//namespace length
+using Nanometers  = Quantity< units::Nanometer >;
+using Micrometers = Quantity< units::Micrometer >;
+using Millimeters = Quantity< units::Millimeter >;
+using Centimeters = Quantity< units::Centimeter >;
+using Decimeters  = Quantity< units::Decimeter >;
+using Meters      = Quantity< units::Meter >;
+using Kilometers  = Quantity< units::Kilometer >;
+
+namespace literals
+{
+    [[nodiscard]] constexpr auto operator""_nm(long double x) noexcept {
+        return Nanometers{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_nm(unsigned long long x) noexcept {
+        return Nanometers{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_mm(long double x) noexcept {
+        return Millimeters{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_mm(unsigned long long x) noexcept {
+        return Millimeters{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_cm(long double x) noexcept {
+        return Centimeters{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_cm(unsigned long long x) noexcept {
+        return Centimeters{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_dm(long double x) noexcept {
+        return Decimeters{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_dm(unsigned long long x) noexcept {
+        return Decimeters{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_m(long double x) noexcept {
+        return Meters{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_m(unsigned long long x) noexcept {
+        return Meters{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_km(long double x) noexcept {
+        return Kilometers{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_km(unsigned long long x) noexcept {
+        return Kilometers{static_cast<double>(x)};
+    }
+}
+
+namespace units
+{
+    using Inch = Unit< MulRatios<Ratio<254, 100>, Centimeter::conversion>, kinds::Length >; // (international)
+    using Foot = Unit< MulRatios<Ratio<12>, Inch::conversion>, kinds::Length >;             // (international)
+    using Yard = Unit< MulRatios<Ratio<3>, Foot::conversion>, kinds::Length >;              // (international)
+    using Mile = Unit< MulRatios<Ratio<1760>, Yard::conversion>, kinds::Length >;           // (international)
+}
+
+using Inches = Quantity< units::Inch >;
+using Feet   = Quantity< units::Foot >;
+using Yards  = Quantity< units::Yard >;
+using Miles  = Quantity< units::Mile >;
+
+namespace literals
+{
+    [[nodiscard]] constexpr auto operator""_in(long double x) noexcept {
+        return Inches{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_in(unsigned long long x) noexcept {
+        return Inches{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_ft(long double x) noexcept {
+        return Feet{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_ft(unsigned long long x) noexcept {
+        return Feet{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_yd(long double x) noexcept {
+        return Yards{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_yd(unsigned long long x) noexcept {
+        return Yards{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_mi(long double x) noexcept {
+        return Miles{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_mi(unsigned long long x) noexcept {
+        return Miles{static_cast<double>(x)};
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+// Time
+
+namespace units
+{
+    using Nanosecond  = Unit< Ratio<1, 1000000000>, kinds::Time >;
+    using Microsecond = Unit< Ratio<1, 1000000>, kinds::Time >;
+    using Millisecond = Unit< Ratio<1, 1000>, kinds::Time >;
+    using Second      = Unit< Ratio<1>, kinds::Time >;
+    using Minute      = Unit< MulRatios<Ratio<60>, Second::conversion>, kinds::Time >;
+    using Hour        = Unit< MulRatios<Ratio<60>, Minute::conversion>, kinds::Time >;
+    // using Day         = Unit< MulRatios<Ratio<24>, Hour::conversion>, kinds::Time >;
+    // using Week        = Unit< MulRatios<Ratio<7>, Day::conversion>, kinds::Time >;
+    // using Year        = Unit< MulRatios<Ratio<146097, 400>, Day::conversion>, kinds::Time >;
+    // using Month       = Unit< MulRatios<Ratio<1, 12>, Year::conversion>, kinds::Time >;
+}
+
+using Nanoseconds  = Quantity< units::Nanosecond >;
+using Microseconds = Quantity< units::Microsecond >;
+using Milliseconds = Quantity< units::Millisecond >;
+using Seconds      = Quantity< units::Second >;
+using Minutes      = Quantity< units::Minute >;
+using Hours        = Quantity< units::Hour >;
+
+namespace literals
+{
+    [[nodiscard]] constexpr auto operator""_ns(long double x) noexcept {
+        return Nanoseconds{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_ns(unsigned long long x) noexcept {
+        return Nanoseconds{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_ms(long double x) noexcept {
+        return Milliseconds{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_ms(unsigned long long x) noexcept {
+        return Milliseconds{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_s(long double x) noexcept {
+        return Seconds{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_s(unsigned long long x) noexcept {
+        return Seconds{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_min(long double x) noexcept {
+        return Minutes{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_min(unsigned long long x) noexcept {
+        return Minutes{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_h(long double x) noexcept {
+        return Hours{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_h(unsigned long long x) noexcept {
+        return Hours{static_cast<double>(x)};
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+// Velocity
+
+namespace units
+{
+    using MeterPerSecond
+        = Unit< DivRatios<Meter::conversion, Second::conversion>,
+                //DivKinds<kinds::Length, kinds::Time> >;
+                kinds::Velocity >;
+    using KilometerPerHour
+        = Unit< DivRatios<Kilometer::conversion, Hour::conversion>,
+                //DivKinds<kinds::Length, kinds::Time> >;
+                kinds::Velocity >;
+    using MilePerHour
+        = Unit< DivRatios<Mile::conversion, Hour::conversion>,
+                //DivKinds<kinds::Length, kinds::Time> >;
+                kinds::Velocity >;
+}
+
+using MetersPerSecond   = Quantity< units::MeterPerSecond >;
+using KilometersPerHour = Quantity< units::KilometerPerHour >;
+using MilesPerHour      = Quantity< units::MilePerHour >;
+
+namespace literals
+{
+    [[nodiscard]] constexpr auto operator""_mps(long double x) noexcept {
+        return MetersPerSecond{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_mps(unsigned long long x) noexcept {
+        return MetersPerSecond{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_kmph(long double x) noexcept {
+        return KilometersPerHour{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_kmph(unsigned long long x) noexcept {
+        return KilometersPerHour{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_miph(long double x) noexcept {
+        return MilesPerHour{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_miph(unsigned long long x) noexcept {
+        return MilesPerHour{static_cast<double>(x)};
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+// Mass
+
+namespace units
+{
+    using Gram     = Unit< Ratio<1, 1000>, kinds::Mass >;
+    using Kilogram = Unit< Ratio<1>, kinds::Mass >;
+    using Ton      = Unit< Ratio<1000>, kinds::Mass >;
+}
+
+using Grams     = Quantity< units::Gram >;
+using Kilograms = Quantity< units::Kilogram >;
+using Tons      = Quantity< units::Ton >;
+
+namespace literals
+{
+    [[nodiscard]] constexpr auto operator""_g(long double x) noexcept {
+        return Grams{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_g(unsigned long long x) noexcept {
+        return Grams{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_kg(long double x) noexcept {
+        return Kilograms{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_kg(unsigned long long x) noexcept {
+        return Kilograms{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_t(long double x) noexcept {
+        return Tons{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_t(unsigned long long x) noexcept {
+        return Tons{static_cast<double>(x)};
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+// Plane angle
+
+namespace units
+{
+    using Radian     = Unit< Ratio<1>, kinds::PlaneAngle >;
+    using Degree     = Unit< Ratio<1, 180, /* pi^ */ 1>, kinds::PlaneAngle >;
+    using Gon        = Unit< Ratio<1, 200, /* pi^ */ 1>, kinds::PlaneAngle >;
+//  using Revolution = Unit< Ratio<2,   1, /* pi^ */ 1>, kinds::PlaneAngle >;
+    using Revolution = Unit< MulRatios<Ratio<360>, Degree::conversion>, kinds::PlaneAngle >;
+}
+
+using Radians     = Quantity< units::Radian >;
+using Degrees     = Quantity< units::Degree >;
+using Gons        = Quantity< units::Gon >;
+using Revolutions = Quantity< units::Revolution >;
+
+namespace literals
+{
+    [[nodiscard]] constexpr auto operator""_rad(long double x) noexcept {
+        return Radians{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_rad(unsigned long long x) noexcept {
+        return Radians{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_deg(long double x) noexcept {
+        return Degrees{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_deg(unsigned long long x) noexcept {
+        return Degrees{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_gon(long double x) noexcept {
+        return Gons{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_gon(unsigned long long x) noexcept {
+        return Gons{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_rev(long double x) noexcept {
+        return Revolutions{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_rev(unsigned long long x) noexcept {
+        return Revolutions{static_cast<double>(x)};
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+// Solid angle
+
+namespace units
+{
+    using Steradian = Unit< Ratio<1>, kinds::SolidAngle >;
+}
+
+using Steradians = Quantity< units::Steradian >;
+
+namespace literals
+{
+    [[nodiscard]] constexpr auto operator""_sr(long double x) noexcept {
+        return Steradians{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_sr(unsigned long long x) noexcept {
+        return Steradians{static_cast<double>(x)};
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+// Data
+
+#if 0
+
+namespace kinds
+{
+    struct Bit : Kind< Bit, Dimension<> > {};
+}
+
+namespace units
+{
+    using Bit      = Unit< Ratio<1>, kinds::Bit >;
+    using Nibble   = Unit< MulRatios<Ratio<4>, Bit::conversion>, kinds::Bit >;
+    using Byte     = Unit< MulRatios<Ratio<8>, Bit::conversion>, kinds::Bit >;
+    using Kilobyte = Unit< MulRatios<Ratio<1024>, Byte::conversion>, kinds::Bit >;
+    using Megabyte = Unit< MulRatios<Ratio<1024>, Kilobyte::conversion>, kinds::Bit >;
+    using Gigabyte = Unit< MulRatios<Ratio<1024>, Megabyte::conversion>, kinds::Bit >;
+}
+
+using Bits     = Quantity< units::Bit >;
+using Nibbles  = Quantity< units::Nibble >;
+using Bytes    = Quantity< units::Byte >;
+using Kilobyte = Quantity< units::Kilobyte >;
+using Megabyte = Quantity< units::Megabyte >;
+using Gigabyte = Quantity< units::Gigabyte >;
+
+#endif
+
+//--------------------------------------------------------------------------------------------------
+// Constants
+#if 0
+
+//namespace kinds
 //{
-    using Meter       = Unit< prefixes::One, dimensions::Length >;
-    using Nanometer   = decltype(prefixes::Nano{} * Meter{});
-    using Micrometer  = decltype(prefixes::Micro{} * Meter{});
-    using Millimeter  = decltype(prefixes::Milli{} * Meter{});
-    using Centimeter  = decltype(prefixes::Centi{} * Meter{});
-    using Decimeter   = decltype(prefixes::Deci{} * Meter{});
-    using Kilometer   = decltype(prefixes::Kilo{} * Meter{});
-
-    using Nanometers  = Quantity< Nanometer >;
-    using Micrometers = Quantity< Micrometer >;
-    using Millimeters = Quantity< Millimeter >;
-    using Centimeters = Quantity< Centimeter >;
-    using Decimeters  = Quantity< Decimeter >;
-    using Meters      = Quantity< Meter >;
-    using Kilometers  = Quantity< Kilometer >;
-
-    namespace literals
-    {
-        constexpr auto operator""_nm(long double x) noexcept {
-            return Nanometers{static_cast<double>(x)};
-        }
-        constexpr auto operator""_nm(unsigned long long x) noexcept {
-            return Nanometers{static_cast<double>(x)};
-        }
-        constexpr auto operator""_mm(long double x) noexcept {
-            return Millimeters{static_cast<double>(x)};
-        }
-        constexpr auto operator""_mm(unsigned long long x) noexcept {
-            return Millimeters{static_cast<double>(x)};
-        }
-        constexpr auto operator""_cm(long double x) noexcept {
-            return Centimeters{static_cast<double>(x)};
-        }
-        constexpr auto operator""_cm(unsigned long long x) noexcept {
-            return Centimeters{static_cast<double>(x)};
-        }
-        constexpr auto operator""_dm(long double x) noexcept {
-            return Decimeters{static_cast<double>(x)};
-        }
-        constexpr auto operator""_dm(unsigned long long x) noexcept {
-            return Decimeters{static_cast<double>(x)};
-        }
-        constexpr auto operator""_m(long double x) noexcept {
-            return Meters{static_cast<double>(x)};
-        }
-        constexpr auto operator""_m(unsigned long long x) noexcept {
-            return Meters{static_cast<double>(x)};
-        }
-        constexpr auto operator""_km(long double x) noexcept {
-            return Kilometers{static_cast<double>(x)};
-        }
-        constexpr auto operator""_km(unsigned long long x) noexcept {
-            return Kilometers{static_cast<double>(x)};
-        }
-    }
-
-    using Inch   = decltype(Ratio<254, 100>{} * Centimeter{}); // (international)
-    using Foot   = decltype(Ratio<12, 1>{} * Inch{});          // (international)
-    using Yard   = decltype(Ratio<3, 1>{} * Foot{});           // (international)
-    using Mile   = decltype(Ratio<1760, 1>{} * Yard{});        // (international)
-
-    using Inches = Quantity< Inch >;
-    using Feet   = Quantity< Foot >;
-    using Yards  = Quantity< Yard >;
-    using Miles  = Quantity< Mile >;
-
-    namespace literals
-    {
-        constexpr auto operator""_in(long double x) noexcept {
-            return Inches{static_cast<double>(x)};
-        }
-        constexpr auto operator""_in(unsigned long long x) noexcept {
-            return Inches{static_cast<double>(x)};
-        }
-        constexpr auto operator""_ft(long double x) noexcept {
-            return Feet{static_cast<double>(x)};
-        }
-        constexpr auto operator""_ft(unsigned long long x) noexcept {
-            return Feet{static_cast<double>(x)};
-        }
-        constexpr auto operator""_yd(long double x) noexcept {
-            return Yards{static_cast<double>(x)};
-        }
-        constexpr auto operator""_yd(unsigned long long x) noexcept {
-            return Yards{static_cast<double>(x)};
-        }
-        constexpr auto operator""_mi(long double x) noexcept {
-            return Miles{static_cast<double>(x)};
-        }
-        constexpr auto operator""_mi(unsigned long long x) noexcept {
-            return Miles{static_cast<double>(x)};
-        }
-    }
+//    struct SpeedOfLight : Kind< SpeedOfLight, Dimension< 1, 0,-1> > {};
 //}
 
-//namespace time
-//{
-    using Second       = Unit< prefixes::One, dimensions::Time >;
-    using Nanosecond   = decltype(prefixes::Nano{} * Second{});
-    using Microsecond  = decltype(prefixes::Micro{} * Second{});
-    using Millisecond  = decltype(prefixes::Milli{} * Second{});
-    using Minute       = decltype(Ratio<60, 1>{} * Second{});
-    using Hour         = decltype(Ratio<60, 1>{} * Minute{});
-    //using Day          = decltype(Ratio<24, 1>{} * Hour{});
-    //using Week         = decltype(Ratio<7, 1>{} * Day{});
-    //using Year         = decltype(Ratio<146097, 400>{} * Day{});
-    //using Month        = decltype(Ratio<1, 12>{} * Year{});
+namespace units
+{
+    using SpeedOfLight = Unit< Ratio<299792458>, kinds::Velocity >;
+    //using SpeedOfLight = Unit< Ratio<1>, kinds::SpeedOfLight >;
+}
 
-    using Nanoseconds  = Quantity< Nanosecond >;
-    using Microseconds = Quantity< Microsecond >;
-    using Milliseconds = Quantity< Millisecond >;
-    using Seconds      = Quantity< Second >;
-    using Minutes      = Quantity< Minute >;
-    using Hours        = Quantity< Hour >;
-    //using Days         = Quantity< Day >;
-    //using Weeks        = Quantity< Week >;
-    //using Years        = Quantity< Year >;
-    //using Months       = Quantity< Month >;
+using SpeedOfLight = Quantity< units::SpeedOfLight >;
 
-    namespace literals
-    {
-        constexpr auto operator""_ns(long double x) noexcept {
-            return Nanoseconds{static_cast<double>(x)};
-        }
-        constexpr auto operator""_ns(unsigned long long x) noexcept {
-            return Nanoseconds{static_cast<double>(x)};
-        }
-        constexpr auto operator""_ms(long double x) noexcept {
-            return Milliseconds{static_cast<double>(x)};
-        }
-        constexpr auto operator""_ms(unsigned long long x) noexcept {
-            return Milliseconds{static_cast<double>(x)};
-        }
-        constexpr auto operator""_s(long double x) noexcept {
-            return Seconds{static_cast<double>(x)};
-        }
-        constexpr auto operator""_s(unsigned long long x) noexcept {
-            return Seconds{static_cast<double>(x)};
-        }
-        constexpr auto operator""_min(long double x) noexcept {
-            return Minutes{static_cast<double>(x)};
-        }
-        constexpr auto operator""_min(unsigned long long x) noexcept {
-            return Minutes{static_cast<double>(x)};
-        }
-        constexpr auto operator""_h(long double x) noexcept {
-            return Hours{static_cast<double>(x)};
-        }
-        constexpr auto operator""_h(unsigned long long x) noexcept {
-            return Hours{static_cast<double>(x)};
-        }
-        //constexpr auto operator""_d(long double x) noexcept {
-        //    return Days{static_cast<double>(x)};
-        //}
-        //constexpr auto operator""_d(unsigned long long x) noexcept {
-        //    return Days{static_cast<double>(x)};
-        //}
-        //constexpr auto operator""_y(long double x) noexcept {
-        //    return Years{static_cast<double>(x)};
-        //}
-        //constexpr auto operator""_y(unsigned long long x) noexcept {
-        //    return Years{static_cast<double>(x)};
-        //}
+namespace literals
+{
+    [[nodiscard]] constexpr auto operator""_c(long double x) noexcept {
+        return SpeedOfLight{static_cast<double>(x)};
     }
-//}
-
-//namespace mass
-//{
-    //using Milligram  = Unit< prefixes::Micro, dimensions::Mass >;
-    using Gram       = Unit< prefixes::Milli, dimensions::Mass >;
-    using Kilogram   = Unit< prefixes::One, dimensions::Mass >;
-    //using Tonne      = Unit< prefixes::Kilo, dimensions::Mass >;
-
-    //using Milligrams = Quantity< Milligram >;
-    using Grams      = Quantity< Gram >;
-    using Kilograms  = Quantity< Kilogram >;
-    //using Tonnes     = Quantity< Tonne >;
-
-    namespace literals
-    {
-        //constexpr auto operator""_mg(long double x) noexcept {
-        //    return Milligrams{static_cast<double>(x)};
-        //}
-        //constexpr auto operator""_mg(unsigned long long x) noexcept {
-        //    return Milligrams{static_cast<double>(x)};
-        //}
-        constexpr auto operator""_g(long double x) noexcept {
-            return Grams{static_cast<double>(x)};
-        }
-        constexpr auto operator""_g(unsigned long long x) noexcept {
-            return Grams{static_cast<double>(x)};
-        }
-        constexpr auto operator""_kg(long double x) noexcept {
-            return Kilograms{static_cast<double>(x)};
-        }
-        constexpr auto operator""_kg(unsigned long long x) noexcept {
-            return Kilograms{static_cast<double>(x)};
-        }
-        //constexpr auto operator""_t(long double x) noexcept {
-        //    return Tonnes{static_cast<double>(x)};
-        //}
-        //constexpr auto operator""_t(unsigned long long x) noexcept {
-        //    return Tonnes{static_cast<double>(x)};
-        //}
+    [[nodiscard]] constexpr auto operator""_c(unsigned long long x) noexcept {
+        return SpeedOfLight{static_cast<double>(x)};
     }
-//}
+}
 
-//namespace area
-//{
-    //using SquareMillimeter  = Unit< decltype(Pow2(Millimeter::conversion)), dimensions::Area >;
-    using SquareCentimeter  = Unit< decltype(Pow2(Centimeter::conversion)), dimensions::Area >;
-    //using SquareDecimeter   = Unit< decltype(Pow2(Decimeter::conversion)), dimensions::Area >;
-    using SquareMeter       = Unit< decltype(Pow2(Meter::conversion)), dimensions::Area >;
-    //using Hectare           = Unit< decltype(Ratio<10000>{} * SquareMeter::conversion), dimensions::Area >;
-
-    //using SquareMillimeters = Quantity< SquareMillimeter >;
-    using SquareCentimeters = Quantity< SquareCentimeter >;
-    //using SquareDecimeters  = Quantity< SquareDecimeter >;
-    using SquareMeters      = Quantity< SquareMeter >;
-    //using Hectares          = Quantity< Hectare >;
-
-    namespace literals
-    {
-        //constexpr auto operator""_sqmm(long double x) noexcept {
-        //    return SquareMillimeters{static_cast<double>(x)};
-        //}
-        //constexpr auto operator""_sqmm(unsigned long long x) noexcept {
-        //    return SquareMillimeters{static_cast<double>(x)};
-        //}
-        constexpr auto operator""_sqcm(long double x) noexcept {
-            return SquareCentimeters{static_cast<double>(x)};
-        }
-        constexpr auto operator""_sqcm(unsigned long long x) noexcept {
-            return SquareCentimeters{static_cast<double>(x)};
-        }
-        //constexpr auto operator""_sqdm(long double x) noexcept {
-        //    return SquareDecimeters{static_cast<double>(x)};
-        //}
-        //constexpr auto operator""_sqdm(unsigned long long x) noexcept {
-        //    return SquareDecimeters{static_cast<double>(x)};
-        //}
-        constexpr auto operator""_sqm(long double x) noexcept {
-            return SquareMeters{static_cast<double>(x)};
-        }
-        constexpr auto operator""_sqm(unsigned long long x) noexcept {
-            return SquareMeters{static_cast<double>(x)};
-        }
-        //constexpr auto operator""_ha(long double x) noexcept {
-        //    return Hectares{static_cast<double>(x)};
-        //}
-        //constexpr auto operator""_ha(unsigned long long x) noexcept {
-        //    return Hectares{static_cast<double>(x)};
-        //}
-    }
-
-    //using SquareInch   = decltype(Pow2(Inch{}));                 // (international)
-    //using SquareFoot   = decltype(Pow2(Foot{}));                 // (international)
-    //using SquareYard   = decltype(Pow2(Yard{}));                 // (international)
-    //using SquareMile   = decltype(Pow2(Mile{}));                 // (international)
-    //using Acre         = decltype(Ratio<4840>{} * SquareYard{}); // (international)
-
-    //using SquareInches = Quantity< SquareInch >;
-    //using SquareFeet   = Quantity< SquareFoot >;
-    //using SquareYards  = Quantity< SquareYard >;
-    //using SquareMiles  = Quantity< SquareMile >;
-    //using Acres        = Quantity< Acre >;
-
-    namespace literals
-    {
-        //constexpr auto operator""_sqin(long double x) noexcept {
-        //    return SquareInches{static_cast<double>(x)};
-        //}
-        //constexpr auto operator""_sqin(unsigned long long x) noexcept {
-        //    return SquareInches{static_cast<double>(x)};
-        //}
-        //constexpr auto operator""_sqft(long double x) noexcept {
-        //    return SquareFeet{static_cast<double>(x)};
-        //}
-        //constexpr auto operator""_sqft(unsigned long long x) noexcept {
-        //    return SquareFeet{static_cast<double>(x)};
-        //}
-        //constexpr auto operator""_sqyd(long double x) noexcept {
-        //    return SquareYards{static_cast<double>(x)};
-        //}
-        //constexpr auto operator""_sqyd(unsigned long long x) noexcept {
-        //    return SquareYards{static_cast<double>(x)};
-        //}
-        //constexpr auto operator""_sqmi(long double x) noexcept {
-        //    return SquareMiles{static_cast<double>(x)};
-        //}
-        //constexpr auto operator""_sqmi(unsigned long long x) noexcept {
-        //    return SquareMiles{static_cast<double>(x)};
-        //}
-        //constexpr auto operator""_ac(long double x) noexcept {
-        //    return Acres{static_cast<double>(x)};
-        //}
-        //constexpr auto operator""_ac(unsigned long long x) noexcept {
-        //    return Acres{static_cast<double>(x)};
-        //}
-    }
-//}
-
-//namespace volume
-//{
-    using CubicMeter  = Unit< decltype(Pow3(Meter::conversion)), dimensions::Volume >;
-
-    using CubicMeters = Quantity< CubicMeter >;
-
-    namespace literals
-    {
-        constexpr auto operator""_cbm(long double x) noexcept {
-            return CubicMeters{static_cast<double>(x)};
-        }
-        constexpr auto operator""_cbm(unsigned long long x) noexcept {
-            return CubicMeters{static_cast<double>(x)};
-        }
-    }
-
-    using Liter       = decltype(prefixes::Milli{} * CubicMeter{}); // = CubicDecimeter
-    //using Milliliter  = decltype(prefixes::Milli{} * Liter{});
-
-    using Liters      = Quantity< Liter >;
-    //using Milliliters = Quantity< Milliliter >;
-
-    namespace literals
-    {
-        constexpr auto operator""_l(long double x) noexcept {
-            return Liters{static_cast<double>(x)};
-        }
-        constexpr auto operator""_l(unsigned long long x) noexcept {
-            return Liters{static_cast<double>(x)};
-        }
-        //constexpr auto operator""_ml(long double x) noexcept {
-        //    return Milliliters{static_cast<double>(x)};
-        //}
-        //constexpr auto operator""_ml(unsigned long long x) noexcept {
-        //    return Milliliters{static_cast<double>(x)};
-        //}
-    }
-//}
-
-////namespace frequency
-////{
-//    using Hertz  = Unit< decltype(Inverse(Second::conversion)), dimensions::Frequency >;
-//
-//    using Hertzs = Quantity< Hertz >;
-//
-//    namespace literals
-//    {
-//        constexpr auto operator""_Hz(long double x) noexcept {
-//            return Hertzs{static_cast<double>(x)};
-//        }
-//        constexpr auto operator""_Hz(unsigned long long x) noexcept {
-//            return Hertzs{static_cast<double>(x)};
-//        }
-//    }
-////}
-
-//namespace velocity
-//{
-    using MeterPerSecond     = Unit< decltype(Meter::conversion / Second::conversion), dimensions::Velocity >;
-    using KilometerPerHour   = Unit< decltype(Kilometer::conversion / Hour::conversion), dimensions::Velocity >;
-
-    using MetersPerSeconds   = Quantity< MeterPerSecond >;
-    using KilometersPerHours = Quantity< KilometerPerHour >;
-
-    namespace literals
-    {
-        constexpr auto operator""_mps(long double x) noexcept {
-            return MetersPerSeconds{static_cast<double>(x)};
-        }
-        constexpr auto operator""_mps(unsigned long long x) noexcept {
-            return MetersPerSeconds{static_cast<double>(x)};
-        }
-        constexpr auto operator""_kmph(long double x) noexcept {
-            return KilometersPerHours{static_cast<double>(x)};
-        }
-        constexpr auto operator""_kmph(unsigned long long x) noexcept {
-            return KilometersPerHours{static_cast<double>(x)};
-        }
-    }
-
-    //using MilePerSecond   = decltype(Mile{} / Second{});
-    //using MilePerHour     = decltype(Mile{} / Hour{});
-
-    //using MilesPerSeconds = Quantity< MilePerSecond >;
-    //using MilesPerHours   = Quantity< MilePerHour >;
-
-    //namespace literals
-    //{
-    //    constexpr auto operator""_mips(long double x) noexcept {
-    //        return MilesPerSeconds{static_cast<double>(x)};
-    //    }
-    //    constexpr auto operator""_mips(unsigned long long x) noexcept {
-    //        return MilesPerSeconds{static_cast<double>(x)};
-    //    }
-    //    constexpr auto operator""_miph(long double x) noexcept {
-    //        return MilesPerHours{static_cast<double>(x)};
-    //    }
-    //    constexpr auto operator""_miph(unsigned long long x) noexcept {
-    //        return MilesPerHours{static_cast<double>(x)};
-    //    }
-    //}
-//}
-
-////namespace acceleration
-////{
-//    using MeterPerSquareSecond   = Unit< decltype(MeterPerSecond::conversion / Second::conversion), dimensions::Acceleration >;
-//
-//    using MetersPerSquareSeconds = Quantity< MeterPerSquareSecond >;
-//
-//    namespace literals
-//    {
-//        constexpr auto operator""_mpsqs(long double x) noexcept {
-//            return MetersPerSquareSeconds{static_cast<double>(x)};
-//        }
-//        constexpr auto operator""_mpsqs(unsigned long long x) noexcept {
-//            return MetersPerSquareSeconds{static_cast<double>(x)};
-//        }
-//    }
-////}
-
-//namespace density
-//{
-//}
-
-////namespace force
-////{
-//    using Newton  = Unit< decltype(Kilogram::conversion * MeterPerSquareSecond::conversion), dimensions::Force >;
-//
-//    using Newtons = Quantity< Newton >;
-//
-//    namespace literals
-//    {
-//        constexpr auto operator""_N(long double x) noexcept {
-//            return Newtons{static_cast<double>(x)};
-//        }
-//        constexpr auto operator""_N(unsigned long long x) noexcept {
-//            return Newtons{static_cast<double>(x)};
-//        }
-//    }
-////}
-
-////namespace impulse
-////{
-//    using NewtonSecond   = Unit< decltype(Newton::conversion / Second::conversion), dimensions::Impulse >;
-//
-//    using NewtonsSeconds = Quantity< NewtonSecond >;
-//
-//    namespace literals
-//    {
-//        constexpr auto operator""_Ns(long double x) noexcept {
-//            return NewtonsSeconds{static_cast<double>(x)};
-//        }
-//        constexpr auto operator""_Ns(unsigned long long x) noexcept {
-//            return NewtonsSeconds{static_cast<double>(x)};
-//        }
-//    }
-////}
-
-////namespace pressure
-////{
-//    using Pascal  = Unit< decltype(Kilogram::conversion / SquareMeter::conversion), dimensions::Pressure >;
-//
-//    using Pascals = Quantity< Pascal >;
-//
-//    namespace literals
-//    {
-//        constexpr auto operator""_Pa(long double x) noexcept {
-//            return Pascals{static_cast<double>(x)};
-//        }
-//        constexpr auto operator""_Pa(unsigned long long x) noexcept {
-//            return Pascals{static_cast<double>(x)};
-//        }
-//    }
-////}
-
-////namespace energy
-////{
-//    using Joule  = Unit< decltype(Newton::conversion * Meter::conversion), dimensions::Energy >;
-//
-//    using Joules = Quantity< Joule >;
-//
-//    namespace literals
-//    {
-//        constexpr auto operator""_J(long double x) noexcept {
-//            return Joules{static_cast<double>(x)};
-//        }
-//        constexpr auto operator""_J(unsigned long long x) noexcept {
-//            return Joules{static_cast<double>(x)};
-//        }
-//    }
-////}
-
-////namespace torque
-////{
-//    using NewtonMeter  = Unit< decltype(Newton::conversion * Meter::conversion), dimensions::Torque >;
-//
-//    using NewtonMeters = Quantity< NewtonMeter >;
-//
-//    namespace literals
-//    {
-//        constexpr auto operator""_Nm(long double x) noexcept {
-//            return NewtonMeters{static_cast<double>(x)};
-//        }
-//        constexpr auto operator""_Nm(unsigned long long x) noexcept {
-//            return NewtonMeters{static_cast<double>(x)};
-//        }
-//    }
-////}
-
-//namespace plane_angle
-//{
-    using Radian  = Unit< Ratio<1, 1>, dimensions::PlaneAngle >;
-
-    using Radians = Quantity< Radian >;
-
-    namespace literals
-    {
-        constexpr auto operator""_rad(long double x) noexcept {
-            return Radians{static_cast<double>(x)};
-        }
-        constexpr auto operator""_rad(unsigned long long x) noexcept {
-            return Radians{static_cast<double>(x)};
-        }
-    }
-//}
-
-////namespace solid_angle
-////{
-//    using Steradian  = Unit< Ratio<1, 1>, dimensions::SolidAngle >;
-//
-//    using Steradians = Quantity< Steradian >;
-//
-//    namespace literals
-//    {
-//        constexpr auto operator""_sr(long double x) noexcept {
-//            return Steradians{static_cast<double>(x)};
-//        }
-//        constexpr auto operator""_sr(unsigned long long x) noexcept {
-//            return Steradians{static_cast<double>(x)};
-//        }
-//    }
-////}
+#endif
 
 //==================================================================================================
-// Math
+// Math functions
 //==================================================================================================
 
-// ... as friends in Quantity?!?!
+#if 0
 
-//template <typename UnitType>
-//auto sqrt(Quantity<UnitType> q) noexcept {
+template <typename U>
+[[nodiscard]] auto abs(Quantity<U> q) noexcept {
+    return Quantity<U>(std::abs(q.count()));
+}
+
+template <typename U>
+[[nodiscard]] auto square(Quantity<U> q) noexcept {
+    return q * q;
+}
+
+// q^(1/2)
+// template <typename U>
+// [[nodiscard]] auto sqrt(Quantity<U> q) noexcept {
+//     // ???
+// }
+
+// q^n
+// template <typename U>
+// [[nodiscard]] auto pow(Quantity<U> q, int n) noexcept {
+//     // ???
+// }
+
+// q^(1/n)
+// template <typename U>
+// [[nodiscard]] auto root(Quantity<U> q, int n) noexcept {
+//     // ???
+// }
+
+//#if 0
+//template <typename U, std::enable_if_t< std::is_same_v<Dimension<>, typename U::dimension>, int > = 0>
+//[[nodiscard]] auto sqrt(Quantity<U> q) noexcept {
+//    return std::sqrt(q.count());
 //}
+//#else
+//template <typename U, std::enable_if_t< std::is_same_v<Dimension<>, typename U::dimension>, int > = 0>
+//[[nodiscard]] auto sqrt(Quantity<U> q) noexcept {
+//    return Quantity<U>(std::sqrt(q.count()));
+//}
+//#endif
 
-//==================================================================================================
-// Input/Output
-//==================================================================================================
+#if 0
+template <typename U, std::enable_if_t< std::is_same_v<Dimension<>, typename U::dimension>, int > = 0>
+[[nodiscard]] auto sin(Quantity<U> q) noexcept {
+    return Radians(std::sin(q.count()));
+}
 
-// ... as friends in Quantity/Unit?!?!
+template <typename U, std::enable_if_t< std::is_same_v<Dimension<>, typename U::dimension>, int > = 0>
+[[nodiscard]] auto cos(Quantity<U> q) noexcept {
+    return Radians(std::cos(q.count()));
+}
 
-} // namespace units
+template <typename U, std::enable_if_t< std::is_same_v<Dimension<>, typename U::dimension>, int > = 0>
+[[nodiscard]] auto tan(Quantity<U> q) noexcept {
+    return Radians(std::tan(q.count()));
+}
+#endif
+
+#if 1
+#if 0
+template <typename U, std::enable_if_t< std::is_same_v<Dimension<>, typename U::dimension>, int > = 0>
+[[nodiscard]] auto log(Quantity<U> q) noexcept {
+    return std::log(q.count());
+}
+
+template <typename U, std::enable_if_t< std::is_same_v<Dimension<>, typename U::dimension>, int > = 0>
+[[nodiscard]] auto exp(Quantity<U> q) noexcept {
+    return std::exp(q.count());
+}
+#else
+template <typename U, std::enable_if_t< std::is_same_v<Dimension<>, typename U::dimension>, int > = 0>
+[[nodiscard]] auto log(Quantity<U> q) noexcept {
+    return Quantity<U>(std::log(q.count()));
+}
+
+template <typename U, std::enable_if_t< std::is_same_v<Dimension<>, typename U::dimension>, int > = 0>
+[[nodiscard]] auto exp(Quantity<U> q) noexcept {
+    return Quantity<U>(std::exp(q.count()));
+}
+#endif
+#endif
+
+#endif
+
+} // namespace sc
