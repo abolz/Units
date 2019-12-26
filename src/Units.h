@@ -168,42 +168,42 @@ namespace kinds
     struct AmountOfSubstance :      Kind< AmountOfSubstance,    Dimension<dim::AmountOfSubstance<1>> > {};
     struct LuminousIntensity :      Kind< LuminousIntensity,    Dimension<dim::LuminousIntensity<1>> > {};
 
-    struct Area :                   Kind< Area,                 MulDimensions<Length::dimension, Length::dimension> > {};
-    struct Volume :                 Kind< Volume,               MulDimensions<Length::dimension, Area::dimension> > {};
-    struct PlaneAngle :             Kind< PlaneAngle,           Dimension<> > {};
-    struct SolidAngle :             Kind< SolidAngle,           Dimension<> > {};
-    struct Velocity :               Kind< Velocity,             DivDimensions<Length::dimension, Time::dimension> > {};
-    struct Acceleration :           Kind< Acceleration,         DivDimensions<Velocity::dimension, Time::dimension> > {};
-    struct Frequency :              Kind< Frequency,            DivDimensions<One::dimension, Time::dimension> > {};
-    struct Density :                Kind< Density,              DivDimensions<Mass::dimension, Volume::dimension> > {};
-    struct SurfaceDensity :         Kind< SurfaceDensity,       DivDimensions<Mass::dimension, Area::dimension> > {};
-    struct Impulse :                Kind< Impulse,              MulDimensions<Mass::dimension, Velocity::dimension> > {};
-    struct Force :                  Kind< Force,                MulDimensions<Mass::dimension, Acceleration::dimension> > {};
-    struct Energy :                 Kind< Energy,               MulDimensions<Force::dimension, Length::dimension> > {};
-    struct Torque :                 Kind< Torque,               MulDimensions<Force::dimension, Length::dimension> > {};
-    struct Power :                  Kind< Power,                DivDimensions<Energy::dimension, Time::dimension> > {};
-    struct Pressure :               Kind< Pressure,             DivDimensions<Force::dimension, Area::dimension> > {};
-    struct AngularVelocity :        Kind< AngularVelocity,      DivDimensions<PlaneAngle::dimension, Time::dimension> > {};
-    struct AngularAcceleration :    Kind< AngularAcceleration,  DivDimensions<AngularVelocity::dimension, Time::dimension> > {};
+    struct Area :                   Kind< Area,                 Dimension<dim::Length< 2>                              > > {}; // m^2
+    struct Volume :                 Kind< Volume,               Dimension<dim::Length< 3>                              > > {}; // m^3
+    struct PlaneAngle :             Kind< PlaneAngle,           Dimension<                                             > > {}; // 1
+    struct SolidAngle :             Kind< SolidAngle,           Dimension<                                             > > {}; // 1
+    struct Velocity :               Kind< Velocity,             Dimension<dim::Length< 1>,                dim::Time<-1>> > {}; // m s^-1
+    struct Acceleration :           Kind< Acceleration,         Dimension<dim::Length< 1>,                dim::Time<-2>> > {}; // m s^-2
+    struct Frequency :              Kind< Frequency,            Dimension<                                dim::Time<-1>> > {}; // s^-1
+    struct Density :                Kind< Density,              Dimension<dim::Length<-3>, dim::Mass< 1>               > > {}; // kg m^-3
+    struct SurfaceDensity :         Kind< SurfaceDensity,       Dimension<dim::Length<-2>, dim::Mass< 1>               > > {}; // kg m^-2
+    struct Impulse :                Kind< Impulse,              Dimension<dim::Length< 1>, dim::Mass< 1>, dim::Time<-1>> > {}; // kg m s^-1
+    struct Force :                  Kind< Force,                Dimension<dim::Length< 1>, dim::Mass< 1>, dim::Time<-2>> > {}; // kg m s^-2
+    struct Energy :                 Kind< Energy,               Dimension<dim::Length< 2>, dim::Mass< 1>, dim::Time<-2>> > {}; // kg m^2 s^-2
+    struct Torque :                 Kind< Torque,               Dimension<dim::Length< 2>, dim::Mass< 1>, dim::Time<-2>> > {}; // kg m^2 s^-2
+    struct Power :                  Kind< Power,                Dimension<dim::Length< 2>, dim::Mass< 1>, dim::Time<-3>> > {}; // kg m^2 s^-3
+    struct Pressure :               Kind< Pressure,             Dimension<dim::Length<-1>, dim::Mass< 1>, dim::Time<-2>> > {}; // kg m^-1 s^-2
+    struct AngularVelocity :        Kind< AngularVelocity,      Dimension<                                dim::Time<-1>> > {}; // s^-1
+    struct AngularAcceleration :    Kind< AngularAcceleration,  Dimension<                                dim::Time<-2>> > {}; // s^-2
 
     template <typename K1, typename K2>
-    struct KindProduct
-        : Kind< KindProduct<K1, K2>, MulDimensions<typename K1::dimension, typename K2::dimension> >
+    struct Product
+        : Kind< Product<K1, K2>, MulDimensions<typename K1::dimension, typename K2::dimension> >
     {
     };
 
     template <typename K1, typename K2>
-    struct KindQuotient
-        : Kind< KindQuotient<K1, K2>, DivDimensions<typename K1::dimension, typename K2::dimension> >
+    struct Quotient
+        : Kind< Quotient<K1, K2>, DivDimensions<typename K1::dimension, typename K2::dimension> >
     {
     };
 }
 
 template <typename K1, typename K2>
-using MulKinds = typename kinds::KindProduct<K1, K2>::type;
+using MulKinds = typename kinds::Product<K1, K2>::type;
 
 template <typename K1, typename K2>
-using DivKinds = typename kinds::KindQuotient<K1, K2>::type;
+using DivKinds = typename kinds::Quotient<K1, K2>::type;
 
 //--------------------------------------------------------------------------------------------------
 // Rational
