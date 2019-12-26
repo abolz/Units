@@ -443,7 +443,7 @@ private:
 private:
     template <typename C2>
     using IsNatural
-        = std::integral_constant< bool, C2::den == 1 && C2::exp == 0 >;
+        = std::bool_constant< C2::den == 1 && C2::exp == 0 >;
 
     // C1 | C2
     template <typename C1, typename C2>
