@@ -167,27 +167,65 @@ namespace sc {
 using namespace sc;
 using namespace sc::literals;
 
+#if 1
+template <typename C>
+using Velocity = Quantity< Unit< C, kinds::Velocity > >;
+#else
+template <typename C>
+using Velocity = Quantity< Unit< C, DivKinds<kinds::Length, kinds::Time> > >;
+#endif
+
+template <typename C>
+static void takesVelocity(Velocity<C> /*v*/)
+{
+}
+
 static void test001()
 {
-    constexpr auto x1 = 1_mps;
-    constexpr auto y1 = kind_cast<kinds::Velocity>(1_m / 1_s);
-    //constexpr auto y1 = 1_m / 1_s;
-    static_assert(x1 == y1);
+    //constexpr auto x1 = 1_mps;
+    //constexpr auto y1 = kind_cast<kinds::Velocity>(1_m / 1_s);
+    ////constexpr auto y1 = 1_m / 1_s;
+    //static_assert(x1 == y1);
 
     constexpr auto x2 = 1_mps;
     constexpr auto y2 = 1_m / 1_s;
     //static_assert(x2 == y2);
+    takesVelocity(x2);
+    takesVelocity(y2);
 }
 
 static void test002()
 {
-    //constexpr auto x = 1_m / 1_m;
-    //constexpr auto y = 1_s / 1_s;
-    //constexpr auto z = x + y;
+#if UNITS_HAS_NO_KINDS()
+    constexpr auto x = 1_m / 1_m;
+    constexpr auto y = 1_s / 1_s;
+    constexpr auto z = x + y;
+#endif
 
     //constexpr auto x = 1_m;
     //constexpr auto y = 1_s;
     //constexpr auto z = x + y;
+}
+
+static void test003()
+{
+#if UNITS_HAS_NO_KINDS()
+    constexpr auto t0 = 1_rad;
+    constexpr auto t1 = 1_sr;
+    constexpr auto t2 = t0 + Radians{t1};
+    //constexpr auto t3 = Radians{1_m};
+    //constexpr auto t3 = t0 + t1;
+#endif
+}
+
+static void test004()
+{
+    constexpr auto t0 = 1_m / 1_s;
+    constexpr auto t1 = 1_km / 1_h;
+    constexpr auto t2 = 1_mps;
+    constexpr auto t3 = 1_kmph;
+    constexpr MetersPerSecond t4 = t0;
+    constexpr MetersPerSecond t5 = t2;
 }
 
 #if UNITS_HAS_ANY()
@@ -213,6 +251,20 @@ static void testFlatten()
     constexpr auto res7 = takesLength(1_m);
 }
 #endif
+
+template <typename C>
+using AngularVelocity = Quantity< Unit< C, kinds::AngularVelocity > >;
+
+template <typename C>
+static void takesAngularVelocity(AngularVelocity<C>)
+{
+}
+
+static void test009()
+{
+    takesAngularVelocity(1_rad / 1_h);
+    //takesAngularVelocity(1 / 1_s);
+}
 
 #if UNITS_HAS_MATH()
 static void testFma0()
@@ -322,6 +374,9 @@ static void test1()
     using Phi9 = std::remove_const_t<decltype(phi9)>;
     constexpr auto phi12 = phi9 - Phi9(phi10);
     //Incomplet<decltype(phi12)>{};
+#if UNITS_HAS_NO_KINDS()
+    constexpr auto phi12a = phi9 - phi10;
+#endif
 #if UNITS_HAS_ANY()
     constexpr auto phi13 = flatten(phi9) - flatten(phi10);
     //Incomplet<decltype(phi13)>{};
@@ -479,6 +534,9 @@ int main()
     constexpr auto ghi = 1_m / 1_m + 1_cm / 1_cm;
 
     constexpr auto rad0 = Radians{1_rad / 2_rad};
+//#if UNITS_HAS_NO_KINDS()
+//    constexpr Radians phi0a = 1_rad / 2_rad;
+//#endif
     constexpr auto rad1 = 1_rad + 2_rad /*+ rad0*/;
     //static_assert( units::kinds::IsDimensionless<Radians::dimension_type>::value, "");
     constexpr auto rad2 = Radians{1_m / 1_m};
@@ -546,8 +604,13 @@ int main()
 
     constexpr auto Q1 = 1_m / 1_m;
     constexpr auto Q2 = 1_s / 1_s;
-    //constexpr auto Q3 = Q1 + Q2;
-    // constexpr auto Q3 = (1_m * 1_s + 1_s * 1_m) / (1_m * 1_s);
+#if UNITS_HAS_NO_KINDS()
+    constexpr auto Q3a = Q1 + Q2;
+    constexpr auto Q3b = (1_m * 1_s + 1_s * 1_m) / (1_m * 1_s);
+    static_assert(std::is_same<decltype(Q3a), decltype(Q3b)>::value, "");
+    constexpr auto Q3c = (1_m * 1_s + 1_s * 1_m) / 1_m / 1_s;
+    static_assert(std::is_same<decltype(Q3a), decltype(Q3c)>::value, "");
+#endif
     constexpr auto Q3 = (1_m * 1_s + 1_m * 1_s) / (1_m * 1_s);
     //Incomplet<decltype(Q3)>{};
     //using XXXXX = decltype(Q3);
@@ -564,6 +627,7 @@ int main()
     //Incomplet<decltype(ouch2)>{};
 
     //constexpr auto ouch2 = 1_rad + 2.0;
+    //constexpr auto ouch2a = 1_rad / 1_rad + 2.0;
     //constexpr auto ouch3 = 1_m + 2.0;
     //constexpr auto ouch4 = 1+ ((1_m/1_s) * (1_m/1_s)) / ((1_km/1_h) * (1_km/1_h));
 
