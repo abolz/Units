@@ -493,19 +493,11 @@ namespace impl
     template <typename C1, typename C2>
     struct CommonRational;
 
-#if 0
-    template <Natural Num1, Natural Den1, Exponent Exp1, Natural Num2, Natural Den2, Exponent Exp2>
-    struct CommonRational< Rational<Num1, Den1, Exp1>, Rational<Num2, Den2, Exp2> >
-    {
-        using type = Rational< Gcd(Num1, Num2), Lcm(Den1, Den2), Min(Exp1, Exp2) >;
-    };
-#else
     template <Natural Num1, Natural Den1, Natural Num2, Natural Den2, Exponent CommonExp>
     struct CommonRational< Rational<Num1, Den1, CommonExp>, Rational<Num2, Den2, CommonExp> >
     {
         using type = Rational< Gcd(Num1, Num2), Lcm(Den1, Den2), CommonExp >;
     };
-#endif
 }
 
 template <typename C1, typename C2>
