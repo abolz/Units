@@ -165,15 +165,17 @@ using DivDimensions = decltype(impl::Merge(D1{}, impl::Invert(D2{})));
 
 namespace dim // Base quantities
 {
-    template <int E> struct Length            { static constexpr int64_t id = 1; };
-    template <int E> struct Mass              { static constexpr int64_t id = 2; };
-    template <int E> struct Time              { static constexpr int64_t id = 3; };
-    template <int E> struct ElectricCurrent   { static constexpr int64_t id = 4; };
-    template <int E> struct Temperature       { static constexpr int64_t id = 5; };
-    template <int E> struct AmountOfSubstance { static constexpr int64_t id = 6; };
-    template <int E> struct LuminousIntensity { static constexpr int64_t id = 7; };
-    template <int E> struct Bit               { static constexpr int64_t id = 8; };
-    template <int E> struct Currency          { static constexpr int64_t id = 9; };
+    template <int E> struct Length            { static constexpr int64_t id =  1; };
+    template <int E> struct Mass              { static constexpr int64_t id =  2; };
+    template <int E> struct Time              { static constexpr int64_t id =  3; };
+    template <int E> struct ElectricCurrent   { static constexpr int64_t id =  4; };
+    template <int E> struct Temperature       { static constexpr int64_t id =  5; };
+    template <int E> struct AmountOfSubstance { static constexpr int64_t id =  6; };
+    template <int E> struct LuminousIntensity { static constexpr int64_t id =  7; };
+    template <int E> struct Bit               { static constexpr int64_t id =  8; };
+    template <int E> struct Currency          { static constexpr int64_t id =  9; };
+    template <int E> struct Pixel             { static constexpr int64_t id = 10; };
+    template <int E> struct Dot               { static constexpr int64_t id = 11; };
 }
 
 namespace kinds
