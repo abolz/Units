@@ -671,11 +671,15 @@ public:
 
     template <typename C2, typename Q = CommonTypeSfinae<C, C2, K>>
     [[nodiscard]] constexpr friend auto operator+(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
+        //static_assert(std::is_convertible<decltype(lhs), Q>::value, "");
+        //static_assert(std::is_convertible<decltype(rhs), Q>::value, "");
         return Q(Q(lhs).count() + Q(rhs).count());
     }
 
     template <typename C2, typename Q = CommonTypeSfinae<C, C2, K>>
     [[nodiscard]] constexpr friend auto operator-(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
+        //static_assert(std::is_convertible<decltype(lhs), Q>::value, "");
+        //static_assert(std::is_convertible<decltype(rhs), Q>::value, "");
         return Q(Q(lhs).count() - Q(rhs).count());
     }
 
@@ -723,6 +727,7 @@ public:
 
     template <typename C2, EnableIfDivides<C, C2> = 0>
     constexpr friend Quantity& operator+=(Quantity& lhs, Quantity<Unit<C2, K>> rhs) noexcept {
+        //static_assert(std::is_convertible<decltype(rhs), Quantity>::value, "");
 //      lhs.count_ += Quantity(rhs).count();
 //      lhs.count_ += DivRatios<C2, C>{}(rhs.count());
         lhs.count_ += DivRatios<C2, C>::num * rhs.count();
@@ -731,6 +736,7 @@ public:
 
     template <typename C2, EnableIfDivides<C, C2> = 0>
     constexpr friend Quantity& operator-=(Quantity& lhs, Quantity<Unit<C2, K>> rhs) noexcept {
+        //static_assert(std::is_convertible<decltype(rhs), Quantity>::value, "");
 //      lhs.count_ -= Quantity(rhs).count();
 //      lhs.count_ -= DivRatios<C2, C>{}(rhs.count());
         lhs.count_ -= DivRatios<C2, C>::num * rhs.count();
@@ -760,6 +766,8 @@ public:
 
     template <typename C2, typename Q = CommonTypeSfinae<C, C2, K>>
     [[nodiscard]] constexpr friend int Compare(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
+        //static_assert(std::is_convertible<decltype(lhs), Q>::value, "");
+        //static_assert(std::is_convertible<decltype(rhs), Q>::value, "");
         return impl::CompareValues(Q(lhs).count(), Q(rhs).count());
     }
 
@@ -776,6 +784,8 @@ public:
 
     template <typename C2, typename Q = CommonTypeSfinae<C, C2, K>>
     [[nodiscard]] constexpr friend bool operator==(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
+        //static_assert(std::is_convertible<decltype(lhs), Q>::value, "");
+        //static_assert(std::is_convertible<decltype(rhs), Q>::value, "");
         return Q(lhs).count() == Q(rhs).count();
     }
 
@@ -786,6 +796,8 @@ public:
 
     template <typename C2, typename Q = CommonTypeSfinae<C, C2, K>>
     [[nodiscard]] constexpr friend bool operator<(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
+        //static_assert(std::is_convertible<decltype(lhs), Q>::value, "");
+        //static_assert(std::is_convertible<decltype(rhs), Q>::value, "");
         return Q(lhs).count() < Q(rhs).count();
     }
 
@@ -1229,7 +1241,7 @@ namespace units
 {
     using Gram     = Unit< Ratio<1, 1000>, kinds::Mass >;
     using Kilogram = Unit< Ratio<1>, kinds::Mass >;
-    using Tonne     = Unit< Ratio<1000>, kinds::Mass >;
+    using Tonne    = Unit< Ratio<1000>, kinds::Mass >;
 }
 
 using Grams     = Quantity< units::Gram >;
@@ -1419,7 +1431,7 @@ namespace units
     using Bit      = Unit< Ratio<1>, kinds::Bit >;
     using Nibble   = Unit< MulRatios<Ratio<4>, Bit::conversion>, kinds::Bit >;
     using Byte     = Unit< MulRatios<Ratio<8>, Bit::conversion>, kinds::Bit >;
-#if 1
+#if 0
     using Kilobyte = Unit< MulRatios<Ratio<1024>, Byte::conversion>, kinds::Bit >;
     using Megabyte = Unit< MulRatios<Ratio<1024>, Kilobyte::conversion>, kinds::Bit >;
     using Gigabyte = Unit< MulRatios<Ratio<1024>, Megabyte::conversion>, kinds::Bit >;
