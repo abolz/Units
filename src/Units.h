@@ -937,6 +937,11 @@ template <typename C, typename K>
 }
 #endif
 
+template <typename C, typename K>
+[[nodiscard]] constexpr auto remove_conversion(Quantity<Unit<C, K>> q) noexcept {
+    return Quantity<Unit<Ratio<1>, K>>{C{}(q.count())};
+}
+
 //==================================================================================================
 // Typedefs
 //==================================================================================================

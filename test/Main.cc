@@ -437,6 +437,12 @@ static void test999()
     constexpr auto bits07 = bits06.convert_to(Megabytes{1} / Seconds{1});
 }
 
+static void test998()
+{
+    constexpr auto t0 = 1_ms;
+    constexpr auto t1 = remove_conversion(t0);
+}
+
 int main()
 {
     constexpr auto hhhh = 1_h + 1_s;
