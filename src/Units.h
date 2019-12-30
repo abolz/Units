@@ -297,6 +297,10 @@ namespace impl
         return lhs < rhs ? -1 : 1;
     }
 
+    constexpr int Sgn(Natural x) noexcept {
+        return CompareValues(x, static_cast<Natural>(0));
+    }
+
     constexpr Natural Abs(Natural x) noexcept {
         return x < 0 ? -x : x;
     }
@@ -476,6 +480,9 @@ namespace impl
 template <typename C1, typename C2>
 using MulRatios = typename impl::RationalProduct<C1, C2>::type;
 
+template <typename C>
+using SqrRatios = MulRatios<C, C>;
+
 template <typename C1, typename C2>
 using DivRatios = typename impl::RationalProduct<C1, Ratio<C2::den, C2::num, -C2::exp>>::type;
 
@@ -515,10 +522,12 @@ struct Unit
 
     //template <typename C2, typename K2>
     //[[nodiscard]] constexpr friend auto operator*(Unit lhs, Unit<C2, K2> rhs) noexcept {
+    //    return Unit<MulRatios<C, C2>, MulKinds<K, K2>>{};
     //}
 
     //template <typename C2, typename K2>
     //[[nodiscard]] constexpr friend auto operator/(Unit lhs, Unit<C2, K2> rhs) noexcept {
+    //    return Unit<DivRatios<C, C2>, DivKinds<K, K2>>{};
     //}
 
     //template <Natural N2, Natural D2, Natural E2>
@@ -562,9 +571,9 @@ private:
     double count_ = 0;
 
 private:
-    template <typename C2>
+    template <typename R>
     using IsNatural
-        = std::bool_constant< C2::den == 1 && C2::exp == 0 >;
+        = std::bool_constant< R::den == 1 && R::exp == 0 >;
 
     // C1 | C2
     template <typename C1, typename C2>
@@ -577,7 +586,7 @@ private:
 
     template <typename K1, typename K2>
     using IsSameDimensionType
-        = std::is_same<typename K1::dimension, typename K2::dimension>;
+        = std::is_same< typename K1::dimension, typename K2::dimension >;
 
     template <typename K1, typename K2, typename T = int>
     using EnableIfCompatible
@@ -645,7 +654,7 @@ public:
 #endif
 
     template <typename C2, typename K2, EnableIfCompatible<K, K2> = 0>
-    [[nodiscard]] constexpr auto convert_to(Quantity<Unit<C2, K2>>) const noexcept {
+    [[nodiscard]] constexpr Quantity<Unit<C2, K>> convert_to(Quantity<Unit<C2, K2>>) const noexcept {
         return Quantity<Unit<C2, K>>(DivRatios<C, C2>{}(count()));
     }
 
@@ -701,22 +710,9 @@ public:
     }
 
     [[nodiscard]] constexpr friend auto operator/(double lhs, Quantity rhs) noexcept {
-        using U = Unit<Ratio<1>, kinds::One>;
-        using Q = Quantity<DivUnits<U, unit>>;
+        using Q = Quantity<DivUnits<Unit<Ratio<1>, kinds::One>, unit>>;
         return Q(lhs / rhs.count());
     }
-
-    //template <Natural N2, Natural D2, Exponent E2>
-    //[[nodiscard]] constexpr friend auto operator*(Rational<N2, D2, E2> lhs, Quantity rhs) noexcept {
-    //    using Q = Quantity<decltype(lhs * unit{})>;
-    //    return Q{rhs.count()};
-    //}
-
-    //template <Natural N2, Natural D2, Exponent E2>
-    //[[nodiscard]] constexpr friend auto operator*(Quantity lhs, Rational<N2, D2, E2> rhs) noexcept {
-    //    using Q = Quantity<decltype(unit{} * rhs)>;
-    //    return Q{lhs.count()};
-    //}
 
 #if 0 // UNITS_DELETE_EVERYTHING_ELSE()
     template <typename U2>
@@ -876,7 +872,7 @@ public:
         //
         // NB:
         //
-        // This function only allows arguments as the third parameter, which are implicitly
+        // This function only allows arguments as the third parametre, which are implicitly
         // convertible to the exact type of the multiplication (a * b). This is more restrictive
         // than the expression (a * b + c). But otherwise, we would need to convert the
         // product (a * b) and the third argument (c) to their common type before the addition,
@@ -886,6 +882,22 @@ public:
         using Q = decltype(a * b);
 //      return Q(a.count() * b.count() + c.count());
         return Q(std::fma(a.count(), b.count(), c.count()));
+    }
+
+    // exp(a b) = exp(a) exp(b)
+    //  check!
+
+    template <typename K2 = K, std::enable_if_t< std::is_same<typename K2::dimension, Dimension<>>::value, int > = 0>
+    friend Quantity Exp(Quantity q) noexcept {
+        return Quantity(std::Log(q.count()));
+    }
+
+    // log_a(t) = log_b(t) / log_b(a)
+    //  ... !?!?
+
+    template <typename K2 = K, std::enable_if_t< std::is_same<typename K2::dimension, Dimension<>>::value, int > = 0>
+    friend Quantity Log(Quantity q) noexcept {
+        return Quantity(std::log(q.count()));
     }
 
 #endif
@@ -945,66 +957,66 @@ template <typename C, typename K>
 
 namespace units
 {
-    using Nanometer   = Unit< Ratio<1, 1000000000>, kinds::Length >;
-    using Micrometer  = Unit< Ratio<1, 1000000>, kinds::Length >;
-    using Millimeter  = Unit< Ratio<1, 1000>, kinds::Length >;
-    using Centimeter  = Unit< Ratio<1, 100>, kinds::Length >;
-    using Decimeter   = Unit< Ratio<1, 10>, kinds::Length >;
-    using Meter       = Unit< Ratio<1>, kinds::Length >;
-    using Kilometer   = Unit< Ratio<1000>, kinds::Length >;
+    using Nanometre   = Unit< Ratio<1, 1000000000>, kinds::Length >;
+    using Micrometre  = Unit< Ratio<1, 1000000>, kinds::Length >;
+    using Millimetre  = Unit< Ratio<1, 1000>, kinds::Length >;
+    using Centimetre  = Unit< Ratio<1, 100>, kinds::Length >;
+    using Decimetre   = Unit< Ratio<1, 10>, kinds::Length >;
+    using Metre       = Unit< Ratio<1>, kinds::Length >;
+    using Kilometre   = Unit< Ratio<1000>, kinds::Length >;
 }
 
-using Nanometers  = Quantity< units::Nanometer >;
-using Micrometers = Quantity< units::Micrometer >;
-using Millimeters = Quantity< units::Millimeter >;
-using Centimeters = Quantity< units::Centimeter >;
-using Decimeters  = Quantity< units::Decimeter >;
-using Meters      = Quantity< units::Meter >;
-using Kilometers  = Quantity< units::Kilometer >;
+using Nanometres  = Quantity< units::Nanometre >;
+using Micrometres = Quantity< units::Micrometre >;
+using Millimetres = Quantity< units::Millimetre >;
+using Centimetres = Quantity< units::Centimetre >;
+using Decimetres  = Quantity< units::Decimetre >;
+using Metres      = Quantity< units::Metre >;
+using Kilometres  = Quantity< units::Kilometre >;
 
 namespace literals
 {
     [[nodiscard]] constexpr auto operator""_nm(long double x) noexcept {
-        return Nanometers{static_cast<double>(x)};
+        return Nanometres{static_cast<double>(x)};
     }
     [[nodiscard]] constexpr auto operator""_nm(unsigned long long x) noexcept {
-        return Nanometers{static_cast<double>(x)};
+        return Nanometres{static_cast<double>(x)};
     }
     [[nodiscard]] constexpr auto operator""_mm(long double x) noexcept {
-        return Millimeters{static_cast<double>(x)};
+        return Millimetres{static_cast<double>(x)};
     }
     [[nodiscard]] constexpr auto operator""_mm(unsigned long long x) noexcept {
-        return Millimeters{static_cast<double>(x)};
+        return Millimetres{static_cast<double>(x)};
     }
     [[nodiscard]] constexpr auto operator""_cm(long double x) noexcept {
-        return Centimeters{static_cast<double>(x)};
+        return Centimetres{static_cast<double>(x)};
     }
     [[nodiscard]] constexpr auto operator""_cm(unsigned long long x) noexcept {
-        return Centimeters{static_cast<double>(x)};
+        return Centimetres{static_cast<double>(x)};
     }
     [[nodiscard]] constexpr auto operator""_dm(long double x) noexcept {
-        return Decimeters{static_cast<double>(x)};
+        return Decimetres{static_cast<double>(x)};
     }
     [[nodiscard]] constexpr auto operator""_dm(unsigned long long x) noexcept {
-        return Decimeters{static_cast<double>(x)};
+        return Decimetres{static_cast<double>(x)};
     }
     [[nodiscard]] constexpr auto operator""_m(long double x) noexcept {
-        return Meters{static_cast<double>(x)};
+        return Metres{static_cast<double>(x)};
     }
     [[nodiscard]] constexpr auto operator""_m(unsigned long long x) noexcept {
-        return Meters{static_cast<double>(x)};
+        return Metres{static_cast<double>(x)};
     }
     [[nodiscard]] constexpr auto operator""_km(long double x) noexcept {
-        return Kilometers{static_cast<double>(x)};
+        return Kilometres{static_cast<double>(x)};
     }
     [[nodiscard]] constexpr auto operator""_km(unsigned long long x) noexcept {
-        return Kilometers{static_cast<double>(x)};
+        return Kilometres{static_cast<double>(x)};
     }
 }
 
 namespace units
 {
-    using Inch = Unit< MulRatios<Ratio<254, 100>, Centimeter::conversion>, kinds::Length >; // (international)
+    using Inch = Unit< MulRatios<Ratio<254, 100>, Centimetre::conversion>, kinds::Length >; // (international)
     using Foot = Unit< MulRatios<Ratio<12>, Inch::conversion>, kinds::Length >;             // (international)
     using Yard = Unit< MulRatios<Ratio<3>, Foot::conversion>, kinds::Length >;              // (international)
     using Mile = Unit< MulRatios<Ratio<1760>, Yard::conversion>, kinds::Length >;           // (international)
@@ -1048,7 +1060,10 @@ namespace literals
 
 namespace units
 {
-    using SquareMeter = Unit< MulRatios<Meter::conversion, Meter::conversion>, kinds::Area >;
+    using SquareCentimetre = Unit< SqrRatios<Centimetre::conversion>, kinds::Area >;
+    using SquareDecimetre  = Unit< SqrRatios<Decimetre::conversion>, kinds::Area >;
+    using SquareMetre      = Unit< SqrRatios<Metre::conversion>, kinds::Area >;
+    using SquareKilometre  = Unit< SqrRatios<Kilometre::conversion>, kinds::Area >;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1056,7 +1071,11 @@ namespace units
 
 namespace units
 {
-    using CubicMeter = Unit< MulRatios<SquareMeter::conversion, Meter::conversion>, kinds::Area >;
+    using CubicCentimetre = Unit< MulRatios<SquareCentimetre::conversion, Centimetre::conversion>, kinds::Volume >;
+    using CubicDecimetre  = Unit< MulRatios<SquareDecimetre::conversion, Decimetre::conversion>, kinds::Volume >;
+    using CubicMetre      = Unit< MulRatios<SquareMetre::conversion, Metre::conversion>, kinds::Volume >;
+
+    using Litre = CubicDecimetre;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1143,42 +1162,42 @@ namespace literals
 namespace units
 {
 #if 0
-    using MeterPerSecond
-        = Unit< DivRatios<Meter::conversion, Second::conversion>,
+    using MetrePerSecond
+        = Unit< DivRatios<Metre::conversion, Second::conversion>,
                 DivKinds<kinds::Length, kinds::Time> >;
-    using KilometerPerHour
-        = Unit< DivRatios<Kilometer::conversion, Hour::conversion>,
+    using KilometrePerHour
+        = Unit< DivRatios<Kilometre::conversion, Hour::conversion>,
                 DivKinds<kinds::Length, kinds::Time> >;
     using MilePerHour
         = Unit< DivRatios<Mile::conversion, Hour::conversion>,
                 DivKinds<kinds::Length, kinds::Time> >;
 #else
-    using MeterPerSecond
-        = Unit< DivRatios<Meter::conversion, Second::conversion>, kinds::Velocity >;
-    using KilometerPerHour
-        = Unit< DivRatios<Kilometer::conversion, Hour::conversion>, kinds::Velocity >;
+    using MetrePerSecond
+        = Unit< DivRatios<Metre::conversion, Second::conversion>, kinds::Velocity >;
+    using KilometrePerHour
+        = Unit< DivRatios<Kilometre::conversion, Hour::conversion>, kinds::Velocity >;
     using MilePerHour
         = Unit< DivRatios<Mile::conversion, Hour::conversion>, kinds::Velocity >;
 #endif
 }
 
-using MetersPerSecond   = Quantity< units::MeterPerSecond >;
-using KilometersPerHour = Quantity< units::KilometerPerHour >;
+using MetresPerSecond   = Quantity< units::MetrePerSecond >;
+using KilometresPerHour = Quantity< units::KilometrePerHour >;
 using MilesPerHour      = Quantity< units::MilePerHour >;
 
 namespace literals
 {
     [[nodiscard]] constexpr auto operator""_mps(long double x) noexcept {
-        return MetersPerSecond{static_cast<double>(x)};
+        return MetresPerSecond{static_cast<double>(x)};
     }
     [[nodiscard]] constexpr auto operator""_mps(unsigned long long x) noexcept {
-        return MetersPerSecond{static_cast<double>(x)};
+        return MetresPerSecond{static_cast<double>(x)};
     }
     [[nodiscard]] constexpr auto operator""_kmph(long double x) noexcept {
-        return KilometersPerHour{static_cast<double>(x)};
+        return KilometresPerHour{static_cast<double>(x)};
     }
     [[nodiscard]] constexpr auto operator""_kmph(unsigned long long x) noexcept {
-        return KilometersPerHour{static_cast<double>(x)};
+        return KilometresPerHour{static_cast<double>(x)};
     }
     [[nodiscard]] constexpr auto operator""_miph(long double x) noexcept {
         return MilesPerHour{static_cast<double>(x)};
@@ -1189,18 +1208,39 @@ namespace literals
 }
 
 //--------------------------------------------------------------------------------------------------
+// Acceleration
+
+namespace units
+{
+//  using MetrePerSecondSquared = Unit< MulRatios<MetrePerSecond::conversion, Second::conversion>, kinds::Acceleration >;
+    using MetrePerSecondSquared = Unit< DivRatios<Metre::conversion, SqrRatios<Second::conversion>>, kinds::Acceleration >;
+}
+
+using MetresPerSecondSquared = Quantity< units::MetrePerSecondSquared >;
+
+namespace literals
+{
+    [[nodiscard]] constexpr auto operator""_mpssq(long double x) noexcept {
+        return MetresPerSecondSquared{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_mpssq(unsigned long long x) noexcept {
+        return MetresPerSecondSquared{static_cast<double>(x)};
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
 // Mass
 
 namespace units
 {
     using Gram     = Unit< Ratio<1, 1000>, kinds::Mass >;
     using Kilogram = Unit< Ratio<1>, kinds::Mass >;
-    using Ton      = Unit< Ratio<1000>, kinds::Mass >;
+    using Tonne     = Unit< Ratio<1000>, kinds::Mass >;
 }
 
 using Grams     = Quantity< units::Gram >;
 using Kilograms = Quantity< units::Kilogram >;
-using Tons      = Quantity< units::Ton >;
+using Tonnes    = Quantity< units::Tonne >;
 
 namespace literals
 {
@@ -1217,10 +1257,78 @@ namespace literals
         return Kilograms{static_cast<double>(x)};
     }
     [[nodiscard]] constexpr auto operator""_t(long double x) noexcept {
-        return Tons{static_cast<double>(x)};
+        return Tonnes{static_cast<double>(x)};
     }
     [[nodiscard]] constexpr auto operator""_t(unsigned long long x) noexcept {
-        return Tons{static_cast<double>(x)};
+        return Tonnes{static_cast<double>(x)};
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+// Force
+
+namespace units
+{
+    using Newton = Unit< MulRatios<Kilogram::conversion, MetrePerSecondSquared::conversion>, kinds::Force >;
+}
+
+using Newton = Quantity< units::Newton >;
+
+namespace literals
+{
+    [[nodiscard]] constexpr auto operator""_N(long double x) noexcept {
+        return Newton{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_N(unsigned long long x) noexcept {
+        return Newton{static_cast<double>(x)};
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+// Temperature
+
+namespace units
+{
+    using Kelvin  = Unit< Ratio<1>, kinds::Temperature >;
+//  using Celsius = Unit< Ratio<1>, kinds::Temperature >;
+}
+
+using Kelvin  = Quantity< units::Kelvin >;
+//using Celsius = Quantity< units::Celsius >;
+
+namespace literals
+{
+    [[nodiscard]] constexpr auto operator""_K(long double x) noexcept {
+        return Kelvin{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_K(unsigned long long x) noexcept {
+        return Kelvin{static_cast<double>(x)};
+    }
+//  [[nodiscard]] constexpr auto operator""_degC(long double x) noexcept {
+//      return Celsius{static_cast<double>(x)};
+//  }
+//  [[nodiscard]] constexpr auto operator""_degC(unsigned long long x) noexcept {
+//      return Celsius{static_cast<double>(x)};
+//  }
+}
+
+//--------------------------------------------------------------------------------------------------
+// Amount of substance
+
+namespace units
+{
+    using Mole = Unit< Ratio<1>, kinds::AmountOfSubstance >;
+}
+
+using Moles = Quantity< units::Mole >;
+
+namespace literals
+{
+    [[nodiscard]] constexpr auto operator""_mol(long double x) noexcept {
+        return Moles{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_mol(unsigned long long x) noexcept {
+        return Moles{static_cast<double>(x)};
     }
 }
 
@@ -1232,7 +1340,7 @@ namespace units
     using Radian     = Unit< Ratio<1>, kinds::PlaneAngle >;
     using Degree     = Unit< Ratio<1, 180, /* pi^ */ 1>, kinds::PlaneAngle >;
     using Gon        = Unit< Ratio<1, 200, /* pi^ */ 1>, kinds::PlaneAngle >;
-    using Revolution = Unit< Ratio<2,   1, /* pi^ */ 1>, kinds::PlaneAngle >; // Turn?!?!
+    using Revolution = Unit< Ratio<2,   1, /* pi^ */ 1>, kinds::PlaneAngle >;
 }
 
 using Radians     = Quantity< units::Radian >;
@@ -1402,7 +1510,7 @@ namespace kinds
     // nt
     // Luminance: density of luminous intensity with respect to projected area in a specified
     // direction at a specified point on a real or imaginary surface.
-    // The luminance is expressed in candela per square meter (nit = cd / m^2 = lm / (m^2 sr)).
+    // The luminance is expressed in candela per square metre (nit = cd / m^2 = lm / (m^2 sr)).
     struct Luminance
         : Kind< Luminance,
                 Dimension<dim::Length<-2>, dim::LuminousIntensity<1>> > {};
@@ -1462,10 +1570,10 @@ namespace units
 //  using CandelaPerSquareMeter
 //      = Unit< DivRatios<Candela::conversion, SquareMeter::conversion>, kinds::Luminance >;
     using Nit
-        = Unit< DivRatios<Candela::conversion, SquareMeter::conversion>, kinds::Luminance >;
+        = Unit< DivRatios<Candela::conversion, SquareMetre::conversion>, kinds::Luminance >;
 
     using Lux
-        = Unit< DivRatios<Lumen::conversion, SquareMeter::conversion>, kinds::Illuminance >;
+        = Unit< DivRatios<Lumen::conversion, SquareMetre::conversion>, kinds::Illuminance >;
 }
 
 using Candelas = Quantity< units::Candela >;

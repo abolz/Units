@@ -16,33 +16,33 @@ int main()
     constexpr std::chrono::seconds chr1 = std::chrono::nanoseconds{1};
 
     //constexpr auto m0 = 1 * Meter{};
-    constexpr Meters<> m1 = Millimeters<>{1};
-    constexpr Millimeters<> m2 = Meters<>{1};
+    constexpr Metres<> m1 = Millimetres<>{1};
+    constexpr Millimetres<> m2 = Metres<>{1};
     constexpr auto m3 = m1 + m2;
     constexpr auto m4 = 1_m + 1_cm + 1_mm;
     //constexpr auto m5 = 1 / (1 / 2.98873687628376_m);
     //static_assert(m5 == 2.98873687628376_m, "");
 
     constexpr auto m6 = 1_mi + 1_yd + 1_ft + 1_in;
-    constexpr auto m7 = Micrometers{m6};
+    constexpr auto m7 = Micrometres{m6};
     constexpr auto m8 = 1_mi + 1_yd;
     constexpr auto m9 = 1_yd + 1_ft;
     constexpr auto m10 = 1_ft + 1_in;
     constexpr auto m11 = 1_in + 1_cm;
-    constexpr auto cm11 = Centimeters{m11};
+    constexpr auto cm11 = Centimetres{m11};
     constexpr auto cm11x = 1.0 + 2.54;
-    constexpr auto m12 = Centimeters{1_in};
-    constexpr Centimeters m13 = 1_in;
+    constexpr auto m12 = Centimetres{1_in};
+    constexpr Centimetres m13 = 1_in;
     constexpr auto m14 = 1_in;
     //using InchType = units::Inch::conversion;
     //Incomplet<InchType>{};
     //Incomplet<decltype(m11)::conversion>{};
-    constexpr auto m15 = Centimeters{Meters{Yards{Inches{1_cm}}}};
+    constexpr auto m15 = Centimetres{Metres{Yards{Inches{1_cm}}}};
     //Incomplet<decltype(m15)::conversion>{};
-    constexpr auto m16 = Centimeters{Inches{1_cm}};
-    //constexpr auto m17 = Centimeters{Yards{Inches{1_cm}}};
+    constexpr auto m16 = Centimetres{Inches{1_cm}};
+    //constexpr auto m17 = Centimetres{Yards{Inches{1_cm}}};
     constexpr auto m18 = 3.2347687234_mi * 1_cm * 2.2347326487236487234_in / 1e+2_yd * 1e+2_yd / 2.2347326487236487234_in / 3.2347687234_mi;
-    constexpr auto m18cm = Centimeters{m18};
+    constexpr auto m18cm = Centimetres{m18};
     static_assert(m18cm == 1_cm, "");
     constexpr auto m19 = 3.2347687234_mi + 1_cm + 2.2347326487236487234_in - 2.2347326487236487234_in - 3.2347687234_mi + 1_cm;
     //Incomplet<decltype(m19)::conversion>{};
@@ -194,17 +194,55 @@ static void test001()
     takesVelocity(y2);
 }
 
+template <typename L, typename R> using Add = decltype(std::declval<L>() + std::declval<R>());
+template <typename L, typename R> using Sub = decltype(std::declval<L>() - std::declval<R>());
+template <typename L, typename R> using Mul = decltype(std::declval<L>() * std::declval<R>());
+template <typename L, typename R> using Div = decltype(std::declval<L>() / std::declval<R>());
+
+template <typename From, typename To>
+using ConvertFromTo = decltype(std::declval<From>().convert_to(std::declval<To>()));
+
+namespace details
+{
+    template <typename T>
+    struct Void
+    {
+        using type = void;
+    };
+
+    template <typename T>
+    using Void_t = typename Void<T>::type;
+
+    template <typename AlwaysVoid, template <typename...> class Op, typename... Args>
+    struct Detector
+    {
+        static constexpr bool value = false;
+    };
+
+    template <template <typename...> class Op, typename... Args>
+    struct Detector<Void_t<Op<Args...>>, Op, Args...>
+    {
+        static constexpr bool value = true;
+    };
+}
+
+template <template <typename...> class Op, typename... Args>
+inline constexpr bool Compiles = details::Detector<void, Op, Args...>::value;
+
 static void test002()
 {
-#if UNITS_HAS_NO_KINDS()
-    constexpr auto x = 1_m / 1_m;
-    constexpr auto y = 1_s / 1_s;
-    constexpr auto z = x + y;
-#endif
-
-    //constexpr auto x = 1_m;
-    //constexpr auto y = 1_s;
-    //constexpr auto z = x + y;
+    {
+        constexpr auto x = 1_m / 1_m;
+        constexpr auto y = 1_s / 1_s;
+        constexpr auto z = x * y;
+        static_assert(!Compiles<Add, decltype(x), decltype(y)>, "");
+    }
+    {
+        constexpr auto x = 1_m;
+        constexpr auto y = 1_s;
+        constexpr auto z = x * y;
+        static_assert(!Compiles<Add, decltype(x), decltype(y)>, "");
+    }
 }
 
 static void test003()
@@ -224,12 +262,12 @@ static void test004()
     constexpr auto t1 = 1_km / 1_h;
     constexpr auto t2 = 1_mps;
     constexpr auto t3 = 1_kmph;
-    constexpr MetersPerSecond t4 = t0;
-    constexpr MetersPerSecond t5 = t2;
+    constexpr MetresPerSecond t4 = t0;
+    constexpr MetresPerSecond t5 = t2;
 }
 
 #if UNITS_HAS_ANY()
-static constexpr int takesLength(Centimeters)
+static constexpr int takesLength(Centimetres)
 {
     return 0;
 }
@@ -307,22 +345,18 @@ static void testFma2()
 #if 1
 static void test1()
 {
-    //constexpr auto x = 1_m / 1_m;
-    //constexpr auto y = 1_s / 1_s;
-    //constexpr auto z = x + y;
-
-    //constexpr Meters zzz = 1_s;
-    constexpr Centimeters zzz = 1_m;
-    constexpr Centimeters zzz2{1_m};
-    //constexpr Centimeters zzz3{1_s};
-    //constexpr Meters z2 = Seconds{1}.convert_to(Meters{});
+    //constexpr Metres zzz = 1_s;
+    constexpr Centimetres zzz = 1_m;
+    constexpr Centimetres zzz2{1_m};
+    //constexpr Centimetres zzz3{1_s};
+    //constexpr Metres z2 = Seconds{1}.convert_to(Metres{});
 
     ////auto vel1 = 1_mps;
     ////auto vel1a = 1_m * (1 / 1_s);
     ////auto vel1b = vel1 + kind_cast<kinds::Velocity>(vel1a);
     ////auto vel2 = 1_kmph;
     //////vel1 = vel2;
-    ////vel1 = MetersPerSecond{vel2};
+    ////vel1 = MetresPerSecond{vel2};
 
     //auto len1 = 1_m;
     //len1 = 1_mm;
@@ -334,8 +368,8 @@ static void test1()
     //constexpr Quantity z = m + s;
 
     auto vel01 = 1_kmph;
-    //KilometersPerHour vel02 = 1_mps;
-    KilometersPerHour vel03 = KilometersPerHour{1_mps};
+    //KilometresPerHour vel02 = 1_mps;
+    KilometresPerHour vel03 = KilometresPerHour{1_mps};
 
     constexpr auto phi0 = 1_gon + 1_deg;
     //Incomplet<decltype(phi0)>{};
@@ -349,7 +383,7 @@ static void test1()
     constexpr auto val5 = phi5.value();
     //Incomplet<decltype(phi5)>{};
 
-    //constexpr auto phi6 = 1_deg + 1_rad;
+    static_assert(!Compiles<Add, Radians, Degrees>, "");
     //Incomplet<decltype(phi6)>{};
     constexpr auto phi6a = Radians{1_deg} + 1_rad;
     //Incomplet<decltype(phi6a)>{};
@@ -366,15 +400,10 @@ static void test1()
     //Incomplet<decltype(phi10_0)>{};
 
     constexpr auto phi7 = 1_m + 1_km;
-    //Incomplet<decltype(phi7)>{};
     constexpr auto phi8 = 1_m * 1_km;
-    //Incomplet<decltype(phi8)>{};
     constexpr auto phi9 = phi7 / phi8;
-    //Incomplet<decltype(phi9)>{};
     constexpr auto phi10 = 1 / 1_m + 1 / 1_km;
-    //Incomplet<decltype(phi10)>{};
-    //constexpr auto phi11 = phi9 - phi10;
-    //static_assert(phi9 == phi10, "");
+    static_assert(!Compiles<Add, decltype(phi9), decltype(phi10)>, "");
     using Phi9 = std::remove_const_t<decltype(phi9)>;
     constexpr auto phi12 = phi9 - Phi9(phi10);
     //Incomplet<decltype(phi12)>{};
@@ -411,10 +440,10 @@ static void test999()
 int main()
 {
     constexpr auto hhhh = 1_h + 1_s;
-    constexpr Meters m = 1_m;
-    constexpr Meters m2222 = Meters{1_mm};
-    constexpr Millimeters mm = 1_mm;
-    constexpr Millimeters mmmm22222 = 1_m;
+    constexpr Metres m = 1_m;
+    constexpr Metres m2222 = Metres{1_mm};
+    constexpr Millimetres mm = 1_mm;
+    constexpr Millimetres mmmm22222 = 1_m;
     constexpr auto mmsq = mm * mm;
     constexpr auto mm01 = mm.count();
     //constexpr auto mm02 = mm.value();
@@ -431,10 +460,10 @@ int main()
     //constexpr auto tttNum = TTT::conv_type::num;
     //constexpr auto tttDen = TTT::conv_type::den;
     //constexpr double xxx_value = xxx.value();
-    constexpr auto yyy = quantity_cast<Millimeters>(xxx);
-    constexpr auto yyy1 = Millimeters{xxx};
-    //constexpr Millimeters yyy2 = xxx;
-    constexpr Millimeters yyy3 = 1_m;
+    constexpr auto yyy = quantity_cast<Millimetres>(xxx);
+    constexpr auto yyy1 = Millimetres{xxx};
+    //constexpr Millimetres yyy2 = xxx;
+    constexpr Millimetres yyy3 = 1_m;
     static_assert(std::is_same<decltype(yyy), decltype(yyy1)>::value, "");
     static_assert(yyy == yyy1);
 #if 1
@@ -462,7 +491,7 @@ int main()
     ////////constexpr auto m003 = 1_m + m001;
     ////////constexpr auto m003 = m001 + 1_m;
     ////////constexpr auto m003 = Rainfalls{m001} + 1_m;
-    //////constexpr auto m004 = Meters{m001} + 1_m;
+    //////constexpr auto m004 = Metres{m001} + 1_m;
     ////////Incomplet<decltype(m001)>{};
     ////////constexpr auto m002 = m001 + 1_m;
 
@@ -497,19 +526,19 @@ int main()
     static_assert(1_yd < 1_m);
     static_assert(1_yd <= 1_m);
     //static_assert(Min(1_yd, 1_m) == 1_yd);
-    ////constexpr Meters min1 = Min(1_yd, 1_m);
+    ////constexpr Metres min1 = Min(1_yd, 1_m);
     ////constexpr Yards min2 = Min(1_yd, 1_m);
-    ////constexpr Millimeters min3 = Min(1_yd, 1_m);
-    //constexpr Micrometers min4 = Min(1_yd, 1_m);
+    ////constexpr Millimetres min3 = Min(1_yd, 1_m);
+    //constexpr Micrometres min4 = Min(1_yd, 1_m);
 #endif
-    //constexpr auto zzz = mm.convert_to(Millimeters::unit);
+    //constexpr auto zzz = mm.convert_to(Millimetres::unit);
     //constexpr auto zxz = mm.convert_to(units::Millimeter{});
-    constexpr auto aaa = mm.convert_to(Millimeters{});
-    //constexpr auto bbb = mm.convert_to(Millimeters::unit_type{});
-    //constexpr Meters x00 = m.convert_to(Millimeters{}) + 1_mm;
+    constexpr auto aaa = mm.convert_to(Millimetres{});
+    //constexpr auto bbb = mm.convert_to(Millimetres::unit_type{});
+    //constexpr Metres x00 = m.convert_to(Millimetres{}) + 1_mm;
     //constexpr double x01 = 1001.0 * (1.0 / 1000.0);
     //constexpr double x02 = 1.0 / 1000.0;
-    //using CM1 = CommonMultiplier< Millimeters::multiplier_type, Meters::multiplier_type >;
+    //using CM1 = CommonMultiplier< Millimetres::multiplier_type, Metres::multiplier_type >;
     //constexpr auto CM1_num = CM1::num;
     //constexpr auto CM2_den = CM1::den;
     //constexpr auto ddd01 = m / mm;
@@ -546,6 +575,7 @@ int main()
     constexpr auto rad2 = Radians{1_m / 1_m};
     constexpr auto rad3 = rad1 + rad2;
     //constexpr auto rad4 = rad1 + 1_m / 1_m;
+    static_assert(!Compiles<Add, Radians, decltype(1_m / 1_m)>, "");
     //constexpr auto rad5 = rad3 + 1_sr;
     //constexpr auto rad6 = rad1 + 1_m;
     constexpr auto deg1 = Degrees{1_rad};
@@ -581,28 +611,28 @@ int main()
 
     ////constexpr auto v1111 = Miles{12} / Hours{1};
     ////constexpr auto v2222 = 12 / Hours{1} * Miles{1};
-    ////constexpr auto v3333 = quantity_cast<MetersPerSecond>(v2222);
+    ////constexpr auto v3333 = quantity_cast<MetresPerSecond>(v2222);
     ////static_assert(v1111 == v2222);
     ////static_assert(v1111 == v3333);
     ////static_assert(v3333 == v1111);
     ////static_assert(std::is_same<decltype(v1111), decltype(v2222)>::value, "");
     //constexpr Quantity v1 = v1111;
-    //constexpr Quantity v2 = quantity_cast<MetersPerSecond>(v1); // = v1.convert_to(meters / seconds);
+    //constexpr Quantity v2 = quantity_cast<MetresPerSecond>(v1); // = v1.convert_to(metres / seconds);
 
     //constexpr MmPerSec yyy = v3;
 
-    //constexpr auto zzzzz = Meters{1} + Seconds{2};
+    //constexpr auto zzzzz = Metres{1} + Seconds{2};
 
-    ////constexpr Meters mm = 1_m;
+    ////constexpr Metres mm = 1_m;
     //////constexpr double yyy { 9832_mm };
     //////static_assert(yyy == 9832.0);
     //////constexpr double xxx { 1_m / 1_mm };
     //////static_assert(xxx == 1000.0);
-    //////constexpr auto m2 = mm + (2 /** (kilometers * milliseconds / kilometers / milliseconds)*/) * Yards{1};
+    //////constexpr auto m2 = mm + (2 /** (kilometres * milliseconds / kilometres / milliseconds)*/) * Yards{1};
     ////constexpr auto m2 = 1_m + 2 * Yards{1}; // (2 * (1_km * 1_ms / 1_km / 1_ms)) * Yards{1};
-    ////constexpr auto m3 = Meters{1} - mm;
-    ////constexpr Yards yr = Meters{1};
-    ////constexpr Meters m = Yards{1};
+    ////constexpr auto m3 = Metres{1} - mm;
+    ////constexpr Yards yr = Metres{1};
+    ////constexpr Metres m = Yards{1};
     //////constexpr auto msq = m * m + Yards{1};
 #endif
 
@@ -638,20 +668,20 @@ int main()
     //constexpr auto speed1 = avg_speed(220_km, 2_h);
     //constexpr auto speed2 = avg_speed(140_mi, 2_h);
 
-    //////constexpr auto ouch17 = KilometersPerHour{1_c} + MetersPerSecond{2_m / 2_s};
-    //constexpr auto ouch18 = MetersPerSecond{0.25_c + 0.5_c} + 1_km / 1_h;
-    //constexpr MetersPerSecond mps = 1_km / 1_h;
-    //////constexpr MetersPerSecond vel01 = 1_c;
+    //////constexpr auto ouch17 = KilometresPerHour{1_c} + MetresPerSecond{2_m / 2_s};
+    //constexpr auto ouch18 = MetresPerSecond{0.25_c + 0.5_c} + 1_km / 1_h;
+    //constexpr MetresPerSecond mps = 1_km / 1_h;
+    //////constexpr MetresPerSecond vel01 = 1_c;
     //////constexpr SpeedOfLight vel02 = SpeedOfLight{299'792'458_m / 1_s};
     //////constexpr auto vel03 = 1_m / 1_s;
 
-    //constexpr Micrometers imp01 = 1_in;
-    //constexpr Millimeters imp02 = 1_in;
+    //constexpr Micrometres imp01 = 1_in;
+    //constexpr Millimetres imp02 = 1_in;
     //////constexpr auto vel01 = 1_m / 1_s + 1_km / 1_h;
     //////constexpr auto vel02 = kind_cast<kinds::Velocity>(1_m / 1_s) + 1_miph;
 
     auto xxxxx = 1_m / 1_s;
-    auto yyyyy = MetersPerSecond{2_km / 1_h};
+    auto yyyyy = MetresPerSecond{2_km / 1_h};
     xxxxx += kind_cast<DivKinds<kinds::Length, kinds::Time>>(yyyyy);
     xxxxx += 1_km / 1_s;
     //xxxxx += 1_km / 1_h;
