@@ -601,6 +601,10 @@ private:
         = std::enable_if_t< Divides<C1, C2>::value && IsSameDimensionType<K1, K2>::value && IsAnyKind<K2>::value, T >;
 #endif
 
+    template <typename K2, typename T = int>
+    using EnableIfDimensionless
+        = std::enable_if_t< std::is_same< typename K2::dimension, Dimension<> >::value, T >;
+
 public:
     constexpr Quantity() noexcept = default;
     constexpr Quantity(const Quantity&) noexcept = default;
@@ -893,15 +897,15 @@ public:
     // exp(a b) = exp(a) exp(b)
     //  check!
 
-    template <typename K2 = K, std::enable_if_t< std::is_same<typename K2::dimension, Dimension<>>::value, int > = 0>
+    template <typename K2 = K, EnableIfDimensionless<K2> = 0>
     friend Quantity Exp(Quantity q) noexcept {
-        return Quantity(std::Log(q.count()));
+        return Quantity(std::exp(q.count()));
     }
 
     // log_a(t) = log_b(t) / log_b(a)
     //  ... !?!?
 
-    template <typename K2 = K, std::enable_if_t< std::is_same<typename K2::dimension, Dimension<>>::value, int > = 0>
+    template <typename K2 = K, EnableIfDimensionless<K2> = 0>
     friend Quantity Log(Quantity q) noexcept {
         return Quantity(std::log(q.count()));
     }
@@ -1545,7 +1549,7 @@ namespace kinds
     // lm = W / s
     template <> struct Quotient < LuminousEnergy, Time > { using type = LuminousPower; };
     // cd = lm / sr
-    template <> struct Quotient < LuminousIntensity, SolidAngle > { using type = LuminousIntensity; };
+    template <> struct Quotient < LuminousPower, SolidAngle > { using type = LuminousIntensity; };
     // nt = cd / m^2
     template <> struct Quotient < LuminousIntensity, Area > { using type = Luminance; };
     // lx = lm / m^2
