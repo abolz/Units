@@ -648,7 +648,7 @@ public:
 #endif
 
     template <typename C2, typename K2, EnableIfCompatible<K, K2> = 0>
-    [[nodiscard]] constexpr Quantity<Unit<C2, K>> convert_to(Quantity<Unit<C2, K2>>) const noexcept {
+    [[nodiscard]] constexpr auto convert_to(Quantity<Unit<C2, K2>>) const noexcept {
         return Quantity<Unit<C2, K>>(DivRatios<C, C2>{}(count()));
     }
 
