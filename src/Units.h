@@ -513,9 +513,13 @@ struct Unit
     using kind = K;
     using dimension = typename kind::dimension;
 
-    template <typename C2, typename K2>
-    [[nodiscard]] constexpr friend auto operator*(Unit lhs, Unit<C2, K2> rhs) noexcept {
-    }
+    //template <typename C2, typename K2>
+    //[[nodiscard]] constexpr friend auto operator*(Unit lhs, Unit<C2, K2> rhs) noexcept {
+    //}
+
+    //template <typename C2, typename K2>
+    //[[nodiscard]] constexpr friend auto operator/(Unit lhs, Unit<C2, K2> rhs) noexcept {
+    //}
 
     //template <Natural N2, Natural D2, Natural E2>
     //[[nodiscard]] constexpr friend auto operator*(Rational<N2, D2, E2> /*lhs*/, Unit /*rhs*/) noexcept {
