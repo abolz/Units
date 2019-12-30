@@ -351,15 +351,19 @@ static void test1()
 
     //constexpr auto phi6 = 1_deg + 1_rad;
     //Incomplet<decltype(phi6)>{};
+    constexpr auto phi6a = Radians{1_deg} + 1_rad;
+    //Incomplet<decltype(phi6a)>{};
+    constexpr auto phi6b = 1_deg + Degrees{1_rad};
+    //Incomplet<decltype(phi6b)>{};
 
-    //constexpr auto phi7 = 1_deg + 1_rev;
-    //Incomplet<decltype(phi7)>{};
-    //constexpr auto phi8 = 1_deg * 1_rev;
-    //Incomplet<decltype(phi8)>{};
-    //constexpr auto phi9 = phi7 / phi8;
-    //Incomplet<decltype(phi9)>{};
-    //constexpr auto phi10 = 1 / 1_deg + 1 / 1_rev;
-    //Incomplet<decltype(phi10)>{};
+    constexpr auto phi7_0 = 1_deg + 1_rev;
+    //Incomplet<decltype(phi7_0)>{};
+    constexpr auto phi8_0 = 1_deg * 1_rev;
+    //Incomplet<decltype(phi8_0)>{};
+    constexpr auto phi9_0 = phi7_0 / phi8_0;
+    //Incomplet<decltype(phi9_0)>{};
+    constexpr auto phi10_0 = 1 / 1_deg + 1 / 1_rev;
+    //Incomplet<decltype(phi10_0)>{};
 
     constexpr auto phi7 = 1_m + 1_km;
     //Incomplet<decltype(phi7)>{};

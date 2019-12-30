@@ -301,6 +301,10 @@ namespace impl
         return x < 0 ? -x : x;
     }
 
+    constexpr Natural Min(Natural x, Natural y) noexcept {
+        return y < x ? y : x;
+    }
+
     constexpr Natural Gcd(Natural a, Natural b) noexcept {
         UNITS_ASSERT(a >= 1); // static_assert
         UNITS_ASSERT(b >= 1); // static_assert
@@ -480,11 +484,19 @@ namespace impl
     template <typename C1, typename C2>
     struct CommonRational;
 
+#if 0
+    template <Natural Num1, Natural Den1, Exponent Exp1, Natural Num2, Natural Den2, Exponent Exp2>
+    struct CommonRational< Rational<Num1, Den1, Exp1>, Rational<Num2, Den2, Exp2> >
+    {
+        using type = Rational< Gcd(Num1, Num2), Lcm(Den1, Den2), Min(Exp1, Exp2) >;
+    };
+#else
     template <Natural Num1, Natural Den1, Natural Num2, Natural Den2, Exponent CommonExp>
     struct CommonRational< Rational<Num1, Den1, CommonExp>, Rational<Num2, Den2, CommonExp> >
     {
         using type = Rational< Gcd(Num1, Num2), Lcm(Den1, Den2), CommonExp >;
     };
+#endif
 }
 
 template <typename C1, typename C2>
@@ -1373,6 +1385,7 @@ namespace kinds
 
 //  using LuminousFlux = LuminousPower;
 
+#if 0
     // cd
     // Luminous intensity: density of luminous flux with respect to solid angle in a specified
     // direction.
@@ -1380,6 +1393,7 @@ namespace kinds
     struct LuminousIntensity
         : Kind< LuminousIntensity,
                 Dimension<dim::LuminousIntensity<1>> > {};
+#endif
 
     // nt
     // Luminance: density of luminous intensity with respect to projected area in a specified
