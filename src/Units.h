@@ -939,7 +939,7 @@ template <typename C, typename K>
 
 template <typename C, typename K>
 [[nodiscard]] constexpr auto remove_conversion(Quantity<Unit<C, K>> q) noexcept {
-    return Quantity<Unit<Ratio<1>, K>>{C{}(q.count())};
+    return Quantity<Unit<Ratio<1>, K>>(C{}(q.count()));
 }
 
 //==================================================================================================
@@ -978,6 +978,7 @@ namespace units
     using Centimetre  = Unit< Ratio<1, 100>, kinds::Length >;
     using Decimetre   = Unit< Ratio<1, 10>, kinds::Length >;
     using Metre       = Unit< Ratio<1>, kinds::Length >;
+    using Hectometre  = Unit< Ratio<100>, kinds::Length >;
     using Kilometre   = Unit< Ratio<1000>, kinds::Length >;
 }
 
@@ -987,6 +988,7 @@ using Millimetres = Quantity< units::Millimetre >;
 using Centimetres = Quantity< units::Centimetre >;
 using Decimetres  = Quantity< units::Decimetre >;
 using Metres      = Quantity< units::Metre >;
+using Hectometres = Quantity< units::Hectometre >;
 using Kilometres  = Quantity< units::Kilometre >;
 
 namespace literals
@@ -1020,6 +1022,12 @@ namespace literals
     }
     [[nodiscard]] constexpr auto operator""_m(unsigned long long x) noexcept {
         return Metres{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_hm(long double x) noexcept {
+        return Hectometres{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_hm(unsigned long long x) noexcept {
+        return Hectometres{static_cast<double>(x)};
     }
     [[nodiscard]] constexpr auto operator""_km(long double x) noexcept {
         return Kilometres{static_cast<double>(x)};
@@ -1079,6 +1087,8 @@ namespace units
     using SquareDecimetre  = Unit< SqrRatios<Decimetre::conversion>, kinds::Area >;
     using SquareMetre      = Unit< SqrRatios<Metre::conversion>, kinds::Area >;
     using SquareKilometre  = Unit< SqrRatios<Kilometre::conversion>, kinds::Area >;
+
+    using Hectare = Unit< SqrRatios<Hectometre::conversion>, kinds::Area >;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1104,10 +1114,10 @@ namespace units
     using Second      = Unit< Ratio<1>, kinds::Time >;
     using Minute      = Unit< MulRatios<Ratio<60>, Second::conversion>, kinds::Time >;
     using Hour        = Unit< MulRatios<Ratio<60>, Minute::conversion>, kinds::Time >;
-    // using Day         = Unit< MulRatios<Ratio<24>, Hour::conversion>, kinds::Time >;
-    // using Week        = Unit< MulRatios<Ratio<7>, Day::conversion>, kinds::Time >;
-    // using Year        = Unit< MulRatios<Ratio<146097, 400>, Day::conversion>, kinds::Time >;
-    // using Month       = Unit< MulRatios<Ratio<1, 12>, Year::conversion>, kinds::Time >;
+    //using Day         = Unit< MulRatios<Ratio<24>, Hour::conversion>, kinds::Time >;
+    //using Week        = Unit< MulRatios<Ratio<7>, Day::conversion>, kinds::Time >;
+    //using Year        = Unit< MulRatios<Ratio<146097, 400>, Day::conversion>, kinds::Time >;
+    //using Month       = Unit< MulRatios<Ratio<1, 12>, Year::conversion>, kinds::Time >;
 }
 
 using Nanoseconds  = Quantity< units::Nanosecond >;
@@ -1159,15 +1169,15 @@ namespace units
     using Hertz = Unit< DivRatios<Ratio<1>, Second::conversion>, kinds::Frequency >;
 }
 
-using Hertzs = Quantity< units::Hertz >;
+using Hertz = Quantity< units::Hertz >;
 
 namespace literals
 {
     [[nodiscard]] constexpr auto operator""_Hz(long double x) noexcept {
-        return Hertzs{static_cast<double>(x)};
+        return Hertz{static_cast<double>(x)};
     }
     [[nodiscard]] constexpr auto operator""_Hz(unsigned long long x) noexcept {
-        return Hertzs{static_cast<double>(x)};
+        return Hertz{static_cast<double>(x)};
     }
 }
 
@@ -1408,10 +1418,7 @@ namespace kinds
 namespace units
 {
     using Steradian    = Unit< Ratio<1>, kinds::SolidAngle >;
-
-//  sq.deg = deg^2
-//  using SquareDegree = Unit< Ratio<1, 180 * 180, /* pi^ */ 2>, kinds::SolidAngle >;
-//  using SquareDegree = Unit< MulRatios<Degree::conversion, Degree::conversion>, kinds::SolidAngle >;
+    using SquareDegree = Unit< SqrRatios<Degree::conversion>, kinds::SolidAngle >; // sq.deg = deg^2
 }
 
 using Steradians    = Quantity< units::Steradian >;
@@ -1440,15 +1447,9 @@ namespace units
     using Bit      = Unit< Ratio<1>, kinds::Bit >;
     using Nibble   = Unit< MulRatios<Ratio<4>, Bit::conversion>, kinds::Bit >;
     using Byte     = Unit< MulRatios<Ratio<8>, Bit::conversion>, kinds::Bit >;
-#if 0
-    using Kilobyte = Unit< MulRatios<Ratio<1024>, Byte::conversion>, kinds::Bit >;
-    using Megabyte = Unit< MulRatios<Ratio<1024>, Kilobyte::conversion>, kinds::Bit >;
-    using Gigabyte = Unit< MulRatios<Ratio<1024>, Megabyte::conversion>, kinds::Bit >;
-#else
     using Kilobyte = Unit< MulRatios<Ratio<1000>, Byte::conversion>, kinds::Bit >;
     using Megabyte = Unit< MulRatios<Ratio<1000>, Kilobyte::conversion>, kinds::Bit >;
     using Gigabyte = Unit< MulRatios<Ratio<1000>, Megabyte::conversion>, kinds::Bit >;
-#endif
 }
 
 using Bits      = Quantity< units::Bit >;
