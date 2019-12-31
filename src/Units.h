@@ -479,11 +479,14 @@ namespace impl
     };
 }
 
-template <typename C1, typename C2>
+template <typename C1, typename C2 /* = C1 */>
 using MulRatios = typename impl::RationalProduct<C1, C2>::type;
 
 template <typename C>
-using SqrRatios = MulRatios<C, C>;
+using SquareRatios = MulRatios<C, C>;
+
+template <typename C>
+using CubicRatios = MulRatios<MulRatios<C, C>, C>;
 
 template <typename C1, typename C2>
 using DivRatios = typename impl::RationalProduct<C1, Ratio<C2::den, C2::num, -C2::exp>>::type;
@@ -1083,12 +1086,12 @@ namespace literals
 
 namespace units
 {
-    using SquareCentimetre = Unit< SqrRatios<Centimetre::conversion>, kinds::Area >;
-    using SquareDecimetre  = Unit< SqrRatios<Decimetre::conversion>, kinds::Area >;
-    using SquareMetre      = Unit< SqrRatios<Metre::conversion>, kinds::Area >;
-    using SquareKilometre  = Unit< SqrRatios<Kilometre::conversion>, kinds::Area >;
+    using SquareCentimetre = Unit< SquareRatios<Centimetre::conversion>, kinds::Area >;
+    using SquareDecimetre  = Unit< SquareRatios<Decimetre::conversion>, kinds::Area >;
+    using SquareMetre      = Unit< SquareRatios<Metre::conversion>, kinds::Area >;
+    using SquareKilometre  = Unit< SquareRatios<Kilometre::conversion>, kinds::Area >;
 
-    using Hectare = Unit< SqrRatios<Hectometre::conversion>, kinds::Area >;
+    using Hectare = Unit< SquareRatios<Hectometre::conversion>, kinds::Area >;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1096,9 +1099,9 @@ namespace units
 
 namespace units
 {
-    using CubicCentimetre = Unit< MulRatios<SquareCentimetre::conversion, Centimetre::conversion>, kinds::Volume >;
-    using CubicDecimetre  = Unit< MulRatios<SquareDecimetre::conversion, Decimetre::conversion>, kinds::Volume >;
-    using CubicMetre      = Unit< MulRatios<SquareMetre::conversion, Metre::conversion>, kinds::Volume >;
+    using CubicCentimetre = Unit< CubicRatios<Centimetre::conversion>, kinds::Volume >;
+    using CubicDecimetre  = Unit< CubicRatios<Decimetre::conversion>, kinds::Volume >;
+    using CubicMetre      = Unit< CubicRatios<Metre::conversion>, kinds::Volume >;
 
     using Litre = CubicDecimetre;
 }
@@ -1238,7 +1241,7 @@ namespace literals
 namespace units
 {
 //  using MetrePerSecondSquared = Unit< MulRatios<MetrePerSecond::conversion, Second::conversion>, kinds::Acceleration >;
-    using MetrePerSecondSquared = Unit< DivRatios<Metre::conversion, SqrRatios<Second::conversion>>, kinds::Acceleration >;
+    using MetrePerSecondSquared = Unit< DivRatios<Metre::conversion, SquareRatios<Second::conversion>>, kinds::Acceleration >;
 }
 
 using MetresPerSecondSquared = Quantity< units::MetrePerSecondSquared >;
@@ -1418,7 +1421,7 @@ namespace kinds
 namespace units
 {
     using Steradian    = Unit< Ratio<1>, kinds::SolidAngle >;
-    using SquareDegree = Unit< SqrRatios<Degree::conversion>, kinds::SolidAngle >; // sq.deg = deg^2
+    using SquareDegree = Unit< SquareRatios<Degree::conversion>, kinds::SolidAngle >; // sq.deg = deg^2
 }
 
 using Steradians    = Quantity< units::Steradian >;
