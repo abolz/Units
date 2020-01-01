@@ -4,12 +4,10 @@
 
 #pragma once
 
-#define UNITS_DIMENSIONLESS_ARITHMETIC() 0
 #define UNITS_DELETE_EVERYTHING_ELSE() 0
 #define UNITS_HAS_ANY() 0
-#define UNITS_HAS_NO_KINDS() 0
 #define UNITS_HAS_MATH() 0
-#define UNITS_SI_DIMENSION() 0
+#define UNITS_IGNORE_KIND() 0
 
 #include <cassert>
 #if UNITS_HAS_MATH()
@@ -37,15 +35,11 @@ template <typename K, typename D>
 struct Kind
 {
     using type = Kind;
-#if UNITS_HAS_NO_KINDS()
-    using kind = Any;
-#else
     using kind = K;
-#endif
     using dimension = D;
 };
 
-template <Natural Num, Natural Den, int Exp>
+template <Natural Num, Natural Den, Exponent Exp>
 struct Rational;
 
 template <typename C, typename K>
@@ -64,16 +58,6 @@ class Quantity;
 //--------------------------------------------------------------------------------------------------
 // Dimension
 //--------------------------------------------------------------------------------------------------
-
-// SI base units
-//    Base quantity:                  Name:
-//      time                            second (s)
-//      length                          metre (m)
-//      mass                            kilogram (kg)
-//      electric current                ampere (A)
-//      thermodynamic temperature       kelvin (K)
-//      amount of substance             mole (mol)
-//      luminous intensity              candela (cd)
 
 template <typename... BaseDimension>
 struct Dimension
@@ -94,15 +78,25 @@ namespace impl
     {
     };
 
-    template <template <int> class D, int E>
-    constexpr auto NegateExp(D<E>) noexcept {
-        return D<-E>{};
+    template <int X, template <int> class D, int E>
+    constexpr auto MulExponent(D<E>) noexcept {
+        return D<E * X>{};
+    }
+
+    template <int X, template <int> class D, int E>
+    constexpr auto DivExponent(D<E>) noexcept {
+        return D<E / X>{};
+    }
+
+    template <Natural S, typename... Un>
+    constexpr auto ScaleDimension(Dimension<Un...>) noexcept {
+        return Dimension<decltype(MulExponent<S>(Un{}))...>{};
     }
 
     template <typename... Un>
     constexpr auto Invert(Dimension<Un...>)
     {
-        return Dimension<decltype(NegateExp(Un{}))...>{};
+        return Dimension<decltype(MulExponent<-1>(Un{}))...>{};
     }
 
     template <typename... Ln, typename... Rn>
@@ -157,6 +151,10 @@ namespace impl
     }
 }
 
+//
+// TODO:
+// MulDimensions<D1, D2, Dn...>
+//
 template <typename D1, typename D2>
 using MulDimensions = decltype(impl::Merge(D1{}, D2{}));
 
@@ -165,17 +163,20 @@ using DivDimensions = decltype(impl::Merge(D1{}, impl::Invert(D2{})));
 
 namespace dim // Base quantities
 {
-    template <int E> struct Length            { static constexpr int64_t id =  1; };
-    template <int E> struct Mass              { static constexpr int64_t id =  2; };
-    template <int E> struct Time              { static constexpr int64_t id =  3; };
-    template <int E> struct ElectricCurrent   { static constexpr int64_t id =  4; };
-    template <int E> struct Temperature       { static constexpr int64_t id =  5; };
-    template <int E> struct AmountOfSubstance { static constexpr int64_t id =  6; };
-    template <int E> struct LuminousIntensity { static constexpr int64_t id =  7; };
-    template <int E> struct Bit               { static constexpr int64_t id =  8; };
-    template <int E> struct Currency          { static constexpr int64_t id =  9; };
-    template <int E> struct Pixel             { static constexpr int64_t id = 10; };
-    template <int E> struct Dot               { static constexpr int64_t id = 11; };
+    // TODO:
+    // Rational exponents...
+
+    template <int E> struct Length            { static constexpr int64_t id =  2; }; // Meter m
+    template <int E> struct Mass              { static constexpr int64_t id =  3; }; // Kilogram kg
+    template <int E> struct Time              { static constexpr int64_t id =  5; }; // Second s
+    template <int E> struct ElectricCurrent   { static constexpr int64_t id =  7; }; // Ampere A
+    template <int E> struct Temperature       { static constexpr int64_t id = 11; }; // Kelvin K
+    template <int E> struct AmountOfSubstance { static constexpr int64_t id = 13; }; // Mole mol
+    template <int E> struct LuminousIntensity { static constexpr int64_t id = 17; }; // Candela cd
+    template <int E> struct Bit               { static constexpr int64_t id = 19; };
+    template <int E> struct Currency          { static constexpr int64_t id = 23; }; // TODO: Euro, Dollar, etc...
+    template <int E> struct Pixel             { static constexpr int64_t id = 29; };
+    template <int E> struct Dot               { static constexpr int64_t id = 31; };
 }
 
 namespace kinds
@@ -196,36 +197,205 @@ namespace kinds
     //  weak:     using X = Kind< Any, ... >
     //  strong:  struct X : Kind< X, ... >
 
-    struct One :                    Kind< One,                  Dimension<> > {};
+    //--------------------------------------------------------------------------
+    // Base kinds:
 
-    struct Length :                 Kind< Length,               Dimension<dim::Length<1>> > {};
-    struct Mass :                   Kind< Mass,                 Dimension<dim::Mass<1>> > {};
-    struct Time :                   Kind< Time,                 Dimension<dim::Time<1>> > {};
-    struct ElectricCurrent :        Kind< ElectricCurrent,      Dimension<dim::ElectricCurrent<1>> > {};
-    struct Temperature :            Kind< Temperature,          Dimension<dim::Temperature<1>> > {};
-    struct AmountOfSubstance :      Kind< AmountOfSubstance,    Dimension<dim::AmountOfSubstance<1>> > {};
-    struct LuminousIntensity :      Kind< LuminousIntensity,    Dimension<dim::LuminousIntensity<1>> > {};
+    // 1
+    struct One
+        : Kind< One, Dimension<> > {};
 
-    struct Area :                   Kind< Area,                 Dimension<dim::Length< 2>                              > > {}; // m^2
-    struct Volume :                 Kind< Volume,               Dimension<dim::Length< 3>                              > > {}; // m^3
-    struct PlaneAngle :             Kind< PlaneAngle,           Dimension<                                             > > {}; // 1
-    struct SolidAngle :             Kind< SolidAngle,           Dimension<                                             > > {}; // 1
-    struct Velocity :               Kind< Velocity,             Dimension<dim::Length< 1>,                dim::Time<-1>> > {}; // m s^-1
-    struct Acceleration :           Kind< Acceleration,         Dimension<dim::Length< 1>,                dim::Time<-2>> > {}; // m s^-2
-    struct Frequency :              Kind< Frequency,            Dimension<                                dim::Time<-1>> > {}; // s^-1
-    struct Density :                Kind< Density,              Dimension<dim::Length<-3>, dim::Mass< 1>               > > {}; // kg m^-3
-    struct SurfaceDensity :         Kind< SurfaceDensity,       Dimension<dim::Length<-2>, dim::Mass< 1>               > > {}; // kg m^-2
-    struct Impulse :                Kind< Impulse,              Dimension<dim::Length< 1>, dim::Mass< 1>, dim::Time<-1>> > {}; // kg m s^-1
-    struct Force :                  Kind< Force,                Dimension<dim::Length< 1>, dim::Mass< 1>, dim::Time<-2>> > {}; // kg m s^-2
-    struct Energy :                 Kind< Energy,               Dimension<dim::Length< 2>, dim::Mass< 1>, dim::Time<-2>> > {}; // kg m^2 s^-2
-    struct Torque :                 Kind< Torque,               Dimension<dim::Length< 2>, dim::Mass< 1>, dim::Time<-2>> > {}; // kg m^2 s^-2
-    struct Power :                  Kind< Power,                Dimension<dim::Length< 2>, dim::Mass< 1>, dim::Time<-3>> > {}; // kg m^2 s^-3
-    struct Pressure :               Kind< Pressure,             Dimension<dim::Length<-1>, dim::Mass< 1>, dim::Time<-2>> > {}; // kg m^-1 s^-2
-    struct AngularVelocity :        Kind< AngularVelocity,      Dimension<                                dim::Time<-1>> > {}; // s^-1
-    struct AngularAcceleration :    Kind< AngularAcceleration,  Dimension<                                dim::Time<-2>> > {}; // s^-2
+    // Meter m
+    struct Length
+        : Kind< Length, Dimension<dim::Length<1>> > {};
 
-//  struct ElectricCharge
-//      : Kind< ElectricCharge, MulDimensions<Time::dimension, ElectricCurrent::dimension> > {};
+    // Kilogram kg
+    struct Mass
+        : Kind< Mass, Dimension<dim::Mass<1>> > {};
+
+    // Second s
+    struct Time
+        : Kind< Time, Dimension<dim::Time<1>> > {};
+
+    // Ampere A
+    struct ElectricCurrent
+        : Kind< ElectricCurrent, Dimension<dim::ElectricCurrent<1>> > {};
+
+    // Kelvin K
+    struct Temperature
+        : Kind< Temperature, Dimension<dim::Temperature<1>> > {};
+
+    // Mole mol
+    struct AmountOfSubstance
+        : Kind< AmountOfSubstance, Dimension<dim::AmountOfSubstance<1>> > {};
+
+    // Candela cd
+    struct LuminousIntensity
+        : Kind< LuminousIntensity, Dimension<dim::LuminousIntensity<1>> > {};
+
+    // Radian rad = 1
+    struct PlaneAngle
+        : Kind< PlaneAngle, Dimension<> > {};
+
+    // Steradian sr = 1 (= rad^2)
+    struct SolidAngle
+        : Kind< SolidAngle, Dimension<> > {};
+
+    // Bit b
+    struct Bit
+        : Kind< Bit, Dimension<dim::Bit<1>> > {};
+
+    // Pixel px
+    struct Pixel
+        : Kind< Pixel, Dimension<dim::Pixel<1>> > {};
+
+    //--------------------------------------------------------------------------
+    // Derived kinds:
+
+    // m^2
+    struct Area
+        : Kind< Area,
+                MulDimensions<Length::dimension, Length::dimension> > {};
+
+    // m^3
+    struct Volume
+        : Kind< Volume,
+                MulDimensions<Length::dimension, Area::dimension> > {};
+
+    // m/s
+    struct Velocity
+        : Kind< Velocity,
+                DivDimensions<Length::dimension, Time::dimension> > {};
+
+    // m/s^2
+    struct Acceleration
+        : Kind< Acceleration,
+                DivDimensions<Velocity::dimension, Time::dimension> > {};
+
+    // Hertz Hz = 1/s
+    struct Frequency
+        : Kind< Frequency,
+                DivDimensions<One::dimension, Time::dimension> > {};
+
+    // kg/m^3
+    struct Density
+        : Kind< Density,
+                DivDimensions<Mass::dimension, Volume::dimension> > {};
+
+    // kg/m^2
+    struct SurfaceDensity
+        : Kind< SurfaceDensity,
+                DivDimensions<Mass::dimension, Area::dimension> > {};
+
+    // kg m/s
+    struct Impulse
+        : Kind< Impulse,
+                MulDimensions<Mass::dimension, Velocity::dimension> > {};
+
+    // Newton N = kg m/s^2
+    struct Force
+        : Kind< Force,
+                MulDimensions<Mass::dimension, Acceleration::dimension> > {};
+
+    // Joule J = N m = kg m^2/s^2
+    struct Energy
+        : Kind< Energy,
+                MulDimensions<Force::dimension, Length::dimension> > {};
+
+    // Torque (Moment of force) N m = kg m^2/s^2
+    struct Torque
+        : Kind< Torque,
+                MulDimensions<Force::dimension, Length::dimension> > {};
+
+    // Watt W = J/s = kg m^2/s^3
+    struct Power
+        : Kind< Power,
+                DivDimensions<Energy::dimension, Time::dimension> > {};
+
+    // Watt W = J/s = kg m^2/s^3
+    struct RadiantFlux
+        : Kind< RadiantFlux,
+                DivDimensions<Energy::dimension, Time::dimension> > {};
+
+    // Pascal Pa = N/m^2 = kg/(m s^2)
+    struct Pressure
+        : Kind< Pressure,
+                DivDimensions<Force::dimension, Area::dimension> > {};
+
+    // rad/s = 1/s
+    struct AngularVelocity
+        : Kind< AngularVelocity,
+                DivDimensions<PlaneAngle::dimension, Time::dimension> > {};
+
+    // rad/s^2 = 1/s^2
+    struct AngularAcceleration
+        : Kind< AngularAcceleration,
+                DivDimensions<AngularVelocity::dimension, Time::dimension> > {};
+
+    // J s = kg m^2 / s
+    struct Action
+        : Kind< Action,
+                MulDimensions<Energy::dimension, Time::dimension> > {};
+
+    // Coulomb C = s A
+    struct ElectricCharge
+        : Kind< ElectricCharge,
+                MulDimensions<Time::dimension, ElectricCurrent::dimension> > {};
+
+    // Volt V = W/A = kg m^2/(s^3 A)
+    struct ElectricPotentialDifference
+        : Kind< ElectricPotentialDifference,
+                DivDimensions<Power::dimension, ElectricCurrent::dimension> > {};
+
+    // Farad F = C/V = s^4 A/(kg m^2)
+    struct Capacitance
+        : Kind< Capacitance,
+                DivDimensions<ElectricCharge::dimension, ElectricPotentialDifference::dimension> > {};
+
+    // Ohm = V/A = kg m^2/(s^3 A^2)
+    struct ElectricResistance
+        : Kind< ElectricResistance,
+                DivDimensions<ElectricPotentialDifference::dimension, ElectricCurrent::dimension> > {};
+
+    // Siemens = A/V = s^3 A^2/(kg m^2)
+    struct ElectricConductance
+        : Kind< ElectricConductance,
+                DivDimensions<ElectricCurrent::dimension, ElectricPotentialDifference::dimension> > {};
+
+    // Gray Gy = J/kg = m^2/s^2
+    struct AbsorbedDose
+        : Kind< AbsorbedDose,
+                DivDimensions<Energy::dimension, Mass::dimension> > {};
+
+    // Sievert Sv = J/kg = m^2/s^2
+    struct DoseEquivalent
+        : Kind< DoseEquivalent,
+                DivDimensions<Energy::dimension, Mass::dimension> > {};
+
+    // lm s = cd sr s = talbot
+    // Luminous energy is the perceived energy of light.
+    struct LuminousEnergy
+        : Kind< LuminousEnergy,
+                MulDimensions<LuminousIntensity::dimension, MulDimensions<SolidAngle::dimension, Time::dimension>> > {};
+
+    // Lumen lm = cd sr
+    // Luminous flux/power is the change of luminous energy with time.
+    struct LuminousFlux
+        : Kind< LuminousFlux,
+                MulDimensions<LuminousIntensity::dimension, SolidAngle::dimension> > {};
+
+    // nit = cd/m^2 = lm/(m^2 sr)
+    // Luminance is the density of luminous intensity with respect to projected area in a specified
+    // direction at a specified point on a real or imaginary surface.
+    struct Luminance
+        : Kind< Luminance,
+                DivDimensions<LuminousIntensity::dimension, Area::dimension> > {};
+
+    // Lux lx = lm/m^2
+    // Illuminance is the density of incident luminous flux with respect to area at a point on a real
+    // or imaginary surface.
+    struct Illuminance
+        : Kind< Illuminance,
+                DivDimensions<LuminousFlux::dimension, Area::dimension> > {};
 }
 
 template <typename K1, typename K2>
@@ -239,12 +409,17 @@ namespace kinds
 #if 0
     // 1 * 1 = 1
     template <> struct Product<One, One> { using type = One; };
-    // L * 1 = L
-    template <typename L> struct Product<L, One> { using type = L; };
-    // 1 * R = R
-    template <typename R> struct Product<One, R> { using type = R; };
-    // X / 1 = X
-    template <typename X> struct Quotient<X, One> { using type = X; };
+    // A * 1 = A
+    template <typename A> struct Product<A, One> { using type = A; };
+    // 1 * A = A
+    template <typename A> struct Product<One, A> { using type = A; };
+    // A / 1 = A
+    template <typename A> struct Quotient<A, One> { using type = A; };
+#endif
+
+#if 0
+    // A / A = 1
+    template <typename A> struct Quotient<A, A> { using type = One; };
 #endif
 
 #if 0
@@ -258,7 +433,14 @@ namespace kinds
     template <typename A, typename B> struct Quotient< Product<B, A>, A > { using type = B; };
 #endif
 
-#if 1
+    //==========================================================================
+    // DANGER ZONE!
+    //
+    // Whether or not the simplifications here are valid is (very) domain
+    // specific!
+    //==========================================================================
+
+    //--------------------------------------------------------------------------
     // Simplify **unambiguous** products
 
     template <> struct Product  < Length,               Length                  > { using type = Area; };
@@ -269,6 +451,21 @@ namespace kinds
     template <> struct Product  < Mass,                 Acceleration            > { using type = Force; };
     template <> struct Product  < Acceleration,         Mass                    > { using type = Force; };
 
+#if 0
+    // sr = rad^2
+    template <> struct Product<PlaneAngle, PlaneAngle> { using type = SolidAngle; };
+#endif
+
+    // lm = cd sr
+    template <> struct Product< LuminousIntensity, SolidAngle > { using type = LuminousFlux; };
+    // lm = sr cd
+    template <> struct Product< SolidAngle, LuminousIntensity > { using type = LuminousFlux; };
+    // lm s
+    template <> struct Product< LuminousFlux, Time > { using type = LuminousEnergy; };
+    // s lm
+    template <> struct Product< Time, LuminousFlux > { using type = LuminousEnergy; };
+
+    //--------------------------------------------------------------------------
     // Simplify **unambiguous** quotients
 
     template <> struct Quotient < Length,               Time                    > { using type = Velocity; };
@@ -281,8 +478,29 @@ namespace kinds
     template <> struct Quotient < Impulse,              Time                    > { using type = Force; };
     template <> struct Quotient < Energy,               Time                    > { using type = Power; };
 
-//  template <> struct Quotient < Length,               MulKinds<Time, Time>    > { using type = Acceleration; };
-//  template <> struct Quotient < PlaneAngle,           MulKinds<Time, Time>    > { using type = AngularAcceleration; };
+    template <> struct Quotient < Length,               MulKinds<Time, Time>    > { using type = Acceleration; };
+    template <> struct Quotient < PlaneAngle,           MulKinds<Time, Time>    > { using type = AngularAcceleration; };
+
+#if 0
+    // sr / rad = rad
+    template <> struct Quotient<SolidAngle, PlaneAngle> { using type = PlaneAngle; };
+#endif
+
+    // lm = W / s
+    template <> struct Quotient < LuminousEnergy, Time > { using type = LuminousFlux; };
+    // cd = lm / sr
+    template <> struct Quotient < LuminousFlux, SolidAngle > { using type = LuminousIntensity; };
+    // nt = cd / m^2
+    template <> struct Quotient < LuminousIntensity, Area > { using type = Luminance; };
+    // lx = lm / m^2
+    template <> struct Quotient < LuminousFlux, Area > { using type = Illuminance; };
+    // nt = lx / sr
+    template <> struct Quotient < Illuminance, SolidAngle > { using type = Luminance; };
+#if 1
+    // lx = lm / (m^2 sr)
+    template <> struct Quotient < LuminousFlux, MulKinds<Area, SolidAngle> > { using type = Luminance; };
+    // lx = lm / (sr m^2)
+    template <> struct Quotient < LuminousFlux, MulKinds<SolidAngle, Area> > { using type = Luminance; };
 #endif
 }
 
@@ -327,7 +545,7 @@ namespace impl
         return (a / Gcd(a, b)) * b;
     }
 
-#if 0
+#if 1
     constexpr Natural Power(Natural x, Natural n) noexcept {
         UNITS_ASSERT(x >= 1);
         UNITS_ASSERT(n >= 0);
@@ -392,7 +610,7 @@ namespace impl
 template <Natural Num, Natural Den = 1, Exponent Exp = 0>
 using Ratio = Rational< Num / impl::Gcd(Num, Den), Den / impl::Gcd(Num, Den), Exp >;
 
-template <Natural Num, Natural Den, Exponent Exp>
+template <Natural Num, Natural Den = 1, Exponent Exp = 0>
 struct Rational // RatPi. Delicious.
 {
     // value = (Num / Den) * pi^Exp
@@ -416,20 +634,29 @@ struct Rational // RatPi. Delicious.
     static constexpr Natural den = Den;
     static constexpr Exponent exp = Exp;
 
+    // Returns: x * num / den * pi^exp
     [[nodiscard]] constexpr double operator()(double x) const noexcept {
         return ApplyExp(ApplyRat(x));
     }
 
-    //template <Natural N2, Natural D2, Natural E2>
-    //[[nodiscard]] constexpr friend auto operator*(Rational /*lhs*/, Rational<N2, D2, E2> /*rhs*/) noexcept {
-    //    using R = typename impl::RationalProduct<Rational, Rational<N2, D2, E2>>::type;
-    //    return R{};
+    template <Natural N2, Natural D2, Exponent E2>
+    [[nodiscard]] constexpr friend auto operator*(Rational /*lhs*/, Rational<N2, D2, E2> /*rhs*/) noexcept {
+        constexpr Natural S = impl::Gcd(num, D2);
+        constexpr Natural T = impl::Gcd(den, N2);
+        return Rational< (num / S) * (N2 / T), (den / T) * (D2 / S), exp + E2 >{};
+    }
+
+    template <Natural N2, Natural D2, Exponent E2>
+    [[nodiscard]] constexpr friend auto operator/(Rational lhs, Rational<N2, D2, E2> /*rhs*/) noexcept {
+        return lhs * Rational<D2, N2, -E2>{};
+    }
+
+    //[[nodiscard]] constexpr friend bool operator==(Rational, Rational) noexcept {
+    //    return true;
     //}
 
-    //template <Natural N2, Natural D2, Natural E2>
-    //[[nodiscard]] constexpr friend auto operator/(Rational /*lhs*/, Rational<N2, D2, E2> /*rhs*/) noexcept {
-    //    using R = typename impl::RationalProduct<Rational, Rational<D2, N2, -E2>>::type;
-    //    return R{};
+    //[[nodiscard]] constexpr friend bool operator!=(Rational, Rational) noexcept {
+    //    return false;
     //}
 
 private:
@@ -462,34 +689,43 @@ private:
     }
 };
 
-namespace impl
-{
-    template <typename R1, typename R2>
-    struct RationalProduct
-    {
-        static constexpr Natural Num1 = R1::num;
-        static constexpr Natural Den1 = R1::den;
-        static constexpr Natural Num2 = R2::num;
-        static constexpr Natural Den2 = R2::den;
-
-        static constexpr Natural S = Gcd(Num1, Den2);
-        static constexpr Natural T = Gcd(Den1, Num2);
-
-        using type = Rational< (Num1 / S) * (Num2 / T), (Den1 / T) * (Den2 / S), R1::exp + R2::exp >;
-    };
-}
+//namespace impl
+//{
+//    template <typename R1, typename R2>
+//    struct RationalProduct
+//    {
+//        static constexpr Natural Num1 = R1::num;
+//        static constexpr Natural Den1 = R1::den;
+//        static constexpr Natural Num2 = R2::num;
+//        static constexpr Natural Den2 = R2::den;
+//
+//        static constexpr Natural S = Gcd(Num1, Den2);
+//        static constexpr Natural T = Gcd(Den1, Num2);
+//
+//        using type = Rational< (Num1 / S) * (Num2 / T), (Den1 / T) * (Den2 / S), R1::exp + R2::exp >;
+//    };
+//}
 
 template <typename C1, typename C2 /* = C1 */>
-using MulRatios = typename impl::RationalProduct<C1, C2>::type;
-
-template <typename C>
-using SquareRatios = MulRatios<C, C>;
-
-template <typename C>
-using CubicRatios = MulRatios<MulRatios<C, C>, C>;
+using MulConversions = decltype(C1{} * C2{});
 
 template <typename C1, typename C2>
-using DivRatios = typename impl::RationalProduct<C1, Ratio<C2::den, C2::num, -C2::exp>>::type;
+using DivConversions = decltype(C1{} / C2{});
+
+template <typename C>
+using Square = decltype(C{} * C{});
+
+template <typename C>
+using Cubic = decltype(C{} * C{} * C{});
+
+namespace impl
+{
+    template <Natural N>
+    using HasSquareRoot = std::bool_constant<Power(Root(N, 2), 2) == N>;
+
+    template <Natural N, Natural D>
+    using HasRationalSquareRoot = std::bool_constant<HasSquareRoot<N>::value && HasSquareRoot<D>::value>;
+}
 
 namespace impl
 {
@@ -517,34 +753,43 @@ struct Unit
     using kind = K;
     using dimension = typename kind::dimension;
 
-    //template <typename C2, typename K2>
-    //[[nodiscard]] constexpr friend auto operator*(Unit lhs, Unit<C2, K2> rhs) noexcept {
-    //    return Unit<MulRatios<C, C2>, MulKinds<K, K2>>{};
-    //}
+    template <typename C2, typename K2>
+    [[nodiscard]] constexpr friend auto operator*(Unit /*lhs*/, Unit<C2, K2> /*rhs*/) noexcept {
+        return Unit<MulConversions<C, C2>, MulKinds<K, K2>>{};
+    }
 
-    //template <typename C2, typename K2>
-    //[[nodiscard]] constexpr friend auto operator/(Unit lhs, Unit<C2, K2> rhs) noexcept {
-    //    return Unit<DivRatios<C, C2>, DivKinds<K, K2>>{};
-    //}
+    template <typename C2, typename K2>
+    [[nodiscard]] constexpr friend auto operator/(Unit /*lhs*/, Unit<C2, K2> /*rhs*/) noexcept {
+        return Unit<DivConversions<C, C2>, DivKinds<K, K2>>{};
+    }
 
-    //template <Natural N2, Natural D2, Natural E2>
-    //[[nodiscard]] constexpr friend auto operator*(Rational<N2, D2, E2> /*lhs*/, Unit /*rhs*/) noexcept {
-    //    return Unit<MulRatios<Rational<N2, D2, E2>, C>, K>{};
-    //}
+    template <Natural N2, Natural D2, Natural E2>
+    [[nodiscard]] constexpr friend auto operator*(Rational<N2, D2, E2> /*lhs*/, Unit /*rhs*/) noexcept {
+        return Unit<MulConversions<Rational<N2, D2, E2>, C>, K>{};
+    }
 
-    //template <Natural N2, Natural D2, Natural E2>
-    //[[nodiscard]] constexpr friend auto operator*(Unit /*lhs*/, Rational<N2, D2, E2> /*rhs*/) noexcept {
-    //    return Unit<MulRatios<C, Rational<N2, D2, E2>>, K>{};
-    //}
+    template <Natural N2, Natural D2, Natural E2>
+    [[nodiscard]] constexpr friend auto operator*(Unit /*lhs*/, Rational<N2, D2, E2> /*rhs*/) noexcept {
+        return Unit<MulConversions<C, Rational<N2, D2, E2>>, K>{};
+    }
 };
 
-template <typename U1, typename U2>
-using MulUnits
-    = Unit< MulRatios<typename U1::conversion, typename U2::conversion>, MulKinds<typename U1::kind, typename U2::kind> >;
+//template <typename U1, typename U2>
+//using MulUnits
+//    = Unit< MulConversions<typename U1::conversion, typename U2::conversion>, MulKinds<typename U1::kind, typename U2::kind> >;
+//
+//template <typename U1, typename U2>
+//using DivUnits
+//    = Unit< DivConversions<typename U1::conversion, typename U2::conversion>, DivKinds<typename U1::kind, typename U2::kind> >;
 
 template <typename U1, typename U2>
-using DivUnits
-    = Unit< DivRatios<typename U1::conversion, typename U2::conversion>, DivKinds<typename U1::kind, typename U2::kind> >;
+using MulUnits = decltype(U1{} * U2{});
+
+template <typename U1, typename U2>
+using DivUnits = decltype(U1{} / U2{});
+
+template <typename S, typename U, typename K = typename U::kind >
+using ScaledUnit = Unit< MulConversions<S, typename U::conversion>, K >;
 
 //--------------------------------------------------------------------------------------------------
 // Quantity (value + compile-time unit)
@@ -575,7 +820,7 @@ private:
     // C1 | C2
     template <typename C1, typename C2>
     using Divides
-        = IsNatural< DivRatios<C2, C1> >;
+        = IsNatural< DivConversions<C2, C1> >;
 
     template <typename C1, typename C2, typename T = int>
     using EnableIfDivides
@@ -620,21 +865,21 @@ public:
 
     template <typename C2, EnableIfDivides<C, C2> = 0>
     constexpr Quantity(Quantity<Unit<C2, K>> q) noexcept
-        : count_(DivRatios<C2, C>{}(q.count()))
+        : count_(DivConversions<C2, C>{}(q.count()))
     {
     }
 
 #if UNITS_HAS_ANY()
     template <typename C2, typename K2, EnableIfConvertibleFromAny<C, K, C2, K2> = 0>
     constexpr Quantity(Quantity<Unit<C2, K2>> q) noexcept
-        : count_(DivRatios<C2, C>{}(q.count()))
+        : count_(DivConversions<C2, C>{}(q.count()))
     {
     }
 #endif
 
     template <typename C2, typename K2, EnableIfCompatible<K, K2> = 0>
     constexpr explicit Quantity(Quantity<Unit<C2, K2>> q) noexcept
-        : count_(DivRatios<C2, C>{}(q.count()))
+        : count_(DivConversions<C2, C>{}(q.count()))
     {
     }
 
@@ -655,8 +900,13 @@ public:
 #endif
 
     template <typename C2, typename K2, EnableIfCompatible<K, K2> = 0>
+    [[nodiscard]] constexpr auto convert_to(Unit<C2, K2>) const noexcept {
+        return Quantity<Unit<C2, K>>(DivConversions<C, C2>{}(count()));
+    }
+
+    template <typename C2, typename K2, EnableIfCompatible<K, K2> = 0>
     [[nodiscard]] constexpr auto convert_to(Quantity<Unit<C2, K2>>) const noexcept {
-        return Quantity<Unit<C2, K>>(DivRatios<C, C2>{}(count()));
+        return Quantity<Unit<C2, K>>(DivConversions<C, C2>{}(count()));
     }
 
 #if UNITS_DELETE_EVERYTHING_ELSE()
@@ -736,8 +986,8 @@ public:
     constexpr friend Quantity& operator+=(Quantity& lhs, Quantity<Unit<C2, K>> rhs) noexcept {
         //static_assert(std::is_convertible<decltype(rhs), Quantity>::value, "");
 //      lhs.count_ += Quantity(rhs).count();
-//      lhs.count_ += DivRatios<C2, C>{}(rhs.count());
-        lhs.count_ += DivRatios<C2, C>::num * rhs.count();
+//      lhs.count_ += DivConversions<C2, C>{}(rhs.count());
+        lhs.count_ += DivConversions<C2, C>::num * rhs.count();
         return lhs;
     }
 
@@ -745,8 +995,8 @@ public:
     constexpr friend Quantity& operator-=(Quantity& lhs, Quantity<Unit<C2, K>> rhs) noexcept {
         //static_assert(std::is_convertible<decltype(rhs), Quantity>::value, "");
 //      lhs.count_ -= Quantity(rhs).count();
-//      lhs.count_ -= DivRatios<C2, C>{}(rhs.count());
-        lhs.count_ -= DivRatios<C2, C>::num * rhs.count();
+//      lhs.count_ -= DivConversions<C2, C>{}(rhs.count());
+        lhs.count_ -= DivConversions<C2, C>::num * rhs.count();
         return lhs;
     }
 
@@ -879,8 +1129,7 @@ public:
     }
 
     template <typename U2>
-    friend auto Fma(Quantity a, Quantity<U2> b, decltype(a * b) c) noexcept
-        -> decltype(a * b)
+    constexpr friend auto Fma(Quantity a, Quantity<U2> b, decltype(a * b) c) noexcept -> decltype(a * b)
     {
         //
         // NB:
@@ -891,17 +1140,19 @@ public:
         // product (a * b) and the third argument (c) to their common type before the addition,
         // which would defeat the application of std::fma.
         //
-
         using Q = decltype(a * b);
-//      return Q(a.count() * b.count() + c.count());
+#if 1 // is_constexpr_evaluated
+        return Q(a.count() * b.count() + c.count());
+#else
         return Q(std::fma(a.count(), b.count(), c.count()));
+#endif
     }
 
     // exp(a b) = exp(a) exp(b)
     //  check!
 
     template <typename K2 = K, EnableIfDimensionless<K2> = 0>
-    friend Quantity Exp(Quantity q) noexcept {
+    friend auto Exp(Quantity q) noexcept {
         return Quantity(std::exp(q.count()));
     }
 
@@ -909,14 +1160,21 @@ public:
     //  ... !?!?
 
     template <typename K2 = K, EnableIfDimensionless<K2> = 0>
-    friend Quantity Log(Quantity q) noexcept {
+    friend auto Log(Quantity q) noexcept {
         return Quantity(std::log(q.count()));
+    }
+
+    template <typename C1>
+    using SqrtTypeSfinae = void;
+
+    template <typename Q = SqrtTypeSfinae<C>>
+    friend auto Sqrt(Quantity q) noexcept {
     }
 
 #endif
 };
 
-template <typename T, typename U> // T = Quantity (or Unit)
+template <typename T, typename U> // T = Quantity or Unit
 [[nodiscard]] constexpr auto quantity_cast(Quantity<U> q) noexcept -> decltype( q.convert_to(T{}) ) {
     return q.convert_to(T{});
 }
@@ -1042,10 +1300,17 @@ namespace literals
 
 namespace units
 {
-    using Inch = Unit< MulRatios<Ratio<254, 100>, Centimetre::conversion>, kinds::Length >; // (international)
-    using Foot = Unit< MulRatios<Ratio<12>, Inch::conversion>, kinds::Length >;             // (international)
-    using Yard = Unit< MulRatios<Ratio<3>, Foot::conversion>, kinds::Length >;              // (international)
-    using Mile = Unit< MulRatios<Ratio<1760>, Yard::conversion>, kinds::Length >;           // (international)
+#if 1
+    using Inch = ScaledUnit< Ratio<254, 100>, Centimetre >;
+    using Foot = ScaledUnit< Ratio<12>, Inch >;
+    using Yard = ScaledUnit< Ratio<3>, Foot >;
+    using Mile = ScaledUnit< Ratio<1760>, Yard >;
+#else
+    using Inch = Unit< MulConversions<Ratio<254, 100>, Centimetre::conversion>, kinds::Length >; // (international)
+    using Foot = Unit< MulConversions<Ratio<12>, Inch::conversion>, kinds::Length >;             // (international)
+    using Yard = Unit< MulConversions<Ratio<3>, Foot::conversion>, kinds::Length >;              // (international)
+    using Mile = Unit< MulConversions<Ratio<1760>, Yard::conversion>, kinds::Length >;           // (international)
+#endif
 }
 
 using Inches = Quantity< units::Inch >;
@@ -1086,22 +1351,27 @@ namespace literals
 
 namespace units
 {
-    using SquareCentimetre = Unit< SquareRatios<Centimetre::conversion>, kinds::Area >;
-    using SquareDecimetre  = Unit< SquareRatios<Decimetre::conversion>, kinds::Area >;
-    using SquareMetre      = Unit< SquareRatios<Metre::conversion>, kinds::Area >;
-    using SquareKilometre  = Unit< SquareRatios<Kilometre::conversion>, kinds::Area >;
+    using SquareCentimetre = Unit< Square<Centimetre::conversion>, kinds::Area >;
+    using SquareDecimetre  = Unit< Square<Decimetre::conversion>, kinds::Area >;
+    using SquareMetre      = Unit< Square<Metre::conversion>, kinds::Area >;
+    using SquareKilometre  = Unit< Square<Kilometre::conversion>, kinds::Area >;
 
-    using Hectare = Unit< SquareRatios<Hectometre::conversion>, kinds::Area >;
+    using Hectare = Unit< Square<Hectometre::conversion>, kinds::Area >;
 }
+
+using SquareCentimetres = Quantity< units::SquareCentimetre >;
+using SquareDecimetres  = Quantity< units::SquareDecimetre >;
+using SquareMetres      = Quantity< units::SquareMetre >;
+using SquareKilometres  = Quantity< units::SquareKilometre >;
 
 //--------------------------------------------------------------------------------------------------
 // Volume
 
 namespace units
 {
-    using CubicCentimetre = Unit< CubicRatios<Centimetre::conversion>, kinds::Volume >;
-    using CubicDecimetre  = Unit< CubicRatios<Decimetre::conversion>, kinds::Volume >;
-    using CubicMetre      = Unit< CubicRatios<Metre::conversion>, kinds::Volume >;
+    using CubicCentimetre = Unit< Cubic<Centimetre::conversion>, kinds::Volume >;
+    using CubicDecimetre  = Unit< Cubic<Decimetre::conversion>, kinds::Volume >;
+    using CubicMetre      = Unit< Cubic<Metre::conversion>, kinds::Volume >;
 
     using Litre = CubicDecimetre;
 }
@@ -1111,16 +1381,25 @@ namespace units
 
 namespace units
 {
-    using Nanosecond  = Unit< Ratio<1, 1000000000>, kinds::Time >;
-    using Microsecond = Unit< Ratio<1, 1000000>, kinds::Time >;
-    using Millisecond = Unit< Ratio<1, 1000>, kinds::Time >;
     using Second      = Unit< Ratio<1>, kinds::Time >;
-    using Minute      = Unit< MulRatios<Ratio<60>, Second::conversion>, kinds::Time >;
-    using Hour        = Unit< MulRatios<Ratio<60>, Minute::conversion>, kinds::Time >;
-    //using Day         = Unit< MulRatios<Ratio<24>, Hour::conversion>, kinds::Time >;
-    //using Week        = Unit< MulRatios<Ratio<7>, Day::conversion>, kinds::Time >;
-    //using Year        = Unit< MulRatios<Ratio<146097, 400>, Day::conversion>, kinds::Time >;
-    //using Month       = Unit< MulRatios<Ratio<1, 12>, Year::conversion>, kinds::Time >;
+    using Millisecond = ScaledUnit< Ratio<1, 1000>, Second >;
+    using Microsecond = ScaledUnit< Ratio<1, 1000>, Millisecond >;
+    using Nanosecond  = ScaledUnit< Ratio<1, 1000>, Microsecond >;
+#if 1
+    using Minute      = ScaledUnit< Ratio<60>, Second >;
+    using Hour        = ScaledUnit< Ratio<60>, Minute >;
+    //using Day         = ScaledUnit< Ratio<24>, Hour >;
+    //using Week        = ScaledUnit< Ratio<7>, Day >;
+    //using Year        = ScaledUnit< Ratio<146097, 400>, Day >;
+    //using Month       = ScaledUnit< Ratio<1, 12>, Year >;
+#else
+    using Minute      = Unit< MulConversions<Ratio<60>, Second::conversion>, kinds::Time >;
+    using Hour        = Unit< MulConversions<Ratio<60>, Minute::conversion>, kinds::Time >;
+    //using Day         = Unit< MulConversions<Ratio<24>, Hour::conversion>, kinds::Time >;
+    //using Week        = Unit< MulConversions<Ratio<7>, Day::conversion>, kinds::Time >;
+    //using Year        = Unit< MulConversions<Ratio<146097, 400>, Day::conversion>, kinds::Time >;
+    //using Month       = Unit< MulConversions<Ratio<1, 12>, Year::conversion>, kinds::Time >;
+#endif
 }
 
 using Nanoseconds  = Quantity< units::Nanosecond >;
@@ -1169,7 +1448,7 @@ namespace literals
 
 namespace units
 {
-    using Hertz = Unit< DivRatios<Ratio<1>, Second::conversion>, kinds::Frequency >;
+    using Hertz = Unit< DivConversions<Ratio<1>, Second::conversion>, kinds::Frequency >;
 }
 
 using Hertz = Quantity< units::Hertz >;
@@ -1191,21 +1470,21 @@ namespace units
 {
 #if 0
     using MetrePerSecond
-        = Unit< DivRatios<Metre::conversion, Second::conversion>,
+        = Unit< DivConversions<Metre::conversion, Second::conversion>,
                 DivKinds<kinds::Length, kinds::Time> >;
     using KilometrePerHour
-        = Unit< DivRatios<Kilometre::conversion, Hour::conversion>,
+        = Unit< DivConversions<Kilometre::conversion, Hour::conversion>,
                 DivKinds<kinds::Length, kinds::Time> >;
     using MilePerHour
-        = Unit< DivRatios<Mile::conversion, Hour::conversion>,
+        = Unit< DivConversions<Mile::conversion, Hour::conversion>,
                 DivKinds<kinds::Length, kinds::Time> >;
 #else
     using MetrePerSecond
-        = Unit< DivRatios<Metre::conversion, Second::conversion>, kinds::Velocity >;
+        = Unit< DivConversions<Metre::conversion, Second::conversion>, kinds::Velocity >;
     using KilometrePerHour
-        = Unit< DivRatios<Kilometre::conversion, Hour::conversion>, kinds::Velocity >;
+        = Unit< DivConversions<Kilometre::conversion, Hour::conversion>, kinds::Velocity >;
     using MilePerHour
-        = Unit< DivRatios<Mile::conversion, Hour::conversion>, kinds::Velocity >;
+        = Unit< DivConversions<Mile::conversion, Hour::conversion>, kinds::Velocity >;
 #endif
 }
 
@@ -1240,8 +1519,8 @@ namespace literals
 
 namespace units
 {
-//  using MetrePerSecondSquared = Unit< MulRatios<MetrePerSecond::conversion, Second::conversion>, kinds::Acceleration >;
-    using MetrePerSecondSquared = Unit< DivRatios<Metre::conversion, SquareRatios<Second::conversion>>, kinds::Acceleration >;
+//  using MetrePerSecondSquared = Unit< MulConversions<MetrePerSecond::conversion, Second::conversion>, kinds::Acceleration >;
+    using MetrePerSecondSquared = Unit< DivConversions<Metre::conversion, Square<Second::conversion>>, kinds::Acceleration >;
 }
 
 using MetresPerSecondSquared = Quantity< units::MetrePerSecondSquared >;
@@ -1297,7 +1576,7 @@ namespace literals
 
 namespace units
 {
-    using Newton = Unit< MulRatios<Kilogram::conversion, MetrePerSecondSquared::conversion>, kinds::Force >;
+    using Newton = Unit< MulConversions<Kilogram::conversion, MetrePerSecondSquared::conversion>, kinds::Force >;
 }
 
 using Newton = Quantity< units::Newton >;
@@ -1407,21 +1686,10 @@ namespace literals
 //--------------------------------------------------------------------------------------------------
 // Solid angle
 
-namespace kinds
-{
-#if 1
-    // sr = rad^2
-    template <> struct Product<PlaneAngle, PlaneAngle> { using type = SolidAngle; };
-
-    // sr / rad = rad
-    template <> struct Quotient<SolidAngle, PlaneAngle> { using type = PlaneAngle; };
-#endif
-}
-
 namespace units
 {
     using Steradian    = Unit< Ratio<1>, kinds::SolidAngle >;
-    using SquareDegree = Unit< SquareRatios<Degree::conversion>, kinds::SolidAngle >; // sq.deg = deg^2
+    using SquareDegree = Unit< Square<Degree::conversion>, kinds::SolidAngle >; // sq.deg = deg^2
 }
 
 using Steradians    = Quantity< units::Steradian >;
@@ -1440,19 +1708,14 @@ namespace literals
 //--------------------------------------------------------------------------------------------------
 // Data
 
-namespace kinds
-{
-    struct Bit : Kind< Bit, Dimension<dim::Bit<1>> > {};
-}
-
 namespace units
 {
     using Bit      = Unit< Ratio<1>, kinds::Bit >;
-    using Nibble   = Unit< MulRatios<Ratio<4>, Bit::conversion>, kinds::Bit >;
-    using Byte     = Unit< MulRatios<Ratio<8>, Bit::conversion>, kinds::Bit >;
-    using Kilobyte = Unit< MulRatios<Ratio<1000>, Byte::conversion>, kinds::Bit >;
-    using Megabyte = Unit< MulRatios<Ratio<1000>, Kilobyte::conversion>, kinds::Bit >;
-    using Gigabyte = Unit< MulRatios<Ratio<1000>, Megabyte::conversion>, kinds::Bit >;
+    using Nibble   = ScaledUnit< Ratio<4>, Bit >;
+    using Byte     = ScaledUnit< Ratio<8>, Bit >;
+    using Kilobyte = ScaledUnit< Ratio<1000>, Byte >;
+    using Megabyte = ScaledUnit< Ratio<1000>, Kilobyte >;
+    using Gigabyte = ScaledUnit< Ratio<1000>, Megabyte >;
 }
 
 using Bits      = Quantity< units::Bit >;
@@ -1499,100 +1762,26 @@ namespace literals
 //--------------------------------------------------------------------------------------------------
 // Photometric
 
-namespace kinds
-{
-    // Luminous energy: is the perceived energy of light.
-    // The luminous energy is expressed in lm s = cd sr s = talbot.
-    struct LuminousEnergy
-        : Kind< LuminousEnergy,
-                Dimension<dim::Time<1>, dim::LuminousIntensity<1>> > {};
-
-    // lm
-    // Luminous power/flux: change of luminous energy with time.
-    // The luminous flux is expressed in lumen (lm = cd sr).
-    struct LuminousPower
-        : Kind< LuminousPower,
-                Dimension<dim::LuminousIntensity<1>> > {};
-
-//  using LuminousFlux = LuminousPower;
-
-#if 0
-    // cd
-    // Luminous intensity: density of luminous flux with respect to solid angle in a specified
-    // direction.
-    // The luminous intensity is expressed in candela (cd = lm / sr).
-    struct LuminousIntensity
-        : Kind< LuminousIntensity,
-                Dimension<dim::LuminousIntensity<1>> > {};
-#endif
-
-    // nt
-    // Luminance: density of luminous intensity with respect to projected area in a specified
-    // direction at a specified point on a real or imaginary surface.
-    // The luminance is expressed in candela per square metre (nit = cd / m^2 = lm / (m^2 sr)).
-    struct Luminance
-        : Kind< Luminance,
-                Dimension<dim::Length<-2>, dim::LuminousIntensity<1>> > {};
-
-    // lx
-    // Illuminance: density of incident luminous flux with respect to area at a point on a real
-    // or imaginary surface.
-    // The illuminance is expressed in lux (lx = lm / m^2).
-    struct Illuminance // Lux = Lumens / SquareMeter
-        : Kind< Illuminance,
-                Dimension<dim::Length<-2>, dim::LuminousIntensity<1>> > {};
-
-    // Simplify **unambiguous** products
-
-    // lm = cd sr
-    template <> struct Product< LuminousIntensity, SolidAngle > { using type = LuminousPower; };
-    // lm = sr cd
-    template <> struct Product< SolidAngle, LuminousIntensity > { using type = LuminousPower; };
-    // lm s
-    template <> struct Product< LuminousPower, Time > { using type = LuminousEnergy; };
-    // s lm
-    template <> struct Product< Time, LuminousPower > { using type = LuminousEnergy; };
-
-    // Simplify **unambiguous** quotients
-
-    // lm = W / s
-    template <> struct Quotient < LuminousEnergy, Time > { using type = LuminousPower; };
-    // cd = lm / sr
-    template <> struct Quotient < LuminousPower, SolidAngle > { using type = LuminousIntensity; };
-    // nt = cd / m^2
-    template <> struct Quotient < LuminousIntensity, Area > { using type = Luminance; };
-    // lx = lm / m^2
-    template <> struct Quotient < LuminousPower, Area > { using type = Illuminance; };
-    // nt = lx / sr
-    template <> struct Quotient < Illuminance, SolidAngle > { using type = Luminance; };
-#if 1
-    // lx = lm / (m^2 sr)
-    template <> struct Quotient < LuminousPower, MulKinds<Area, SolidAngle> > { using type = Luminance; };
-    // lx = lm / (sr m^2)
-    template <> struct Quotient < LuminousPower, MulKinds<SolidAngle, Area> > { using type = Luminance; };
-#endif
-}
-
 namespace units
 {
     using Candela
         = Unit< Ratio<1>, kinds::LuminousIntensity >;
 
     using Lumen
-        = Unit< MulRatios<Candela::conversion, Steradian::conversion>, kinds::LuminousPower >;
+        = Unit< MulConversions<Candela::conversion, Steradian::conversion>, kinds::LuminousFlux >;
 
 //  using LumenSecond
-//      = Unit< MulRatios<Lumen::conversion, Second::conversion>, kinds::LuminousEnergy >;
+//      = Unit< MulConversions<Lumen::conversion, Second::conversion>, kinds::LuminousEnergy >;
     using Talbot
-        = Unit< MulRatios<Lumen::conversion, Second::conversion>, kinds::LuminousEnergy >;
+        = Unit< MulConversions<Lumen::conversion, Second::conversion>, kinds::LuminousEnergy >;
 
 //  using CandelaPerSquareMeter
-//      = Unit< DivRatios<Candela::conversion, SquareMeter::conversion>, kinds::Luminance >;
+//      = Unit< DivConversions<Candela::conversion, SquareMeter::conversion>, kinds::Luminance >;
     using Nit
-        = Unit< DivRatios<Candela::conversion, SquareMetre::conversion>, kinds::Luminance >;
+        = Unit< DivConversions<Candela::conversion, SquareMetre::conversion>, kinds::Luminance >;
 
     using Lux
-        = Unit< DivRatios<Lumen::conversion, SquareMetre::conversion>, kinds::Illuminance >;
+        = Unit< DivConversions<Lumen::conversion, SquareMetre::conversion>, kinds::Illuminance >;
 }
 
 using Candelas = Quantity< units::Candela >;

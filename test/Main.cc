@@ -1,4 +1,63 @@
 #if 0
+#include "benri/si/si.h"
+#include "benri/cmath.h"
+#include "benri/quantity.h"
+#include "benri/quantity_point.h"
+
+using namespace benri;
+using namespace benri::si;    //Import si literals.
+using namespace benri::casts; //Import casts into namespace for ADL to work.
+
+//static void test001()
+//{
+//    constexpr auto l1 = 1_centi * metre;
+//    constexpr auto l2 = 1_metre;
+//    constexpr auto l3 = l1 + l2;
+//}
+
+static constexpr void test002(quantity<metre_t> m)
+{
+}
+
+static void test003()
+{
+    test002(1_metre);
+    test002(1_kilo * metre);
+}
+
+int main()
+{
+    //Set size of the cake.
+    constexpr auto height = 4_centi * metre;
+    constexpr auto diameter = 30_centi * metre;
+
+    //Calculate the volume.
+    constexpr auto volume = height * constant::pi * square(diameter / 2.0);
+
+    //Set the density of the batter.
+    constexpr auto density = 1_gram / cubic(centi * metre);
+
+    //Calculate the mass of the cake.
+    constexpr auto mass = density * volume;
+
+    ////Print the recipe.
+    //std::cout
+    //    << "  vanilla cake  \n"
+    //    << "----------------\n"
+    //    << ceil(mass * 0.028).value()  << " gram butter\n"
+    //    << ceil(mass * 0.099).value()  << " gram sugar\n"
+    //    << ceil(mass * 0.0635).value() << " gram flour\n"
+    //    << ceil(mass / 2828.0).value() << " pack of backing soda\n"
+    //    << floor(mass * 0.002).value() << " eggs\n"
+    //    << ceil(mass * 0.1765).value()  << " gram quark cream\n"
+    //    << ceil(mass * 0.0705).value() << " gram oil\n"
+    //    << ceil(mass / 2828.0).value() << " pack of vanille aroma\n"
+    //    << ceil(mass / 2828.0).value() << "/2 litre milk\n"
+    //    << std::flush;
+}
+#endif
+
+#if 0
 #include "../src/FsUnits.h"
 
 #include <limits>
@@ -232,10 +291,12 @@ inline constexpr bool Compiles = details::Detector<void, Op, Args...>::value;
 static void test002()
 {
     {
+#if !UNITS_IGNORE_KIND()
         constexpr auto x = 1_m / 1_m;
         constexpr auto y = 1_s / 1_s;
         constexpr auto z = x * y;
         static_assert(!Compiles<Add, decltype(x), decltype(y)>, "");
+#endif
     }
     {
         constexpr auto x = 1_m;
@@ -247,7 +308,7 @@ static void test002()
 
 static void test003()
 {
-#if UNITS_HAS_NO_KINDS()
+#if UNITS_IGNORE_KIND()
     constexpr auto t0 = 1_rad;
     constexpr auto t1 = 1_sr;
     constexpr auto t2 = t0 + Radians{t1};
@@ -318,7 +379,7 @@ static void testFma1()
 {
     constexpr auto sum0 = 1_mm * 1_h + 2_km * 1_s;
     //Incomplet<decltype(sum0)>{};
-    constexpr auto sum1 = Fma(1_mm, 1_h, 2_km * 1_s);
+    //constexpr auto sum1 = Fma(1_mm, 1_h, 2_km * 1_s);
     //Incomplet<decltype(sum1)>{};
     //static_assert(sum0.count() == sum1.count());
 }
@@ -402,12 +463,15 @@ static void test1()
     constexpr auto phi7 = 1_m + 1_km;
     constexpr auto phi8 = 1_m * 1_km;
     constexpr auto phi9 = phi7 / phi8;
+    //Incomplet<decltype(phi9)>{};
     constexpr auto phi10 = 1 / 1_m + 1 / 1_km;
+#if !UNITS_IGNORE_KIND()
     static_assert(!Compiles<Add, decltype(phi9), decltype(phi10)>, "");
+#endif
     using Phi9 = std::remove_const_t<decltype(phi9)>;
     constexpr auto phi12 = phi9 - Phi9(phi10);
     //Incomplet<decltype(phi12)>{};
-#if UNITS_HAS_NO_KINDS()
+#if UNITS_IGNORE_KIND()
     constexpr auto phi12a = phi9 - phi10;
 #endif
 #if UNITS_HAS_ANY()
@@ -433,14 +497,87 @@ static void test999()
 
     constexpr auto bits04 = 1_MB / 1_s;
     constexpr auto bits05 = bits04.convert_to(Gigabytes{1} / Hours{1});
+    constexpr auto bits15 = bits04.convert_to(1_GB / 1_h);
     constexpr auto bits06 = 1_GB / 1_h;
     constexpr auto bits07 = bits06.convert_to(Megabytes{1} / Seconds{1});
+    constexpr auto bits08 = bits06.convert_to(1_MB / 1_s);
+    constexpr auto bits09 = bits06.convert_to(units::Megabyte{} / units::Second{});
 }
 
 static void test998()
 {
     constexpr auto t0 = 1_ms;
     constexpr auto t1 = remove_conversion(t0);
+}
+
+static constexpr void test997(Centimetres cm)
+{
+}
+
+template <typename T>
+using CallTest997 = decltype(test997(std::declval<T>()));
+
+static void test996()
+{
+    test997(1_cm);
+    test997(1_m);
+    //test997(Millimetres(1).convert_to(1_m));
+    //test997(1_mm.convert_to(1_m));
+    static_assert(!Compiles<CallTest997, decltype(1_mm)>, "");
+}
+
+// f(x) = x^2
+static constexpr SquareMetres square(Metres x) {
+    return x * x - SquareMetres(2);
+}
+
+// f'(x) = 2x
+static constexpr Metres d_square(Metres x) {
+    //return 2 * x;
+
+    constexpr auto h = Metres(std::numeric_limits<double>::epsilon() * 1000);
+    return Metres{ (square(x + h) - square(x - h)) / (2 * h) };
+}
+
+// x_{n+1} = x_n - f(x_n) / f'(x_n)
+static constexpr Metres newton_step(Metres x) {
+    return x - Metres{square(x) / d_square(x)};
+}
+
+static void testNewton()
+{
+    constexpr auto s1 = newton_step(2_m);
+    constexpr auto s2 = newton_step(s1);
+    constexpr auto s3 = newton_step(s2);
+    constexpr auto s4 = newton_step(s3);
+    constexpr auto s5 = newton_step(s4);
+    constexpr auto s6 = newton_step(s5);
+    constexpr auto s7 = newton_step(s6);
+    constexpr auto s8 = newton_step(s7);
+    constexpr auto s9 = newton_step(s8);
+}
+
+static constexpr Metres integrate_step(Metres x, Metres h, int n)
+{
+    return n <= 0
+        ? 0_m
+        : d_square(x) + integrate_step(x + h, h, n - 1);
+}
+
+static constexpr auto integrate(Metres a, Metres b, int n)
+{
+    const auto h = (b - a) / n;
+    return (0.5 * h) * (d_square(a) + 2 * integrate_step(a + h, h, n - 1) + d_square(b));
+}
+
+static void testIntegrate()
+{
+    constexpr auto i1 = integrate(0_m, 2_m, 1);
+    constexpr auto i2 = integrate(0_m, 2_m, 2);
+    constexpr auto i3 = integrate(1_m, 2_m, 3);
+    constexpr auto i4 = integrate(1_m, 2_m, 4);
+    constexpr auto i5 = integrate(2_m, 3_m, 5);
+    constexpr auto i6 = integrate(2_m, 3_m, 6);
 }
 
 int main()
@@ -581,7 +718,9 @@ int main()
     constexpr auto rad2 = Radians{1_m / 1_m};
     constexpr auto rad3 = rad1 + rad2;
     //constexpr auto rad4 = rad1 + 1_m / 1_m;
+#if !UNITS_IGNORE_KIND()
     static_assert(!Compiles<Add, Radians, decltype(1_m / 1_m)>, "");
+#endif
     //constexpr auto rad5 = rad3 + 1_sr;
     //constexpr auto rad6 = rad1 + 1_m;
     constexpr auto deg1 = Degrees{1_rad};
@@ -644,7 +783,7 @@ int main()
 
     constexpr auto Q1 = 1_m / 1_m;
     constexpr auto Q2 = 1_s / 1_s;
-#if UNITS_HAS_NO_KINDS()
+#if UNITS_IGNORE_KIND()
     constexpr auto Q3a = Q1 + Q2;
     constexpr auto Q3b = (1_m * 1_s + 1_s * 1_m) / (1_m * 1_s);
     static_assert(std::is_same<decltype(Q3a), decltype(Q3b)>::value, "");
