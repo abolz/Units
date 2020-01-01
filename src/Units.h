@@ -1300,17 +1300,10 @@ namespace literals
 
 namespace units
 {
-#if 1
-    using Inch = ScaledUnit< Ratio<254, 100>, Centimetre >;
-    using Foot = ScaledUnit< Ratio<12>, Inch >;
-    using Yard = ScaledUnit< Ratio<3>, Foot >;
-    using Mile = ScaledUnit< Ratio<1760>, Yard >;
-#else
-    using Inch = Unit< MulConversions<Ratio<254, 100>, Centimetre::conversion>, kinds::Length >; // (international)
-    using Foot = Unit< MulConversions<Ratio<12>, Inch::conversion>, kinds::Length >;             // (international)
-    using Yard = Unit< MulConversions<Ratio<3>, Foot::conversion>, kinds::Length >;              // (international)
-    using Mile = Unit< MulConversions<Ratio<1760>, Yard::conversion>, kinds::Length >;           // (international)
-#endif
+    using Inch = ScaledUnit< Ratio<254, 100>, Centimetre >; // (international)
+    using Foot = ScaledUnit< Ratio<12>, Inch >;             // (international)
+    using Yard = ScaledUnit< Ratio<3>, Foot >;              // (international)
+    using Mile = ScaledUnit< Ratio<1760>, Yard >;           // (international)
 }
 
 using Inches = Quantity< units::Inch >;
@@ -1376,6 +1369,10 @@ namespace units
     using Litre = CubicDecimetre;
 }
 
+using CubicCentimetres = Quantity< units::CubicCentimetre >;
+using CubicDecimetres  = Quantity< units::CubicDecimetre >;
+using CubicMetres      = Quantity< units::CubicMetre >;
+
 //--------------------------------------------------------------------------------------------------
 // Time
 
@@ -1385,21 +1382,12 @@ namespace units
     using Millisecond = ScaledUnit< Ratio<1, 1000>, Second >;
     using Microsecond = ScaledUnit< Ratio<1, 1000>, Millisecond >;
     using Nanosecond  = ScaledUnit< Ratio<1, 1000>, Microsecond >;
-#if 1
     using Minute      = ScaledUnit< Ratio<60>, Second >;
     using Hour        = ScaledUnit< Ratio<60>, Minute >;
     //using Day         = ScaledUnit< Ratio<24>, Hour >;
     //using Week        = ScaledUnit< Ratio<7>, Day >;
     //using Year        = ScaledUnit< Ratio<146097, 400>, Day >;
     //using Month       = ScaledUnit< Ratio<1, 12>, Year >;
-#else
-    using Minute      = Unit< MulConversions<Ratio<60>, Second::conversion>, kinds::Time >;
-    using Hour        = Unit< MulConversions<Ratio<60>, Minute::conversion>, kinds::Time >;
-    //using Day         = Unit< MulConversions<Ratio<24>, Hour::conversion>, kinds::Time >;
-    //using Week        = Unit< MulConversions<Ratio<7>, Day::conversion>, kinds::Time >;
-    //using Year        = Unit< MulConversions<Ratio<146097, 400>, Day::conversion>, kinds::Time >;
-    //using Month       = Unit< MulConversions<Ratio<1, 12>, Year::conversion>, kinds::Time >;
-#endif
 }
 
 using Nanoseconds  = Quantity< units::Nanosecond >;
@@ -1468,24 +1456,12 @@ namespace literals
 
 namespace units
 {
-#if 0
-    using MetrePerSecond
-        = Unit< DivConversions<Metre::conversion, Second::conversion>,
-                DivKinds<kinds::Length, kinds::Time> >;
-    using KilometrePerHour
-        = Unit< DivConversions<Kilometre::conversion, Hour::conversion>,
-                DivKinds<kinds::Length, kinds::Time> >;
-    using MilePerHour
-        = Unit< DivConversions<Mile::conversion, Hour::conversion>,
-                DivKinds<kinds::Length, kinds::Time> >;
-#else
     using MetrePerSecond
         = Unit< DivConversions<Metre::conversion, Second::conversion>, kinds::Velocity >;
     using KilometrePerHour
         = Unit< DivConversions<Kilometre::conversion, Hour::conversion>, kinds::Velocity >;
     using MilePerHour
         = Unit< DivConversions<Mile::conversion, Hour::conversion>, kinds::Velocity >;
-#endif
 }
 
 using MetresPerSecond   = Quantity< units::MetrePerSecond >;
@@ -1519,7 +1495,6 @@ namespace literals
 
 namespace units
 {
-//  using MetrePerSecondSquared = Unit< MulConversions<MetrePerSecond::conversion, Second::conversion>, kinds::Acceleration >;
     using MetrePerSecondSquared = Unit< DivConversions<Metre::conversion, Square<Second::conversion>>, kinds::Acceleration >;
 }
 
