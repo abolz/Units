@@ -165,33 +165,119 @@ namespace impl
 // Dimension
 //--------------------------------------------------------------------------------------------------
 
-template <intmax_t Num = 1, intmax_t Den = 1>
-using Dimension = typename std::ratio<Num, Den>::type;
+template <typename... BaseDimension>
+struct Dimension
+{
+};
+
+namespace impl
+{
+    template <typename T, typename U>
+    struct IsSameBaseDimension
+        : std::false_type
+    {
+    };
+
+    template <template <int, int> class D, int Num1, int Den1, int Num2, int Den2>
+    struct IsSameBaseDimension<D<Num1, Den1>, D<Num2, Den2>>
+        : std::true_type
+    {
+    };
+
+    template <template <int, int> class D, int Num, int Den>
+    constexpr auto NegateDimension(D<Num, Den>) noexcept {
+        return D<-Num, Den>{};
+    }
+
+    template <typename... Un>
+    constexpr auto InvertDimension(Dimension<Un...>)
+    {
+        return Dimension<decltype(NegateDimension(Un{}))...>{};
+    }
+
+    template <typename... Ln, typename... Rn>
+    constexpr auto Concat(Dimension<Ln...>, Dimension<Rn...>)
+    {
+        return Dimension<Ln..., Rn...>{};
+    }
+
+    constexpr auto Merge(Dimension<>, Dimension<>)
+    {
+        return Dimension<>{};
+    }
+
+    template <typename L1, typename... Ln>
+    constexpr auto Merge(Dimension<L1, Ln...> lhs, Dimension<>)
+    {
+        return lhs;
+    }
+
+    template <typename R1, typename... Rn>
+    constexpr auto Merge(Dimension<>, Dimension<R1, Rn...> rhs)
+    {
+        return rhs;
+    }
+
+    template <
+        template <int, int> class L1, int L1Num, int L1Den, typename... Ln,
+        template <int, int> class R1, int R1Num, int R1Den, typename... Rn
+        >
+    constexpr auto Merge(Dimension<L1<L1Num, L1Den>, Ln...> lhs, Dimension<R1<R1Num, R1Den>, Rn...> rhs)
+    {
+        static_assert(L1Den > 0, "invalid denominator");
+        static_assert(R1Den > 0, "invalid denominator");
+
+        constexpr int id1 = L1<L1Num, L1Den>::id;
+        constexpr int id2 = R1<R1Num, R1Den>::id;
+        if constexpr (id1 < id2)
+        {
+            return Concat(Dimension<L1<L1Num, L1Den>>{}, Merge(Dimension<Ln...>{}, rhs));
+        }
+        else if constexpr (id2 < id1)
+        {
+            return Concat(Dimension<R1<R1Num, R1Den>>{}, Merge(lhs, Dimension<Rn...>{}));
+        }
+        else
+        {
+            static_assert(IsSameBaseDimension<L1<L1Num, L1Den>, R1<R1Num, R1Den>>::value,
+                "the 'id' of a base dimensions must be globally unique");
+
+            using Sum = std::ratio_add<typename std::ratio<L1Num, L1Den>::type, typename std::ratio<R1Num, R1Den>::type>;
+            if constexpr (Sum::num != 0)
+                return Concat(Dimension<L1<Sum::num, Sum::den>>{}, Merge(Dimension<Ln...>{}, Dimension<Rn...>{}));
+            else
+                return Merge(Dimension<Ln...>{}, Dimension<Rn...>{});
+        }
+    }
+}
 
 namespace dim // Base quantities
 {
     // Some prime numbers:
     // 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97
 
-    inline constexpr intmax_t Length            = 2;
-    inline constexpr intmax_t Mass              = 3;
-    inline constexpr intmax_t Time              = 5;
-    inline constexpr intmax_t ElectricCurrent   = 7;
-    inline constexpr intmax_t Temperature       = 11;
-    inline constexpr intmax_t AmountOfSubstance = 13;
-    inline constexpr intmax_t LuminousIntensity = 17;
-    inline constexpr intmax_t Bit               = 19;
-    inline constexpr intmax_t Currency          = 23;
-    inline constexpr intmax_t Pixel             = 29;
-    inline constexpr intmax_t Dot               = 31;
+    template <int Num, int Den = 1> struct Length            { static constexpr int64_t id =  2; }; // Meter m
+    template <int Num, int Den = 1> struct Mass              { static constexpr int64_t id =  3; }; // Kilogram kg
+    template <int Num, int Den = 1> struct Time              { static constexpr int64_t id =  5; }; // Second s
+    template <int Num, int Den = 1> struct ElectricCurrent   { static constexpr int64_t id =  7; }; // Ampere A
+    template <int Num, int Den = 1> struct Temperature       { static constexpr int64_t id = 11; }; // Kelvin K
+    template <int Num, int Den = 1> struct AmountOfSubstance { static constexpr int64_t id = 13; }; // Mole mol
+    template <int Num, int Den = 1> struct LuminousIntensity { static constexpr int64_t id = 17; }; // Candela cd
+    template <int Num, int Den = 1> struct Bit               { static constexpr int64_t id = 19; };
+    template <int Num, int Den = 1> struct Currency          { static constexpr int64_t id = 23; }; // TODO: Euro, Dollar, etc...
+    template <int Num, int Den = 1> struct Pixel             { static constexpr int64_t id = 29; };
+    template <int Num, int Den = 1> struct Dot               { static constexpr int64_t id = 31; };
 }
 
 //
 // TODO:
 // MulDimensions<D1, D2, Dn...>
 //
-template <typename D1, typename D2> using MulDimensions = std::ratio_multiply<D1, D2>;
-template <typename D1, typename D2> using DivDimensions = std::ratio_divide<D1, D2>;
+template <typename D1, typename D2>
+using MulDimensions = decltype(impl::Merge(D1{}, D2{}));
+
+template <typename D1, typename D2>
+using DivDimensions = decltype(impl::Merge(D1{}, impl::InvertDimension(D2{})));
 
 namespace kinds
 {
@@ -222,37 +308,37 @@ namespace kinds
     // Meter m
     struct Length
         : Kind< Length,
-                Dimension<dim::Length> > {};
+                Dimension<dim::Length<1>> > {};
 
     // Kilogram kg
     struct Mass
         : Kind< Mass,
-                Dimension<dim::Mass> > {};
+                Dimension<dim::Mass<1>> > {};
 
     // Second s
     struct Time
         : Kind< Time,
-                Dimension<dim::Time> > {};
+                Dimension<dim::Time<1>> > {};
 
     // Ampere A
     struct ElectricCurrent
         : Kind< ElectricCurrent,
-                Dimension<dim::ElectricCurrent> > {};
+                Dimension<dim::ElectricCurrent<1>> > {};
 
     // Kelvin K
     struct Temperature
         : Kind< Temperature,
-                Dimension<dim::Temperature> > {};
+                Dimension<dim::Temperature<1>> > {};
 
     // Mole mol
     struct AmountOfSubstance
         : Kind< AmountOfSubstance,
-                Dimension<dim::AmountOfSubstance> > {};
+                Dimension<dim::AmountOfSubstance<1>> > {};
 
     // Candela cd
     struct LuminousIntensity
         : Kind< LuminousIntensity,
-                Dimension<dim::LuminousIntensity> > {};
+                Dimension<dim::LuminousIntensity<1>> > {};
 
     // Radian rad = 1
     struct PlaneAngle
@@ -267,12 +353,12 @@ namespace kinds
     // Bit b
     struct Bit
         : Kind< Bit,
-                Dimension<dim::Bit> > {};
+                Dimension<dim::Bit<1>> > {};
 
     // Pixel px
     struct Pixel
         : Kind< Pixel,
-                Dimension<dim::Pixel> > {};
+                Dimension<dim::Pixel<1>> > {};
 
     //--------------------------------------------------------------------------
     // Derived kinds:
