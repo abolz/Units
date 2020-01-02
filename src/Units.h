@@ -8,12 +8,15 @@
 #define UNITS_HAS_ANY() 0
 #define UNITS_HAS_MATH() 0
 #define UNITS_IGNORE_KIND() 0
+#define UNITS_PRIME_DIMENSION() 1
 
 #include <cassert>
 #if UNITS_HAS_MATH()
 #include <cmath>
 #endif
 #include <cstdint>
+#include <chrono>
+#include <ratio>
 #include <type_traits>
 
 #ifndef UNITS_ASSERT
@@ -56,9 +59,116 @@ class Quantity;
 //    -> std::bool_constant<std::is_floating_point_v<std::remove_cv_t<T>>>;
 
 //--------------------------------------------------------------------------------------------------
+// Rational
+//--------------------------------------------------------------------------------------------------
+
+namespace impl
+{
+    template <typename L, typename R>
+    constexpr int CompareValues(L lhs, R rhs) noexcept {
+        if (lhs == rhs)
+            return 0;
+        return lhs < rhs ? -1 : 1;
+    }
+
+    constexpr int Sgn(Natural x) noexcept {
+        return CompareValues(x, static_cast<Natural>(0));
+    }
+
+    constexpr Natural Abs(Natural x) noexcept {
+        return x < 0 ? -x : x;
+    }
+
+    constexpr Natural Min(Natural x, Natural y) noexcept {
+        return y < x ? y : x;
+    }
+
+    constexpr Natural Gcd(Natural a, Natural b) noexcept {
+        UNITS_ASSERT(a >= 1); // static_assert
+        UNITS_ASSERT(b >= 1); // static_assert
+        while (b > 0) {
+            const auto r = a % b;
+            a = b;
+            b = r;
+        }
+        UNITS_ASSERT(a >= 1); // static_assert
+        return a;
+    }
+
+    constexpr Natural Lcm(Natural a, Natural b) noexcept {
+        return (a / Gcd(a, b)) * b;
+    }
+
+#if 1
+    constexpr Natural Power(Natural x, Natural n) noexcept {
+        UNITS_ASSERT(x >= 1);
+        UNITS_ASSERT(n >= 0);
+
+        Natural p = 1;
+        if (x > 1) {
+            for ( ; n > 0; --n) {
+                UNITS_ASSERT(p <= INT64_MAX / x);
+                p *= x;
+            }
+        }
+
+        return p;
+    }
+
+    // Returns x^n > lower (without overflow).
+    constexpr bool IsPowerGreaterThan(Natural x, Natural n, Natural lower) noexcept {
+        UNITS_ASSERT(x >= 1);
+        UNITS_ASSERT(n >= 0);
+
+        const auto lim = INT64_MAX / x;
+        const auto max = lim < lower ? lim : lower; // = min(lim, lower)
+
+        Natural p = 1;
+        for ( ; n > 0; --n) {
+            if (p > max) // p*x will overflow, or p > lower
+                return true;
+            p *= x;
+        }
+
+        return p > lower;
+    }
+
+    // Computes the n-th root y of x,
+    // i.e. returns the largest y, such that y^n <= x
+    constexpr Natural Root(Natural x, Natural n) noexcept {
+        UNITS_ASSERT(x >= 1);
+        UNITS_ASSERT(n >= 1);
+
+        if (x <= 1 || n <= 1)
+            return x;
+
+        Natural lo = 1;
+        Natural hi = 1 + x / n;
+        // Bernoulli  ==>  x^(1/n) <= 1 + (x - 1)/n < 1 + x/n
+        // Since n >= 2, hi will not overflow here.
+
+        for (;;)
+        {
+            const auto y = lo + (hi - lo) / 2;
+            if (y == lo)                           // hi - lo <= 1
+                return y;
+            else if (IsPowerGreaterThan(y, n, x))  // x < y^n
+                hi = y;
+            else                                   // y^n <= x
+                lo = y;
+        }
+    }
+#endif
+}
+
+//--------------------------------------------------------------------------------------------------
 // Dimension
 //--------------------------------------------------------------------------------------------------
 
+#if UNITS_PRIME_DIMENSION()
+template <intmax_t Num = 1, intmax_t Den = 1>
+using Dimension = typename std::ratio<Num, Den>::type;
+#else
 template <typename... BaseDimension>
 struct Dimension
 {
@@ -72,31 +182,21 @@ namespace impl
     {
     };
 
-    template <template <int> class D, int Exp1, int Exp2>
-    struct IsSameBaseDimension<D<Exp1>, D<Exp2>>
+    template <template <int, int> class D, int Num1, int Den1, int Num2, int Den2>
+    struct IsSameBaseDimension<D<Num1, Den1>, D<Num2, Den2>>
         : std::true_type
     {
     };
 
-    template <int X, template <int> class D, int E>
-    constexpr auto MulExponent(D<E>) noexcept {
-        return D<E * X>{};
-    }
-
-    template <int X, template <int> class D, int E>
-    constexpr auto DivExponent(D<E>) noexcept {
-        return D<E / X>{};
-    }
-
-    template <Natural S, typename... Un>
-    constexpr auto ScaleDimension(Dimension<Un...>) noexcept {
-        return Dimension<decltype(MulExponent<S>(Un{}))...>{};
+    template <template <int, int> class D, int Num, int Den>
+    constexpr auto NegateDimension(D<Num, Den>) noexcept {
+        return D<-Num, Den>{};
     }
 
     template <typename... Un>
-    constexpr auto Invert(Dimension<Un...>)
+    constexpr auto InvertDimension(Dimension<Un...>)
     {
-        return Dimension<decltype(MulExponent<-1>(Un{}))...>{};
+        return Dimension<decltype(NegateDimension(Un{}))...>{};
     }
 
     template <typename... Ln, typename... Rn>
@@ -123,61 +223,96 @@ namespace impl
     }
 
     template <
-        template <int> class L1, int ExpL1, typename... Ln,
-        template <int> class R1, int ExpR1, typename... Rn
+        template <int, int> class L1, int L1Num, int L1Den, typename... Ln,
+        template <int, int> class R1, int R1Num, int R1Den, typename... Rn
         >
-    constexpr auto Merge(Dimension<L1<ExpL1>, Ln...> lhs, Dimension<R1<ExpR1>, Rn...> rhs)
+    constexpr auto Merge(Dimension<L1<L1Num, L1Den>, Ln...> lhs, Dimension<R1<R1Num, R1Den>, Rn...> rhs)
     {
-        constexpr int id1 = L1<ExpL1>::id;
-        constexpr int id2 = R1<ExpR1>::id;
+        static_assert(L1Den > 0, "invalid denominator");
+        static_assert(R1Den > 0, "invalid denominator");
+
+        constexpr int id1 = L1<L1Num, L1Den>::id;
+        constexpr int id2 = R1<R1Num, R1Den>::id;
         if constexpr (id1 < id2)
         {
-            return Concat(Dimension<L1<ExpL1>>{}, Merge(Dimension<Ln...>{}, rhs));
+            return Concat(Dimension<L1<L1Num, L1Den>>{}, Merge(Dimension<Ln...>{}, rhs));
         }
         else if constexpr (id2 < id1)
         {
-            return Concat(Dimension<R1<ExpR1>>{}, Merge(lhs, Dimension<Rn...>{}));
+            return Concat(Dimension<R1<R1Num, R1Den>>{}, Merge(lhs, Dimension<Rn...>{}));
         }
         else
         {
-            static_assert(IsSameBaseDimension<L1<ExpL1>, R1<ExpR1>>::value,
+            static_assert(IsSameBaseDimension<L1<L1Num, L1Den>, R1<R1Num, R1Den>>::value,
                 "the 'id' of a base dimensions must be globally unique");
 
-            if constexpr (ExpL1 + ExpR1 != 0)
-                return Concat(Dimension<L1<ExpL1 + ExpR1>>{}, Merge(Dimension<Ln...>{}, Dimension<Rn...>{}));
+            using Sum = std::ratio_add<typename std::ratio<L1Num, L1Den>::type, typename std::ratio<R1Num, R1Den>::type>;
+            if constexpr (Sum::num != 0)
+                return Concat(Dimension<L1<Sum::num, Sum::den>>{}, Merge(Dimension<Ln...>{}, Dimension<Rn...>{}));
             else
                 return Merge(Dimension<Ln...>{}, Dimension<Rn...>{});
         }
     }
+}
+#endif
+
+namespace dim // Base quantities
+{
+    // Some prime numbers:
+    // 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97
+
+#if 0
+    template <int64_t Num, int64_t Den = 1>
+    struct Dimension
+    {
+    };
+
+    num = id1^a * id3^b * id5^c
+    den = id7^d
+#endif
+
+#if UNITS_PRIME_DIMENSION()
+    // N >= 1!
+    template <int N = 1> inline constexpr int64_t Length            = N * 2;
+    template <int N = 1> inline constexpr int64_t Mass              = N * 3;
+    template <int N = 1> inline constexpr int64_t Time              = N * 5;
+    template <int N = 1> inline constexpr int64_t ElectricCurrent   = N * 7;
+    template <int N = 1> inline constexpr int64_t Temperature       = N * 11;
+    template <int N = 1> inline constexpr int64_t AmountOfSubstance = N * 13;
+    template <int N = 1> inline constexpr int64_t LuminousIntensity = N * 17;
+    template <int N = 1> inline constexpr int64_t Bit               = N * 19;
+    template <int N = 1> inline constexpr int64_t Currency          = N * 23;
+    template <int N = 1> inline constexpr int64_t Pixel             = N * 29;
+    template <int N = 1> inline constexpr int64_t Dot               = N * 31;
+#else
+    template <int Num, int Den = 1> struct Length            { static constexpr int64_t id =  2; }; // Meter m
+    template <int Num, int Den = 1> struct Mass              { static constexpr int64_t id =  3; }; // Kilogram kg
+    template <int Num, int Den = 1> struct Time              { static constexpr int64_t id =  5; }; // Second s
+    template <int Num, int Den = 1> struct ElectricCurrent   { static constexpr int64_t id =  7; }; // Ampere A
+    template <int Num, int Den = 1> struct Temperature       { static constexpr int64_t id = 11; }; // Kelvin K
+    template <int Num, int Den = 1> struct AmountOfSubstance { static constexpr int64_t id = 13; }; // Mole mol
+    template <int Num, int Den = 1> struct LuminousIntensity { static constexpr int64_t id = 17; }; // Candela cd
+    template <int Num, int Den = 1> struct Bit               { static constexpr int64_t id = 19; };
+    template <int Num, int Den = 1> struct Currency          { static constexpr int64_t id = 23; }; // TODO: Euro, Dollar, etc...
+    template <int Num, int Den = 1> struct Pixel             { static constexpr int64_t id = 29; };
+    template <int Num, int Den = 1> struct Dot               { static constexpr int64_t id = 31; };
+#endif
 }
 
 //
 // TODO:
 // MulDimensions<D1, D2, Dn...>
 //
+#if UNITS_PRIME_DIMENSION()
+template <typename D1, typename D2> using MulDimensions = std::ratio_multiply<D1, D2>;
+template <typename D1, typename D2> using DivDimensions = std::ratio_divide<D1, D2>;
+#else
 template <typename D1, typename D2>
 using MulDimensions = decltype(impl::Merge(D1{}, D2{}));
 
 template <typename D1, typename D2>
-using DivDimensions = decltype(impl::Merge(D1{}, impl::Invert(D2{})));
-
-namespace dim // Base quantities
-{
-    // TODO:
-    // Rational exponents...
-
-    template <int E> struct Length            { static constexpr int64_t id =  2; }; // Meter m
-    template <int E> struct Mass              { static constexpr int64_t id =  3; }; // Kilogram kg
-    template <int E> struct Time              { static constexpr int64_t id =  5; }; // Second s
-    template <int E> struct ElectricCurrent   { static constexpr int64_t id =  7; }; // Ampere A
-    template <int E> struct Temperature       { static constexpr int64_t id = 11; }; // Kelvin K
-    template <int E> struct AmountOfSubstance { static constexpr int64_t id = 13; }; // Mole mol
-    template <int E> struct LuminousIntensity { static constexpr int64_t id = 17; }; // Candela cd
-    template <int E> struct Bit               { static constexpr int64_t id = 19; };
-    template <int E> struct Currency          { static constexpr int64_t id = 23; }; // TODO: Euro, Dollar, etc...
-    template <int E> struct Pixel             { static constexpr int64_t id = 29; };
-    template <int E> struct Dot               { static constexpr int64_t id = 31; };
-}
+using DivDimensions = decltype(impl::Merge(D1{}, impl::InvertDimension(D2{})));
+#endif
 
 namespace kinds
 {
@@ -508,105 +643,6 @@ namespace kinds
 // Rational
 //--------------------------------------------------------------------------------------------------
 
-namespace impl
-{
-    template <typename L, typename R>
-    constexpr int CompareValues(L lhs, R rhs) noexcept {
-        if (lhs == rhs)
-            return 0;
-        return lhs < rhs ? -1 : 1;
-    }
-
-    constexpr int Sgn(Natural x) noexcept {
-        return CompareValues(x, static_cast<Natural>(0));
-    }
-
-    constexpr Natural Abs(Natural x) noexcept {
-        return x < 0 ? -x : x;
-    }
-
-    constexpr Natural Min(Natural x, Natural y) noexcept {
-        return y < x ? y : x;
-    }
-
-    constexpr Natural Gcd(Natural a, Natural b) noexcept {
-        UNITS_ASSERT(a >= 1); // static_assert
-        UNITS_ASSERT(b >= 1); // static_assert
-        while (b > 0) {
-            const auto r = a % b;
-            a = b;
-            b = r;
-        }
-        UNITS_ASSERT(a >= 1); // static_assert
-        return a;
-    }
-
-    constexpr Natural Lcm(Natural a, Natural b) noexcept {
-        return (a / Gcd(a, b)) * b;
-    }
-
-#if 1
-    constexpr Natural Power(Natural x, Natural n) noexcept {
-        UNITS_ASSERT(x >= 1);
-        UNITS_ASSERT(n >= 0);
-
-        Natural p = 1;
-        if (x > 1) {
-            for ( ; n > 0; --n) {
-                UNITS_ASSERT(p <= INT64_MAX / x);
-                p *= x;
-            }
-        }
-
-        return p;
-    }
-
-    // Returns x^n > lower (without overflow).
-    constexpr bool IsPowerGreaterThan(Natural x, Natural n, Natural lower) noexcept {
-        UNITS_ASSERT(x >= 1);
-        UNITS_ASSERT(n >= 0);
-
-        const auto lim = INT64_MAX / x;
-        const auto max = lim < lower ? lim : lower; // = min(lim, lower)
-
-        Natural p = 1;
-        for ( ; n > 0; --n) {
-            if (p > max) // p*x will overflow, or p > lower
-                return true;
-            p *= x;
-        }
-
-        return p > lower;
-    }
-
-    // Computes the n-th root y of x,
-    // i.e. returns the largest y, such that y^n <= x
-    constexpr Natural Root(Natural x, Natural n) noexcept {
-        UNITS_ASSERT(x >= 1);
-        UNITS_ASSERT(n >= 1);
-
-        if (x <= 1 || n <= 1)
-            return x;
-
-        Natural lo = 1;
-        Natural hi = 1 + x / n;
-        // Bernoulli  ==>  x^(1/n) <= 1 + (x - 1)/n < 1 + x/n
-        // Since n >= 2, hi will not overflow here.
-
-        for (;;)
-        {
-            const auto y = lo + (hi - lo) / 2;
-            if (y == lo)                           // hi - lo <= 1
-                return y;
-            else if (IsPowerGreaterThan(y, n, x))  // x < y^n
-                hi = y;
-            else                                   // y^n <= x
-                lo = y;
-        }
-    }
-#endif
-}
-
 template <Natural Num, Natural Den = 1, Exponent Exp = 0>
 using Ratio = Rational< Num / impl::Gcd(Num, Den), Den / impl::Gcd(Num, Den), Exp >;
 
@@ -763,12 +799,12 @@ struct Unit
         return Unit<DivConversions<C, C2>, DivKinds<K, K2>>{};
     }
 
-    template <Natural N2, Natural D2, Natural E2>
+    template <Natural N2, Natural D2, Exponent E2>
     [[nodiscard]] constexpr friend auto operator*(Rational<N2, D2, E2> /*lhs*/, Unit /*rhs*/) noexcept {
         return Unit<MulConversions<Rational<N2, D2, E2>, C>, K>{};
     }
 
-    template <Natural N2, Natural D2, Natural E2>
+    template <Natural N2, Natural D2, Exponent E2>
     [[nodiscard]] constexpr friend auto operator*(Unit /*lhs*/, Rational<N2, D2, E2> /*rhs*/) noexcept {
         return Unit<MulConversions<C, Rational<N2, D2, E2>>, K>{};
     }
