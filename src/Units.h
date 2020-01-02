@@ -216,51 +216,63 @@ namespace kinds
 
     // 1
     struct One
-        : Kind< One, Dimension<> > {};
+        : Kind< One,
+                Dimension<> > {};
 
     // Meter m
     struct Length
-        : Kind< Length, Dimension<dim::Length> > {};
+        : Kind< Length,
+                Dimension<dim::Length> > {};
 
     // Kilogram kg
     struct Mass
-        : Kind< Mass, Dimension<dim::Mass> > {};
+        : Kind< Mass,
+                Dimension<dim::Mass> > {};
 
     // Second s
     struct Time
-        : Kind< Time, Dimension<dim::Time> > {};
+        : Kind< Time,
+                Dimension<dim::Time> > {};
 
     // Ampere A
     struct ElectricCurrent
-        : Kind< ElectricCurrent, Dimension<dim::ElectricCurrent> > {};
+        : Kind< ElectricCurrent,
+                Dimension<dim::ElectricCurrent> > {};
 
     // Kelvin K
     struct Temperature
-        : Kind< Temperature, Dimension<dim::Temperature> > {};
+        : Kind< Temperature,
+                Dimension<dim::Temperature> > {};
 
     // Mole mol
     struct AmountOfSubstance
-        : Kind< AmountOfSubstance, Dimension<dim::AmountOfSubstance> > {};
+        : Kind< AmountOfSubstance,
+                Dimension<dim::AmountOfSubstance> > {};
 
     // Candela cd
     struct LuminousIntensity
-        : Kind< LuminousIntensity, Dimension<dim::LuminousIntensity> > {};
+        : Kind< LuminousIntensity,
+                Dimension<dim::LuminousIntensity> > {};
 
     // Radian rad = 1
     struct PlaneAngle
-        : Kind< PlaneAngle, Dimension<> > {};
+        : Kind< PlaneAngle,
+                Dimension<> > {};
 
     // Steradian sr = 1 (= rad^2)
     struct SolidAngle
-        : Kind< SolidAngle, Dimension<> > {};
+        : Kind< SolidAngle,
+                Dimension<> > {};
 
     // Bit b
     struct Bit
-        : Kind< Bit, Dimension<dim::Bit> > {};
+        : Kind< Bit,
+                Dimension<dim::Bit> > {};
 
     // Pixel px
     struct Pixel
-        : Kind< Pixel, Dimension<dim::Pixel> > {};
+        : Kind< Pixel,
+                Dimension<dim::Pixel> > {};
 
     //--------------------------------------------------------------------------
     // Derived kinds:
@@ -522,8 +534,10 @@ namespace kinds
 // Rational
 //--------------------------------------------------------------------------------------------------
 
+//template <Natural Num, Natural Den = 1, Exponent Exp = 0>
+//using Ratio = Rational< Num / impl::Gcd(Num, Den), Den / impl::Gcd(Num, Den), Exp >;
 template <Natural Num, Natural Den = 1, Exponent Exp = 0>
-using Ratio = Rational< Num / impl::Gcd(Num, Den), Den / impl::Gcd(Num, Den), Exp >;
+using Ratio = Rational< std::ratio<Num, Den>::num, std::ratio<Num, Den>::den, Exp >;
 
 template <Natural Num, Natural Den = 1, Exponent Exp = 0>
 struct Rational
@@ -556,14 +570,20 @@ struct Rational
 
     template <Natural N2, Natural D2, Exponent E2>
     [[nodiscard]] constexpr friend auto operator*(Rational /*lhs*/, Rational<N2, D2, E2> /*rhs*/) noexcept {
-        constexpr Natural S = impl::Gcd(num, D2);
-        constexpr Natural T = impl::Gcd(den, N2);
-        return Rational< (num / S) * (N2 / T), (den / T) * (D2 / S), exp + E2 >{};
+        //constexpr Natural S = impl::Gcd(num, D2);
+        //constexpr Natural T = impl::Gcd(den, N2);
+        //return Rational< (num / S) * (N2 / T), (den / T) * (D2 / S), exp + E2 >{};
+
+        using Rat = std::ratio_multiply< std::ratio<num, den>, std::ratio<N2, D2> >;
+        return Rational<Rat::num, Rat::den, exp + E2>{};
     }
 
     template <Natural N2, Natural D2, Exponent E2>
     [[nodiscard]] constexpr friend auto operator/(Rational lhs, Rational<N2, D2, E2> /*rhs*/) noexcept {
-        return lhs * Rational<D2, N2, -E2>{};
+        //return lhs * Rational<D2, N2, -E2>{};
+
+        using Rat = std::ratio_divide< std::ratio<num, den>, std::ratio<N2, D2> >;
+        return Rational<Rat::num, Rat::den, exp - E2>{};
     }
 
     //[[nodiscard]] constexpr friend bool operator==(Rational, Rational) noexcept {
@@ -578,6 +598,7 @@ private:
     template <typename FromRep>
     [[nodiscard]] static constexpr auto ApplyRat(FromRep x) noexcept {
         using CR = std::common_type_t<FromRep, intmax_t>;
+
         if constexpr (num == 1 && den == 1)
             return static_cast<CR>(x);
         else if constexpr (num == 1)
@@ -592,7 +613,7 @@ private:
     [[nodiscard]] static constexpr auto ApplyExp(FromRep x) noexcept {
         using CR = std::common_type_t<FromRep, double>;
 
-        /**static**/ constexpr double Powers[] = {
+        constexpr double Powers[] = {
             1,                 // pi^0
             3.141592653589793, // pi^1
             9.869604401089358, // pi^2
@@ -623,21 +644,15 @@ using Cubic = decltype(C{} * C{} * C{});
 
 namespace impl
 {
-    template <Natural N>
-    using HasSquareRoot = std::bool_constant<Power(Root(N, 2), 2) == N>;
-
-    template <Natural N, Natural D>
-    using HasRationalSquareRoot = std::bool_constant<HasSquareRoot<N>::value && HasSquareRoot<D>::value>;
-}
-
-namespace impl
-{
     template <typename C1, typename C2>
     struct CommonRational;
 
     template <Natural Num1, Natural Den1, Natural Num2, Natural Den2, Exponent CommonExp>
     struct CommonRational< Rational<Num1, Den1, CommonExp>, Rational<Num2, Den2, CommonExp> >
     {
+        //using CR = std::common_type_t< std::ratio<Num1, Den1>, std::ratio<Num2, Den2> >;
+        //using type = Rational<CR::num, CR::den, CommonExp>;
+
         using type = Rational< Gcd(Num1, Num2), Lcm(Den1, Den2), CommonExp >;
     };
 }
@@ -677,14 +692,6 @@ struct Unit
     }
 };
 
-//template <typename U1, typename U2>
-//using MulUnits
-//    = Unit< MulConversions<typename U1::conversion, typename U2::conversion>, MulKinds<typename U1::kind, typename U2::kind> >;
-//
-//template <typename U1, typename U2>
-//using DivUnits
-//    = Unit< DivConversions<typename U1::conversion, typename U2::conversion>, DivKinds<typename U1::kind, typename U2::kind> >;
-
 template <typename U1, typename U2>
 using MulUnits = decltype(U1{} * U2{});
 
@@ -698,15 +705,14 @@ using ScaledUnit = Unit< MulConversions<S, typename U::conversion>, K >;
 // Quantity (value + compile-time unit)
 //--------------------------------------------------------------------------------------------------
 
-template </*typename R, */typename C, typename K>
-class Quantity</*R, */Unit<C, K>>
+template <typename C, typename K>
+class Quantity<Unit<C, K>>
 {
     //template <typename U2> friend class Quantity;
     //template <typename U2> friend class QuantityPoint;
 
 public:
     using quantity = Quantity;
-    using rep = double;
     using unit = Unit<C, K>;
     using conversion = C;
     using kind = K;
@@ -755,6 +761,7 @@ private:
     template <typename K2, typename T = int>
     using EnableIfDimensionless
         = std::enable_if_t< std::is_same< typename K2::dimension, Dimension<> >::value, T >;
+//      = std::enable_if_t< K2::dimension::num == 1 && K2::dimension::den == 1, T >;
 
 public:
     constexpr Quantity() noexcept = default;
@@ -796,11 +803,11 @@ public:
         return count_;
     }
 
-#if 1 // DANGER!!!
-    [[nodiscard]] constexpr double value() const noexcept {
-        return conversion{}(count_);
-    }
-#endif
+//#if 1 // DANGER!!!
+//    [[nodiscard]] constexpr double value() const noexcept {
+//        return conversion{}(count_);
+//    }
+//#endif
 
     template <typename C2, typename K2, EnableIfCompatible<K, K2> = 0>
     [[nodiscard]] constexpr auto convert_to(Unit<C2, K2>) const noexcept {
@@ -831,15 +838,15 @@ public:
 
     template <typename C2, typename Q = CommonTypeSfinae<C, C2, K>>
     [[nodiscard]] constexpr friend auto operator+(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-        //static_assert(std::is_convertible<decltype(lhs), Q>::value, "");
-        //static_assert(std::is_convertible<decltype(rhs), Q>::value, "");
+        //static_assert(std::is_convertible<decltype(lhs), Q>::value, "internal error");
+        //static_assert(std::is_convertible<decltype(rhs), Q>::value, "internal error");
         return Q(Q(lhs).count() + Q(rhs).count());
     }
 
     template <typename C2, typename Q = CommonTypeSfinae<C, C2, K>>
     [[nodiscard]] constexpr friend auto operator-(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-        //static_assert(std::is_convertible<decltype(lhs), Q>::value, "");
-        //static_assert(std::is_convertible<decltype(rhs), Q>::value, "");
+        //static_assert(std::is_convertible<decltype(lhs), Q>::value, "internal error");
+        //static_assert(std::is_convertible<decltype(rhs), Q>::value, "internal error");
         return Q(Q(lhs).count() - Q(rhs).count());
     }
 
@@ -887,19 +894,15 @@ public:
 
     template <typename C2, EnableIfDivides<C, C2> = 0>
     constexpr friend Quantity& operator+=(Quantity& lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-        //static_assert(std::is_convertible<decltype(rhs), Quantity>::value, "");
-//      lhs.count_ += Quantity(rhs).count();
-//      lhs.count_ += DivConversions<C2, C>{}(rhs.count());
-        lhs.count_ += DivConversions<C2, C>::num * rhs.count();
+        //static_assert(std::is_convertible<decltype(rhs), Quantity>::value, "internal error");
+        lhs.count_ += DivConversions<C2, C>{}(rhs.count());
         return lhs;
     }
 
     template <typename C2, EnableIfDivides<C, C2> = 0>
     constexpr friend Quantity& operator-=(Quantity& lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-        //static_assert(std::is_convertible<decltype(rhs), Quantity>::value, "");
-//      lhs.count_ -= Quantity(rhs).count();
-//      lhs.count_ -= DivConversions<C2, C>{}(rhs.count());
-        lhs.count_ -= DivConversions<C2, C>::num * rhs.count();
+        //static_assert(std::is_convertible<decltype(rhs), Quantity>::value, "internal error");
+        lhs.count_ -= DivConversions<C2, C>{}(rhs.count());
         return lhs;
     }
 
@@ -926,8 +929,8 @@ public:
 
     template <typename C2, typename Q = CommonTypeSfinae<C, C2, K>>
     [[nodiscard]] constexpr friend int Compare(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-        //static_assert(std::is_convertible<decltype(lhs), Q>::value, "");
-        //static_assert(std::is_convertible<decltype(rhs), Q>::value, "");
+        //static_assert(std::is_convertible<decltype(lhs), Q>::value, "internal error");
+        //static_assert(std::is_convertible<decltype(rhs), Q>::value, "internal error");
         return impl::CompareValues(Q(lhs).count(), Q(rhs).count());
     }
 
@@ -944,8 +947,8 @@ public:
 
     template <typename C2, typename Q = CommonTypeSfinae<C, C2, K>>
     [[nodiscard]] constexpr friend bool operator==(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-        //static_assert(std::is_convertible<decltype(lhs), Q>::value, "");
-        //static_assert(std::is_convertible<decltype(rhs), Q>::value, "");
+        //static_assert(std::is_convertible<decltype(lhs), Q>::value, "internal error");
+        //static_assert(std::is_convertible<decltype(rhs), Q>::value, "internal error");
         return Q(lhs).count() == Q(rhs).count();
     }
 
@@ -956,8 +959,8 @@ public:
 
     template <typename C2, typename Q = CommonTypeSfinae<C, C2, K>>
     [[nodiscard]] constexpr friend bool operator<(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-        //static_assert(std::is_convertible<decltype(lhs), Q>::value, "");
-        //static_assert(std::is_convertible<decltype(rhs), Q>::value, "");
+        //static_assert(std::is_convertible<decltype(lhs), Q>::value, "internal error");
+        //static_assert(std::is_convertible<decltype(rhs), Q>::value, "internal error");
         return Q(lhs).count() < Q(rhs).count();
     }
 
