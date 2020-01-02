@@ -165,154 +165,33 @@ namespace impl
 // Dimension
 //--------------------------------------------------------------------------------------------------
 
-#if UNITS_PRIME_DIMENSION()
 template <intmax_t Num = 1, intmax_t Den = 1>
 using Dimension = typename std::ratio<Num, Den>::type;
-#else
-template <typename... BaseDimension>
-struct Dimension
-{
-};
-
-namespace impl
-{
-    template <typename T, typename U>
-    struct IsSameBaseDimension
-        : std::false_type
-    {
-    };
-
-    template <template <int, int> class D, int Num1, int Den1, int Num2, int Den2>
-    struct IsSameBaseDimension<D<Num1, Den1>, D<Num2, Den2>>
-        : std::true_type
-    {
-    };
-
-    template <template <int, int> class D, int Num, int Den>
-    constexpr auto NegateDimension(D<Num, Den>) noexcept {
-        return D<-Num, Den>{};
-    }
-
-    template <typename... Un>
-    constexpr auto InvertDimension(Dimension<Un...>)
-    {
-        return Dimension<decltype(NegateDimension(Un{}))...>{};
-    }
-
-    template <typename... Ln, typename... Rn>
-    constexpr auto Concat(Dimension<Ln...>, Dimension<Rn...>)
-    {
-        return Dimension<Ln..., Rn...>{};
-    }
-
-    constexpr auto Merge(Dimension<>, Dimension<>)
-    {
-        return Dimension<>{};
-    }
-
-    template <typename L1, typename... Ln>
-    constexpr auto Merge(Dimension<L1, Ln...> lhs, Dimension<>)
-    {
-        return lhs;
-    }
-
-    template <typename R1, typename... Rn>
-    constexpr auto Merge(Dimension<>, Dimension<R1, Rn...> rhs)
-    {
-        return rhs;
-    }
-
-    template <
-        template <int, int> class L1, int L1Num, int L1Den, typename... Ln,
-        template <int, int> class R1, int R1Num, int R1Den, typename... Rn
-        >
-    constexpr auto Merge(Dimension<L1<L1Num, L1Den>, Ln...> lhs, Dimension<R1<R1Num, R1Den>, Rn...> rhs)
-    {
-        static_assert(L1Den > 0, "invalid denominator");
-        static_assert(R1Den > 0, "invalid denominator");
-
-        constexpr int id1 = L1<L1Num, L1Den>::id;
-        constexpr int id2 = R1<R1Num, R1Den>::id;
-        if constexpr (id1 < id2)
-        {
-            return Concat(Dimension<L1<L1Num, L1Den>>{}, Merge(Dimension<Ln...>{}, rhs));
-        }
-        else if constexpr (id2 < id1)
-        {
-            return Concat(Dimension<R1<R1Num, R1Den>>{}, Merge(lhs, Dimension<Rn...>{}));
-        }
-        else
-        {
-            static_assert(IsSameBaseDimension<L1<L1Num, L1Den>, R1<R1Num, R1Den>>::value,
-                "the 'id' of a base dimensions must be globally unique");
-
-            using Sum = std::ratio_add<typename std::ratio<L1Num, L1Den>::type, typename std::ratio<R1Num, R1Den>::type>;
-            if constexpr (Sum::num != 0)
-                return Concat(Dimension<L1<Sum::num, Sum::den>>{}, Merge(Dimension<Ln...>{}, Dimension<Rn...>{}));
-            else
-                return Merge(Dimension<Ln...>{}, Dimension<Rn...>{});
-        }
-    }
-}
-#endif
 
 namespace dim // Base quantities
 {
     // Some prime numbers:
     // 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97
 
-#if 0
-    template <int64_t Num, int64_t Den = 1>
-    struct Dimension
-    {
-    };
-
-    num = id1^a * id3^b * id5^c
-    den = id7^d
-#endif
-
-#if UNITS_PRIME_DIMENSION()
-    // N >= 1!
-    template <int N = 1> inline constexpr int64_t Length            = N * 2;
-    template <int N = 1> inline constexpr int64_t Mass              = N * 3;
-    template <int N = 1> inline constexpr int64_t Time              = N * 5;
-    template <int N = 1> inline constexpr int64_t ElectricCurrent   = N * 7;
-    template <int N = 1> inline constexpr int64_t Temperature       = N * 11;
-    template <int N = 1> inline constexpr int64_t AmountOfSubstance = N * 13;
-    template <int N = 1> inline constexpr int64_t LuminousIntensity = N * 17;
-    template <int N = 1> inline constexpr int64_t Bit               = N * 19;
-    template <int N = 1> inline constexpr int64_t Currency          = N * 23;
-    template <int N = 1> inline constexpr int64_t Pixel             = N * 29;
-    template <int N = 1> inline constexpr int64_t Dot               = N * 31;
-#else
-    template <int Num, int Den = 1> struct Length            { static constexpr int64_t id =  2; }; // Meter m
-    template <int Num, int Den = 1> struct Mass              { static constexpr int64_t id =  3; }; // Kilogram kg
-    template <int Num, int Den = 1> struct Time              { static constexpr int64_t id =  5; }; // Second s
-    template <int Num, int Den = 1> struct ElectricCurrent   { static constexpr int64_t id =  7; }; // Ampere A
-    template <int Num, int Den = 1> struct Temperature       { static constexpr int64_t id = 11; }; // Kelvin K
-    template <int Num, int Den = 1> struct AmountOfSubstance { static constexpr int64_t id = 13; }; // Mole mol
-    template <int Num, int Den = 1> struct LuminousIntensity { static constexpr int64_t id = 17; }; // Candela cd
-    template <int Num, int Den = 1> struct Bit               { static constexpr int64_t id = 19; };
-    template <int Num, int Den = 1> struct Currency          { static constexpr int64_t id = 23; }; // TODO: Euro, Dollar, etc...
-    template <int Num, int Den = 1> struct Pixel             { static constexpr int64_t id = 29; };
-    template <int Num, int Den = 1> struct Dot               { static constexpr int64_t id = 31; };
-#endif
+    inline constexpr intmax_t Length            = 2;
+    inline constexpr intmax_t Mass              = 3;
+    inline constexpr intmax_t Time              = 5;
+    inline constexpr intmax_t ElectricCurrent   = 7;
+    inline constexpr intmax_t Temperature       = 11;
+    inline constexpr intmax_t AmountOfSubstance = 13;
+    inline constexpr intmax_t LuminousIntensity = 17;
+    inline constexpr intmax_t Bit               = 19;
+    inline constexpr intmax_t Currency          = 23;
+    inline constexpr intmax_t Pixel             = 29;
+    inline constexpr intmax_t Dot               = 31;
 }
 
 //
 // TODO:
 // MulDimensions<D1, D2, Dn...>
 //
-#if UNITS_PRIME_DIMENSION()
 template <typename D1, typename D2> using MulDimensions = std::ratio_multiply<D1, D2>;
 template <typename D1, typename D2> using DivDimensions = std::ratio_divide<D1, D2>;
-#else
-template <typename D1, typename D2>
-using MulDimensions = decltype(impl::Merge(D1{}, D2{}));
-
-template <typename D1, typename D2>
-using DivDimensions = decltype(impl::Merge(D1{}, impl::InvertDimension(D2{})));
-#endif
 
 namespace kinds
 {
@@ -341,31 +220,31 @@ namespace kinds
 
     // Meter m
     struct Length
-        : Kind< Length, Dimension<dim::Length<1>> > {};
+        : Kind< Length, Dimension<dim::Length> > {};
 
     // Kilogram kg
     struct Mass
-        : Kind< Mass, Dimension<dim::Mass<1>> > {};
+        : Kind< Mass, Dimension<dim::Mass> > {};
 
     // Second s
     struct Time
-        : Kind< Time, Dimension<dim::Time<1>> > {};
+        : Kind< Time, Dimension<dim::Time> > {};
 
     // Ampere A
     struct ElectricCurrent
-        : Kind< ElectricCurrent, Dimension<dim::ElectricCurrent<1>> > {};
+        : Kind< ElectricCurrent, Dimension<dim::ElectricCurrent> > {};
 
     // Kelvin K
     struct Temperature
-        : Kind< Temperature, Dimension<dim::Temperature<1>> > {};
+        : Kind< Temperature, Dimension<dim::Temperature> > {};
 
     // Mole mol
     struct AmountOfSubstance
-        : Kind< AmountOfSubstance, Dimension<dim::AmountOfSubstance<1>> > {};
+        : Kind< AmountOfSubstance, Dimension<dim::AmountOfSubstance> > {};
 
     // Candela cd
     struct LuminousIntensity
-        : Kind< LuminousIntensity, Dimension<dim::LuminousIntensity<1>> > {};
+        : Kind< LuminousIntensity, Dimension<dim::LuminousIntensity> > {};
 
     // Radian rad = 1
     struct PlaneAngle
@@ -377,11 +256,11 @@ namespace kinds
 
     // Bit b
     struct Bit
-        : Kind< Bit, Dimension<dim::Bit<1>> > {};
+        : Kind< Bit, Dimension<dim::Bit> > {};
 
     // Pixel px
     struct Pixel
-        : Kind< Pixel, Dimension<dim::Pixel<1>> > {};
+        : Kind< Pixel, Dimension<dim::Pixel> > {};
 
     //--------------------------------------------------------------------------
     // Derived kinds:
@@ -647,7 +526,7 @@ template <Natural Num, Natural Den = 1, Exponent Exp = 0>
 using Ratio = Rational< Num / impl::Gcd(Num, Den), Den / impl::Gcd(Num, Den), Exp >;
 
 template <Natural Num, Natural Den = 1, Exponent Exp = 0>
-struct Rational // RatPi. Delicious.
+struct Rational
 {
     // value = (Num / Den) * pi^Exp
 
@@ -666,8 +545,8 @@ struct Rational // RatPi. Delicious.
     static_assert(impl::Gcd(Num, Den) == 1,
         "use Ratio<> to construct (reduced) Rational's");
 
-    static constexpr Natural num = Num;
-    static constexpr Natural den = Den;
+    static constexpr Natural num = Num; // / impl::Gcd(Num, Den);
+    static constexpr Natural den = Den; // / impl::Gcd(Num, Den);
     static constexpr Exponent exp = Exp;
 
     // Returns: x * num / den * pi^exp
@@ -696,18 +575,23 @@ struct Rational // RatPi. Delicious.
     //}
 
 private:
-    [[nodiscard]] static constexpr double ApplyRat(double x) noexcept {
+    template <typename FromRep>
+    [[nodiscard]] static constexpr auto ApplyRat(FromRep x) noexcept {
+        using CR = std::common_type_t<FromRep, intmax_t>;
         if constexpr (num == 1 && den == 1)
-            return x;
+            return static_cast<CR>(x);
         else if constexpr (num == 1)
-            return x / den;
+            return static_cast<CR>(x) / static_cast<CR>(den);
         else if constexpr (den == 1)
-            return x * num;
+            return static_cast<CR>(x) * static_cast<CR>(num);
         else
-            return x * num / den;
+            return static_cast<CR>(x) * static_cast<CR>(num) / static_cast<CR>(den);
     }
 
-    [[nodiscard]] static constexpr double ApplyExp(double x) noexcept {
+    template <typename FromRep>
+    [[nodiscard]] static constexpr auto ApplyExp(FromRep x) noexcept {
+        using CR = std::common_type_t<FromRep, double>;
+
         /**static**/ constexpr double Powers[] = {
             1,                 // pi^0
             3.141592653589793, // pi^1
@@ -717,30 +601,13 @@ private:
         };
 
         if constexpr (exp == 0)
-            return x;
+            return static_cast<CR>(x);
         else if constexpr (exp > 0)
-            return x * Powers[exp];
+            return static_cast<CR>(x) * static_cast<CR>(Powers[exp]);
         else
-            return x / Powers[-exp];
+            return static_cast<CR>(x) / static_cast<CR>(Powers[-exp]);
     }
 };
-
-//namespace impl
-//{
-//    template <typename R1, typename R2>
-//    struct RationalProduct
-//    {
-//        static constexpr Natural Num1 = R1::num;
-//        static constexpr Natural Den1 = R1::den;
-//        static constexpr Natural Num2 = R2::num;
-//        static constexpr Natural Den2 = R2::den;
-//
-//        static constexpr Natural S = Gcd(Num1, Den2);
-//        static constexpr Natural T = Gcd(Den1, Num2);
-//
-//        using type = Rational< (Num1 / S) * (Num2 / T), (Den1 / T) * (Den2 / S), R1::exp + R2::exp >;
-//    };
-//}
 
 template <typename C1, typename C2 /* = C1 */>
 using MulConversions = decltype(C1{} * C2{});
