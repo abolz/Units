@@ -5,19 +5,13 @@
 #pragma once
 
 #define UNITS_DELETE_EVERYTHING_ELSE() 0
-#define UNITS_HAS_ANY() 0
 #define UNITS_HAS_MATH() 0
-#define UNITS_IGNORE_KIND() 0
-#define UNITS_PRIME_DIMENSION() 1
 
-#include <cassert>
+#include "Ratio.h"
+
 #if UNITS_HAS_MATH()
 #include <cmath>
 #endif
-#include <cstdint>
-#include <chrono>
-#include <ratio>
-#include <type_traits>
 
 #ifndef UNITS_ASSERT
 #define UNITS_ASSERT(X) assert(X)
@@ -29,9 +23,6 @@ namespace sc {
 // Compile-time units
 //==================================================================================================
 
-using Exponent = int;
-using Natural = int64_t;
-
 struct Any {};
 
 template <typename K, typename D>
@@ -42,124 +33,14 @@ struct Kind
     using dimension = D;
 };
 
-template <Natural Num, Natural Den, Exponent Exp>
-struct Rational;
+template <typename R, intmax_t Exp>
+struct Conversion;
 
 template <typename C, typename K>
 struct Unit;
 
 template <typename U>
 class Quantity;
-
-//template <typename U>
-//class QuantityPoint;
-
-//template <typename T>
-//auto treat_as_floating_point(T&&) // never implemented!
-//    -> std::bool_constant<std::is_floating_point_v<std::remove_cv_t<T>>>;
-
-//--------------------------------------------------------------------------------------------------
-// Rational
-//--------------------------------------------------------------------------------------------------
-
-namespace impl
-{
-    template <typename L, typename R>
-    constexpr int CompareValues(L lhs, R rhs) noexcept {
-        if (lhs == rhs)
-            return 0;
-        return lhs < rhs ? -1 : 1;
-    }
-
-    constexpr int Sgn(Natural x) noexcept {
-        return CompareValues(x, static_cast<Natural>(0));
-    }
-
-    constexpr Natural Abs(Natural x) noexcept {
-        return x < 0 ? -x : x;
-    }
-
-    constexpr Natural Min(Natural x, Natural y) noexcept {
-        return y < x ? y : x;
-    }
-
-    constexpr Natural Gcd(Natural a, Natural b) noexcept {
-        UNITS_ASSERT(a >= 1); // static_assert
-        UNITS_ASSERT(b >= 1); // static_assert
-        while (b > 0) {
-            const auto r = a % b;
-            a = b;
-            b = r;
-        }
-        UNITS_ASSERT(a >= 1); // static_assert
-        return a;
-    }
-
-    constexpr Natural Lcm(Natural a, Natural b) noexcept {
-        return (a / Gcd(a, b)) * b;
-    }
-
-#if 1
-    constexpr Natural Power(Natural x, Natural n) noexcept {
-        UNITS_ASSERT(x >= 1);
-        UNITS_ASSERT(n >= 0);
-
-        Natural p = 1;
-        if (x > 1) {
-            for ( ; n > 0; --n) {
-                UNITS_ASSERT(p <= INT64_MAX / x);
-                p *= x;
-            }
-        }
-
-        return p;
-    }
-
-    // Returns x^n > lower (without overflow).
-    constexpr bool IsPowerGreaterThan(Natural x, Natural n, Natural lower) noexcept {
-        UNITS_ASSERT(x >= 1);
-        UNITS_ASSERT(n >= 0);
-
-        const auto lim = INT64_MAX / x;
-        const auto max = lim < lower ? lim : lower; // = min(lim, lower)
-
-        Natural p = 1;
-        for ( ; n > 0; --n) {
-            if (p > max) // p*x will overflow, or p > lower
-                return true;
-            p *= x;
-        }
-
-        return p > lower;
-    }
-
-    // Computes the n-th root y of x,
-    // i.e. returns the largest y, such that y^n <= x
-    constexpr Natural Root(Natural x, Natural n) noexcept {
-        UNITS_ASSERT(x >= 1);
-        UNITS_ASSERT(n >= 1);
-
-        if (x <= 1 || n <= 1)
-            return x;
-
-        Natural lo = 1;
-        Natural hi = 1 + x / n;
-        // Bernoulli  ==>  x^(1/n) <= 1 + (x - 1)/n < 1 + x/n
-        // Since n >= 2, hi will not overflow here.
-
-        for (;;)
-        {
-            const auto y = lo + (hi - lo) / 2;
-            if (y == lo)                           // hi - lo <= 1
-                return y;
-            else if (IsPowerGreaterThan(y, n, x))  // x < y^n
-                hi = y;
-            else                                   // y^n <= x
-                lo = y;
-        }
-    }
-#endif
-}
 
 //--------------------------------------------------------------------------------------------------
 // Dimension
@@ -242,7 +123,7 @@ namespace impl
             static_assert(IsSameBaseDimension<L1<L1Num, L1Den>, R1<R1Num, R1Den>>::value,
                 "the 'id' of a base dimensions must be globally unique");
 
-            using Sum = std::ratio_add<typename std::ratio<L1Num, L1Den>::type, typename std::ratio<R1Num, R1Den>::type>;
+            using Sum = AddRatios< Ratio<L1Num, L1Den>, Ratio<R1Num, R1Den> >;
             if constexpr (Sum::num != 0)
                 return Concat(Dimension<L1<Sum::num, Sum::den>>{}, Merge(Dimension<Ln...>{}, Dimension<Rn...>{}));
             else
@@ -255,6 +136,8 @@ namespace dim // Base quantities
 {
     // Some prime numbers:
     // 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97
+
+    // Length^(n/d), Mass^(n/d), etc...
 
     template <int Num, int Den = 1> struct Length            { static constexpr int64_t id =  2; }; // Meter m
     template <int Num, int Den = 1> struct Mass              { static constexpr int64_t id =  3; }; // Kilogram kg
@@ -617,88 +500,39 @@ namespace kinds
 }
 
 //--------------------------------------------------------------------------------------------------
-// Rational
+// Conversion
+//  value = R * pi^Exp = (Num / Den) * pi^Exp
 //--------------------------------------------------------------------------------------------------
 
-//template <Natural Num, Natural Den = 1, Exponent Exp = 0>
-//using Ratio = Rational< Num / impl::Gcd(Num, Den), Den / impl::Gcd(Num, Den), Exp >;
-template <Natural Num, Natural Den = 1, Exponent Exp = 0>
-using Ratio = Rational< std::ratio<Num, Den>::num, std::ratio<Num, Den>::den, Exp >;
+template <intmax_t Num, intmax_t Den = 1, intmax_t Exp = 0>
+using Conversion_t
+    = Conversion< Ratio<Num, Den>, Exp >;
 
-template <Natural Num, Natural Den = 1, Exponent Exp = 0>
-struct Rational
+template <typename R, intmax_t Exp = 0>
+struct Conversion
 {
-    // value = (Num / Den) * pi^Exp
+    static constexpr intmax_t Two53 = 9007199254740992; // == 2^53
 
-    static constexpr Natural Two53 = 9007199254740992; // == 2^53
+    static constexpr intmax_t num = R::num;
+    static constexpr intmax_t den = R::den;
+    static constexpr intmax_t exp = Exp;
 
-    static_assert(Num > 0,
+    using rep = double;
+    using ratio = typename R::type;
+
+    static_assert(num > 0,
         "invalid argument");
-    static_assert(Num <= Two53,
+    static_assert(num <= Two53,
         "invalid argument");
-    static_assert(Den > 0,
+    static_assert(den > 0,
         "invalid argument");
-    static_assert(Den <= Two53,
+    static_assert(den <= Two53,
         "invalid argument");
     static_assert(impl::Abs(Exp) <= 4,
         "argument out of range (sorry, not implemented...)");
-    static_assert(impl::Gcd(Num, Den) == 1,
-        "use Ratio<> to construct (reduced) Rational's");
 
-    static constexpr Natural num = Num; // / impl::Gcd(Num, Den);
-    static constexpr Natural den = Den; // / impl::Gcd(Num, Den);
-    static constexpr Exponent exp = Exp;
-
-    // Returns: x * num / den * pi^exp
-    [[nodiscard]] constexpr double operator()(double x) const noexcept {
-        return ApplyExp(ApplyRat(x));
-    }
-
-    template <Natural N2, Natural D2, Exponent E2>
-    [[nodiscard]] constexpr friend auto operator*(Rational /*lhs*/, Rational<N2, D2, E2> /*rhs*/) noexcept {
-        //constexpr Natural S = impl::Gcd(num, D2);
-        //constexpr Natural T = impl::Gcd(den, N2);
-        //return Rational< (num / S) * (N2 / T), (den / T) * (D2 / S), exp + E2 >{};
-
-        using Rat = std::ratio_multiply< std::ratio<num, den>, std::ratio<N2, D2> >;
-        return Rational<Rat::num, Rat::den, exp + E2>{};
-    }
-
-    template <Natural N2, Natural D2, Exponent E2>
-    [[nodiscard]] constexpr friend auto operator/(Rational lhs, Rational<N2, D2, E2> /*rhs*/) noexcept {
-        //return lhs * Rational<D2, N2, -E2>{};
-
-        using Rat = std::ratio_divide< std::ratio<num, den>, std::ratio<N2, D2> >;
-        return Rational<Rat::num, Rat::den, exp - E2>{};
-    }
-
-    //[[nodiscard]] constexpr friend bool operator==(Rational, Rational) noexcept {
-    //    return true;
-    //}
-
-    //[[nodiscard]] constexpr friend bool operator!=(Rational, Rational) noexcept {
-    //    return false;
-    //}
-
-private:
-    template <typename FromRep>
-    [[nodiscard]] static constexpr auto ApplyRat(FromRep x) noexcept {
-        using CR = std::common_type_t<FromRep, intmax_t>;
-
-        if constexpr (num == 1 && den == 1)
-            return static_cast<CR>(x);
-        else if constexpr (num == 1)
-            return static_cast<CR>(x) / static_cast<CR>(den);
-        else if constexpr (den == 1)
-            return static_cast<CR>(x) * static_cast<CR>(num);
-        else
-            return static_cast<CR>(x) * static_cast<CR>(num) / static_cast<CR>(den);
-    }
-
-    template <typename FromRep>
-    [[nodiscard]] static constexpr auto ApplyExp(FromRep x) noexcept {
-        using CR = std::common_type_t<FromRep, double>;
-
+    // Returns: (x * num / den) * pi^exp
+    [[nodiscard]] constexpr rep operator()(rep x) const noexcept {
         constexpr double Powers[] = {
             1,                 // pi^0
             3.141592653589793, // pi^1
@@ -707,44 +541,45 @@ private:
             97.40909103400244, // pi^4
         };
 
+        const rep scaled = ratio{}(x);
         if constexpr (exp == 0)
-            return static_cast<CR>(x);
+            return scaled;
         else if constexpr (exp > 0)
-            return static_cast<CR>(x) * static_cast<CR>(Powers[exp]);
+            return scaled * static_cast<rep>(Powers[exp]);
         else
-            return static_cast<CR>(x) / static_cast<CR>(Powers[-exp]);
+            return scaled / static_cast<rep>(Powers[-exp]);
     }
 };
 
 template <typename C1, typename C2 /* = C1 */>
-using MulConversions = decltype(C1{} * C2{});
+using MulConversions = Conversion< MulRatios<typename C1::ratio, typename C2::ratio>, C1::exp + C2::exp >;
 
 template <typename C1, typename C2>
-using DivConversions = decltype(C1{} / C2{});
+using DivConversions = Conversion< DivRatios<typename C1::ratio, typename C2::ratio>, C1::exp - C2::exp >;
 
 template <typename C>
-using Square = decltype(C{} * C{});
+using SquareConversion = MulConversions<C, C>;
 
 template <typename C>
-using Cubic = decltype(C{} * C{} * C{});
+using CubicConversion = MulConversions<SquareConversion<C>, C>;
 
 namespace impl
 {
     template <typename C1, typename C2>
-    struct CommonRational;
-
-    template <Natural Num1, Natural Den1, Natural Num2, Natural Den2, Exponent CommonExp>
-    struct CommonRational< Rational<Num1, Den1, CommonExp>, Rational<Num2, Den2, CommonExp> >
+    struct CommonConversion
     {
-        //using CR = std::common_type_t< std::ratio<Num1, Den1>, std::ratio<Num2, Den2> >;
-        //using type = Rational<CR::num, CR::den, CommonExp>;
+        // SFINAE: missing 'type'
+    };
 
-        using type = Rational< Gcd(Num1, Num2), Lcm(Den1, Den2), CommonExp >;
+    template <typename R1, typename R2, intmax_t CommonExp>
+    struct CommonConversion< Conversion<R1, CommonExp>, Conversion<R2, CommonExp> >
+    {
+        using type = Conversion< CommonRatio<R1, R2>, CommonExp >;
     };
 }
 
-template <typename C1, typename C2>
-using CommonRatio = typename impl::CommonRational<C1, C2>::type;
+template <typename C1, typename C2> // SFINAE
+using CommonConversion = typename impl::CommonConversion<C1, C2>::type;
 
 //--------------------------------------------------------------------------------------------------
 // Unit
@@ -767,14 +602,14 @@ struct Unit
         return Unit<DivConversions<C, C2>, DivKinds<K, K2>>{};
     }
 
-    template <Natural N2, Natural D2, Exponent E2>
-    [[nodiscard]] constexpr friend auto operator*(Rational<N2, D2, E2> /*lhs*/, Unit /*rhs*/) noexcept {
-        return Unit<MulConversions<Rational<N2, D2, E2>, C>, K>{};
+    template <typename R2, intmax_t E2>
+    [[nodiscard]] constexpr friend auto operator*(Conversion<R2, E2> /*lhs*/, Unit /*rhs*/) noexcept {
+        return Unit<MulConversions<Conversion<R2, E2>, C>, K>{};
     }
 
-    template <Natural N2, Natural D2, Exponent E2>
-    [[nodiscard]] constexpr friend auto operator*(Unit /*lhs*/, Rational<N2, D2, E2> /*rhs*/) noexcept {
-        return Unit<MulConversions<C, Rational<N2, D2, E2>>, K>{};
+    template <typename R2, intmax_t E2>
+    [[nodiscard]] constexpr friend auto operator*(Unit /*lhs*/, Conversion<R2, E2> /*rhs*/) noexcept {
+        return Unit<MulConversions<C, Conversion<R2, E2>>, K>{};
     }
 };
 
@@ -795,7 +630,6 @@ template <typename C, typename K>
 class Quantity<Unit<C, K>>
 {
     //template <typename U2> friend class Quantity;
-    //template <typename U2> friend class QuantityPoint;
 
 public:
     using quantity = Quantity;
@@ -808,46 +642,17 @@ private:
     double count_ = 0;
 
 private:
-    template <typename R>
-    using IsNatural
-        = std::bool_constant< R::den == 1 && R::exp == 0 >;
-
-    // C1 | C2
-    template <typename C1, typename C2>
-    using Divides
-        = IsNatural< DivConversions<C2, C1> >;
-
     template <typename C1, typename C2, typename T = int>
     using EnableIfDivides
-        = std::enable_if_t< Divides<C1, C2>::value, T >;
-
-    template <typename K1, typename K2>
-    using IsSameDimensionType
-        = std::is_same< typename K1::dimension, typename K2::dimension >;
+        = std::enable_if_t< DivConversions<C2, C1>::den == 1 && DivConversions<C2, C1>::exp == 0, T >;
 
     template <typename K1, typename K2, typename T = int>
     using EnableIfCompatible
-        = std::enable_if_t< IsSameDimensionType<K1, K2>::value, T >;
-
-    // PRE: K1 == K2
-    template <typename C1, typename C2, typename K2 = K>
-    using CommonTypeSfinae
-        = std::enable_if_t< C1::exp == C2::exp, Quantity<Unit<CommonRatio<C1, C2>, K2>> >;
-
-#if UNITS_HAS_ANY()
-    template <typename K2>
-    using IsAnyKind
-        = std::is_same< typename K2::kind, Any >;
-
-    template <typename C1, typename K1, typename C2, typename K2, typename T = int>
-    using EnableIfConvertibleFromAny
-        = std::enable_if_t< Divides<C1, C2>::value && IsSameDimensionType<K1, K2>::value && IsAnyKind<K2>::value, T >;
-#endif
+        = std::enable_if_t< std::is_same< typename K1::dimension, typename K2::dimension >::value, T >;
 
     template <typename K2, typename T = int>
     using EnableIfDimensionless
         = std::enable_if_t< std::is_same< typename K2::dimension, Dimension<> >::value, T >;
-//      = std::enable_if_t< K2::dimension::num == 1 && K2::dimension::den == 1, T >;
 
 public:
     constexpr Quantity() noexcept = default;
@@ -865,14 +670,6 @@ public:
     {
     }
 
-#if UNITS_HAS_ANY()
-    template <typename C2, typename K2, EnableIfConvertibleFromAny<C, K, C2, K2> = 0>
-    constexpr Quantity(Quantity<Unit<C2, K2>> q) noexcept
-        : count_(DivConversions<C2, C>{}(q.count()))
-    {
-    }
-#endif
-
     template <typename C2, typename K2, EnableIfCompatible<K, K2> = 0>
     constexpr explicit Quantity(Quantity<Unit<C2, K2>> q) noexcept
         : count_(DivConversions<C2, C>{}(q.count()))
@@ -889,11 +686,9 @@ public:
         return count_;
     }
 
-//#if 1 // DANGER!!!
-//    [[nodiscard]] constexpr double value() const noexcept {
-//        return conversion{}(count_);
-//    }
-//#endif
+    //[[nodiscard]] constexpr double value() const noexcept {
+    //    return conversion{}(count_);
+    //}
 
     template <typename C2, typename K2, EnableIfCompatible<K, K2> = 0>
     [[nodiscard]] constexpr auto convert_to(Unit<C2, K2>) const noexcept {
@@ -922,30 +717,28 @@ public:
         return Quantity(-q.count());
     }
 
-    template <typename C2, typename Q = CommonTypeSfinae<C, C2, K>>
+    template <typename C2, typename Q = Quantity<Unit<CommonConversion<C, C2>, K>>>
     [[nodiscard]] constexpr friend auto operator+(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-        //static_assert(std::is_convertible<decltype(lhs), Q>::value, "internal error");
-        //static_assert(std::is_convertible<decltype(rhs), Q>::value, "internal error");
-        return Q(Q(lhs).count() + Q(rhs).count());
+        const Q x = lhs; // implicit conversion
+        const Q y = rhs; // implicit conversion
+        return Q(x.count() + y.count());
     }
 
-    template <typename C2, typename Q = CommonTypeSfinae<C, C2, K>>
+    template <typename C2, typename Q = Quantity<Unit<CommonConversion<C, C2>, K>>>
     [[nodiscard]] constexpr friend auto operator-(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-        //static_assert(std::is_convertible<decltype(lhs), Q>::value, "internal error");
-        //static_assert(std::is_convertible<decltype(rhs), Q>::value, "internal error");
-        return Q(Q(lhs).count() - Q(rhs).count());
+        const Q x = lhs; // implicit conversion
+        const Q y = rhs; // implicit conversion
+        return Q(x.count() - y.count());
     }
 
     template <typename U2>
     [[nodiscard]] constexpr friend auto operator*(Quantity lhs, Quantity<U2> rhs) noexcept {
-        using Q = Quantity<MulUnits<unit, U2>>;
-        return Q(lhs.count() * rhs.count());
+        return Quantity<MulUnits<unit, U2>>(lhs.count() * rhs.count());
     }
 
     template <typename U2>
     [[nodiscard]] constexpr friend auto operator/(Quantity lhs, Quantity<U2> rhs) noexcept {
-        using Q = Quantity<DivUnits<unit, U2>>;
-        return Q(lhs.count() / rhs.count());
+        return Quantity<DivUnits<unit, U2>>(lhs.count() / rhs.count());
     }
 
     [[nodiscard]] constexpr friend auto operator*(Quantity lhs, double rhs) noexcept {
@@ -961,11 +754,10 @@ public:
     }
 
     [[nodiscard]] constexpr friend auto operator/(double lhs, Quantity rhs) noexcept {
-        using Q = Quantity<DivUnits<Unit<Ratio<1>, kinds::One>, unit>>;
-        return Q(lhs / rhs.count());
+        return Quantity<DivUnits<Unit<Conversion_t<1>, kinds::One>, unit>>(lhs / rhs.count());
     }
 
-#if 0 // UNITS_DELETE_EVERYTHING_ELSE()
+#if UNITS_DELETE_EVERYTHING_ELSE()
     template <typename U2>
     constexpr friend void operator+(Quantity lhs, Quantity<U2> rhs) noexcept
         = delete;
@@ -980,14 +772,12 @@ public:
 
     template <typename C2, EnableIfDivides<C, C2> = 0>
     constexpr friend Quantity& operator+=(Quantity& lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-        //static_assert(std::is_convertible<decltype(rhs), Quantity>::value, "internal error");
         lhs.count_ += DivConversions<C2, C>{}(rhs.count());
         return lhs;
     }
 
     template <typename C2, EnableIfDivides<C, C2> = 0>
     constexpr friend Quantity& operator-=(Quantity& lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-        //static_assert(std::is_convertible<decltype(rhs), Quantity>::value, "internal error");
         lhs.count_ -= DivConversions<C2, C>{}(rhs.count());
         return lhs;
     }
@@ -1013,11 +803,11 @@ public:
     //------------------------------------------------------------------------------
     // Comparisons
 
-    template <typename C2, typename Q = CommonTypeSfinae<C, C2, K>>
+    template <typename C2, typename Q = Quantity<Unit<CommonConversion<C, C2>, K>>>
     [[nodiscard]] constexpr friend int Compare(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-        //static_assert(std::is_convertible<decltype(lhs), Q>::value, "internal error");
-        //static_assert(std::is_convertible<decltype(rhs), Q>::value, "internal error");
-        return impl::CompareValues(Q(lhs).count(), Q(rhs).count());
+        const Q x = lhs; // implicit conversion
+        const Q y = rhs; // implicit conversion
+        return (x.count() == y.count()) ? 0 : (x.count() < y.count() ? -1 : 1);
     }
 
 #if UNITS_DELETE_EVERYTHING_ELSE()
@@ -1031,38 +821,46 @@ public:
     // etc...
     // If you can add them, you can compare them...
 
-    template <typename C2, typename Q = CommonTypeSfinae<C, C2, K>>
+    template <typename C2, typename Q = Quantity<Unit<CommonConversion<C, C2>, K>>>
     [[nodiscard]] constexpr friend bool operator==(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-        //static_assert(std::is_convertible<decltype(lhs), Q>::value, "internal error");
-        //static_assert(std::is_convertible<decltype(rhs), Q>::value, "internal error");
-        return Q(lhs).count() == Q(rhs).count();
+        const Q x = lhs; // implicit conversion
+        const Q y = rhs; // implicit conversion
+        return x.count() == y.count();
     }
 
-    template <typename C2, typename Q = CommonTypeSfinae<C, C2, K>>
+    template <typename C2, typename Q = Quantity<Unit<CommonConversion<C, C2>, K>>>
     [[nodiscard]] constexpr friend bool operator!=(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-        return !(lhs == rhs);
+        const Q x = lhs; // implicit conversion
+        const Q y = rhs; // implicit conversion
+        return x.count() != y.count();
     }
 
-    template <typename C2, typename Q = CommonTypeSfinae<C, C2, K>>
+    template <typename C2, typename Q = Quantity<Unit<CommonConversion<C, C2>, K>>>
     [[nodiscard]] constexpr friend bool operator<(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-        //static_assert(std::is_convertible<decltype(lhs), Q>::value, "internal error");
-        //static_assert(std::is_convertible<decltype(rhs), Q>::value, "internal error");
-        return Q(lhs).count() < Q(rhs).count();
+        const Q x = lhs; // implicit conversion
+        const Q y = rhs; // implicit conversion
+        return x.count() < y.count();
     }
 
-    template <typename C2, typename Q = CommonTypeSfinae<C, C2, K>>
+    template <typename C2, typename Q = Quantity<Unit<CommonConversion<C, C2>, K>>>
     [[nodiscard]] constexpr friend bool operator>(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-        return rhs < lhs;
+        const Q x = lhs; // implicit conversion
+        const Q y = rhs; // implicit conversion
+        return x.count() > y.count();
     }
 
-    template <typename C2, typename Q = CommonTypeSfinae<C, C2, K>>
+    template <typename C2, typename Q = Quantity<Unit<CommonConversion<C, C2>, K>>>
     [[nodiscard]] constexpr friend bool operator<=(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-        return !(rhs < lhs);
+        const Q x = lhs; // implicit conversion
+        const Q y = rhs; // implicit conversion
+        return x.count() <= y.count();
     }
 
-    template <typename C2, typename Q = CommonTypeSfinae<C, C2, K>>
+    template <typename C2, typename Q = Quantity<Unit<CommonConversion<C, C2>, K>>>
     [[nodiscard]] constexpr friend bool operator>=(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-        return !(lhs < rhs);
+        const Q x = lhs; // implicit conversion
+        const Q y = rhs; // implicit conversion
+        return x.count() >= y.count();
     }
 
 #if UNITS_DELETE_EVERYTHING_ELSE()
@@ -1178,21 +976,9 @@ template <typename NewKind, typename C, typename K>
     return Quantity<Unit<C, NewKind>>(q.count());
 }
 
-#if UNITS_HAS_ANY()
-template <typename C, typename K>
-[[nodiscard]] constexpr auto as_any_quantity(Quantity<Unit<C, K>> q) noexcept {
-    return Quantity<Unit<C, Kind<kinds::Any, typename K::dimension>>>(q.count());
-}
-
-template <typename C, typename K>
-[[nodiscard]] constexpr auto flatten(Quantity<Unit<C, K>> q) noexcept {
-    return as_any_quantity(q);
-}
-#endif
-
 template <typename C, typename K>
 [[nodiscard]] constexpr auto remove_conversion(Quantity<Unit<C, K>> q) noexcept {
-    return Quantity<Unit<Ratio<1>, K>>(C{}(q.count()));
+    return Quantity<Unit<Conversion_t<1>, K>>(C{}(q.count()));
 }
 
 //==================================================================================================
@@ -1201,23 +987,23 @@ template <typename C, typename K>
 
 //namespace prefixes
 //{
-//    using Exa   = Ratio<1000000000000000000>;
-//    using Peta  = Ratio<1000000000000000>;
-//    using Tera  = Ratio<1000000000000>;
-//    using Giga  = Ratio<1000000000>;
-//    using Mega  = Ratio<1000000>;
-//    using Kilo  = Ratio<1000>;
-//    using Hecto = Ratio<100>;
-//    using Deca  = Ratio<10>;
-//    using One   = Ratio<1>;
-//    using Deci  = Ratio<1, 10>;
-//    using Centi = Ratio<1, 100>;
-//    using Milli = Ratio<1, 1000>;
-//    using Micro = Ratio<1, 1000000>;
-//    using Nano  = Ratio<1, 1000000000>;
-//    using Pico  = Ratio<1, 1000000000000>;
-//    using Femto = Ratio<1, 1000000000000000>;
-//    using Atto  = Ratio<1, 1000000000000000000>;
+//    using Exa   = Conversion_t<1000000000000000000>;
+//    using Peta  = Conversion_t<1000000000000000>;
+//    using Tera  = Conversion_t<1000000000000>;
+//    using Giga  = Conversion_t<1000000000>;
+//    using Mega  = Conversion_t<1000000>;
+//    using Kilo  = Conversion_t<1000>;
+//    using Hecto = Conversion_t<100>;
+//    using Deca  = Conversion_t<10>;
+//    using One   = Conversion_t<1>;
+//    using Deci  = Conversion_t<1, 10>;
+//    using Centi = Conversion_t<1, 100>;
+//    using Milli = Conversion_t<1, 1000>;
+//    using Micro = Conversion_t<1, 1000000>;
+//    using Nano  = Conversion_t<1, 1000000000>;
+//    using Pico  = Conversion_t<1, 1000000000000>;
+//    using Femto = Conversion_t<1, 1000000000000000>;
+//    using Atto  = Conversion_t<1, 1000000000000000000>;
 //}
 
 //--------------------------------------------------------------------------------------------------
@@ -1225,14 +1011,14 @@ template <typename C, typename K>
 
 namespace units
 {
-    using Nanometre   = Unit< Ratio<1, 1000000000>, kinds::Length >;
-    using Micrometre  = Unit< Ratio<1, 1000000>, kinds::Length >;
-    using Millimetre  = Unit< Ratio<1, 1000>, kinds::Length >;
-    using Centimetre  = Unit< Ratio<1, 100>, kinds::Length >;
-    using Decimetre   = Unit< Ratio<1, 10>, kinds::Length >;
-    using Metre       = Unit< Ratio<1>, kinds::Length >;
-    using Hectometre  = Unit< Ratio<100>, kinds::Length >;
-    using Kilometre   = Unit< Ratio<1000>, kinds::Length >;
+    using Nanometre   = Unit< Conversion_t<1, 1000000000>, kinds::Length >;
+    using Micrometre  = Unit< Conversion_t<1, 1000000>, kinds::Length >;
+    using Millimetre  = Unit< Conversion_t<1, 1000>, kinds::Length >;
+    using Centimetre  = Unit< Conversion_t<1, 100>, kinds::Length >;
+    using Decimetre   = Unit< Conversion_t<1, 10>, kinds::Length >;
+    using Metre       = Unit< Conversion_t<1>, kinds::Length >;
+    using Hectometre  = Unit< Conversion_t<100>, kinds::Length >;
+    using Kilometre   = Unit< Conversion_t<1000>, kinds::Length >;
 }
 
 using Nanometres  = Quantity< units::Nanometre >;
@@ -1292,10 +1078,10 @@ namespace literals
 
 namespace units
 {
-    using Inch = ScaledUnit< Ratio<254, 100>, Centimetre >; // (international)
-    using Foot = ScaledUnit< Ratio<12>, Inch >;             // (international)
-    using Yard = ScaledUnit< Ratio<3>, Foot >;              // (international)
-    using Mile = ScaledUnit< Ratio<1760>, Yard >;           // (international)
+    using Inch = ScaledUnit< Conversion_t<254, 100>, Centimetre >; // (international)
+    using Foot = ScaledUnit< Conversion_t<12>, Inch >;             // (international)
+    using Yard = ScaledUnit< Conversion_t<3>, Foot >;              // (international)
+    using Mile = ScaledUnit< Conversion_t<1760>, Yard >;           // (international)
 }
 
 using Inches = Quantity< units::Inch >;
@@ -1336,12 +1122,12 @@ namespace literals
 
 namespace units
 {
-    using SquareCentimetre = Unit< Square<Centimetre::conversion>, kinds::Area >;
-    using SquareDecimetre  = Unit< Square<Decimetre::conversion>, kinds::Area >;
-    using SquareMetre      = Unit< Square<Metre::conversion>, kinds::Area >;
-    using SquareKilometre  = Unit< Square<Kilometre::conversion>, kinds::Area >;
+    using SquareCentimetre = Unit< SquareConversion<Centimetre::conversion>, kinds::Area >;
+    using SquareDecimetre  = Unit< SquareConversion<Decimetre::conversion>, kinds::Area >;
+    using SquareMetre      = Unit< SquareConversion<Metre::conversion>, kinds::Area >;
+    using SquareKilometre  = Unit< SquareConversion<Kilometre::conversion>, kinds::Area >;
 
-    using Hectare = Unit< Square<Hectometre::conversion>, kinds::Area >;
+    using Hectare = Unit< SquareConversion<Hectometre::conversion>, kinds::Area >;
 }
 
 using SquareCentimetres = Quantity< units::SquareCentimetre >;
@@ -1354,9 +1140,9 @@ using SquareKilometres  = Quantity< units::SquareKilometre >;
 
 namespace units
 {
-    using CubicCentimetre = Unit< Cubic<Centimetre::conversion>, kinds::Volume >;
-    using CubicDecimetre  = Unit< Cubic<Decimetre::conversion>, kinds::Volume >;
-    using CubicMetre      = Unit< Cubic<Metre::conversion>, kinds::Volume >;
+    using CubicCentimetre = Unit< CubicConversion<Centimetre::conversion>, kinds::Volume >;
+    using CubicDecimetre  = Unit< CubicConversion<Decimetre::conversion>, kinds::Volume >;
+    using CubicMetre      = Unit< CubicConversion<Metre::conversion>, kinds::Volume >;
 
     using Litre = CubicDecimetre;
 }
@@ -1370,16 +1156,16 @@ using CubicMetres      = Quantity< units::CubicMetre >;
 
 namespace units
 {
-    using Second      = Unit< Ratio<1>, kinds::Time >;
-    using Millisecond = ScaledUnit< Ratio<1, 1000>, Second >;
-    using Microsecond = ScaledUnit< Ratio<1, 1000>, Millisecond >;
-    using Nanosecond  = ScaledUnit< Ratio<1, 1000>, Microsecond >;
-    using Minute      = ScaledUnit< Ratio<60>, Second >;
-    using Hour        = ScaledUnit< Ratio<60>, Minute >;
-    //using Day         = ScaledUnit< Ratio<24>, Hour >;
-    //using Week        = ScaledUnit< Ratio<7>, Day >;
-    //using Year        = ScaledUnit< Ratio<146097, 400>, Day >;
-    //using Month       = ScaledUnit< Ratio<1, 12>, Year >;
+    using Second      = Unit< Conversion_t<1>, kinds::Time >;
+    using Millisecond = ScaledUnit< Conversion_t<1, 1000>, Second >;
+    using Microsecond = ScaledUnit< Conversion_t<1, 1000>, Millisecond >;
+    using Nanosecond  = ScaledUnit< Conversion_t<1, 1000>, Microsecond >;
+    using Minute      = ScaledUnit< Conversion_t<60>, Second >;
+    using Hour        = ScaledUnit< Conversion_t<60>, Minute >;
+    //using Day         = ScaledUnit< Conversion_t<24>, Hour >;
+    //using Week        = ScaledUnit< Conversion_t<7>, Day >;
+    //using Year        = ScaledUnit< Conversion_t<146097, 400>, Day >;
+    //using Month       = ScaledUnit< Conversion_t<1, 12>, Year >;
 }
 
 using Nanoseconds  = Quantity< units::Nanosecond >;
@@ -1428,7 +1214,7 @@ namespace literals
 
 namespace units
 {
-    using Hertz = Unit< DivConversions<Ratio<1>, Second::conversion>, kinds::Frequency >;
+    using Hertz = Unit< DivConversions<Conversion_t<1>, Second::conversion>, kinds::Frequency >;
 }
 
 using Hertz = Quantity< units::Hertz >;
@@ -1487,7 +1273,7 @@ namespace literals
 
 namespace units
 {
-    using MetrePerSecondSquared = Unit< DivConversions<Metre::conversion, Square<Second::conversion>>, kinds::Acceleration >;
+    using MetrePerSecondSquared = Unit< DivConversions<Metre::conversion, SquareConversion<Second::conversion>>, kinds::Acceleration >;
 }
 
 using MetresPerSecondSquared = Quantity< units::MetrePerSecondSquared >;
@@ -1507,9 +1293,9 @@ namespace literals
 
 namespace units
 {
-    using Gram     = Unit< Ratio<1, 1000>, kinds::Mass >;
-    using Kilogram = Unit< Ratio<1>, kinds::Mass >;
-    using Tonne    = Unit< Ratio<1000>, kinds::Mass >;
+    using Gram     = Unit< Conversion_t<1, 1000>, kinds::Mass >;
+    using Kilogram = Unit< Conversion_t<1>, kinds::Mass >;
+    using Tonne    = Unit< Conversion_t<1000>, kinds::Mass >;
 }
 
 using Grams     = Quantity< units::Gram >;
@@ -1563,8 +1349,8 @@ namespace literals
 
 namespace units
 {
-    using Kelvin  = Unit< Ratio<1>, kinds::Temperature >;
-//  using Celsius = Unit< Ratio<1>, kinds::Temperature >;
+    using Kelvin  = Unit< Conversion_t<1>, kinds::Temperature >;
+    //using Celsius = Unit< Conversion_t<1>, kinds::Temperature >;
 }
 
 using Kelvin  = Quantity< units::Kelvin >;
@@ -1578,12 +1364,12 @@ namespace literals
     [[nodiscard]] constexpr auto operator""_K(unsigned long long x) noexcept {
         return Kelvin{static_cast<double>(x)};
     }
-//  [[nodiscard]] constexpr auto operator""_degC(long double x) noexcept {
-//      return Celsius{static_cast<double>(x)};
-//  }
-//  [[nodiscard]] constexpr auto operator""_degC(unsigned long long x) noexcept {
-//      return Celsius{static_cast<double>(x)};
-//  }
+    //[[nodiscard]] constexpr auto operator""_degC(long double x) noexcept {
+    //    return Celsius{static_cast<double>(x)};
+    //}
+    //[[nodiscard]] constexpr auto operator""_degC(unsigned long long x) noexcept {
+    //    return Celsius{static_cast<double>(x)};
+    //}
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1591,7 +1377,7 @@ namespace literals
 
 namespace units
 {
-    using Mole = Unit< Ratio<1>, kinds::AmountOfSubstance >;
+    using Mole = Unit< Conversion_t<1>, kinds::AmountOfSubstance >;
 }
 
 using Moles = Quantity< units::Mole >;
@@ -1611,10 +1397,10 @@ namespace literals
 
 namespace units
 {
-    using Radian     = Unit< Ratio<1>, kinds::PlaneAngle >;
-    using Degree     = Unit< Ratio<1, 180, /* pi^ */ 1>, kinds::PlaneAngle >;
-    using Gon        = Unit< Ratio<1, 200, /* pi^ */ 1>, kinds::PlaneAngle >;
-    using Revolution = Unit< Ratio<2,   1, /* pi^ */ 1>, kinds::PlaneAngle >;
+    using Radian     = Unit< Conversion_t<1>, kinds::PlaneAngle >;
+    using Degree     = Unit< Conversion_t<1, 180, /* pi^ */ 1>, kinds::PlaneAngle >;
+    using Gon        = Unit< Conversion_t<1, 200, /* pi^ */ 1>, kinds::PlaneAngle >;
+    using Revolution = Unit< Conversion_t<2,   1, /* pi^ */ 1>, kinds::PlaneAngle >;
 }
 
 using Radians     = Quantity< units::Radian >;
@@ -1655,12 +1441,11 @@ namespace literals
 
 namespace units
 {
-    using Steradian    = Unit< Ratio<1>, kinds::SolidAngle >;
-    using SquareDegree = Unit< Square<Degree::conversion>, kinds::SolidAngle >; // sq.deg = deg^2
+    using Steradian    = Unit< Conversion_t<1>, kinds::SolidAngle >;
+    using SquareDegree = Unit< SquareConversion<Degree::conversion>, kinds::SolidAngle >; // sq.deg = deg^2
 }
 
-using Steradians    = Quantity< units::Steradian >;
-//using SquareDegrees = Quantity< units::SquareDegree >;
+using Steradians = Quantity< units::Steradian >;
 
 namespace literals
 {
@@ -1677,12 +1462,12 @@ namespace literals
 
 namespace units
 {
-    using Bit      = Unit< Ratio<1>, kinds::Bit >;
-    using Nibble   = ScaledUnit< Ratio<4>, Bit >;
-    using Byte     = ScaledUnit< Ratio<8>, Bit >;
-    using Kilobyte = ScaledUnit< Ratio<1000>, Byte >;
-    using Megabyte = ScaledUnit< Ratio<1000>, Kilobyte >;
-    using Gigabyte = ScaledUnit< Ratio<1000>, Megabyte >;
+    using Bit      = Unit< Conversion_t<1>, kinds::Bit >;
+    using Nibble   = ScaledUnit< Conversion_t<4>, Bit >;
+    using Byte     = ScaledUnit< Conversion_t<8>, Bit >;
+    using Kilobyte = ScaledUnit< Conversion_t<1000>, Byte >;
+    using Megabyte = ScaledUnit< Conversion_t<1000>, Kilobyte >;
+    using Gigabyte = ScaledUnit< Conversion_t<1000>, Megabyte >;
 }
 
 using Bits      = Quantity< units::Bit >;
@@ -1732,18 +1517,18 @@ namespace literals
 namespace units
 {
     using Candela
-        = Unit< Ratio<1>, kinds::LuminousIntensity >;
+        = Unit< Conversion_t<1>, kinds::LuminousIntensity >;
 
     using Lumen
         = Unit< MulConversions<Candela::conversion, Steradian::conversion>, kinds::LuminousFlux >;
 
-//  using LumenSecond
-//      = Unit< MulConversions<Lumen::conversion, Second::conversion>, kinds::LuminousEnergy >;
+    //using LumenSecond
+    //    = Unit< MulConversions<Lumen::conversion, Second::conversion>, kinds::LuminousEnergy >;
     using Talbot
         = Unit< MulConversions<Lumen::conversion, Second::conversion>, kinds::LuminousEnergy >;
 
-//  using CandelaPerSquareMeter
-//      = Unit< DivConversions<Candela::conversion, SquareMeter::conversion>, kinds::Luminance >;
+    //using CandelaPerSquareMeter
+    //    = Unit< DivConversions<Candela::conversion, SquareMeter::conversion>, kinds::Luminance >;
     using Nit
         = Unit< DivConversions<Candela::conversion, SquareMetre::conversion>, kinds::Luminance >;
 
@@ -1752,7 +1537,7 @@ namespace units
 }
 
 using Candelas = Quantity< units::Candela >;
-//using Talbots  = Quantity< units::Talbot >;
+using Talbots  = Quantity< units::Talbot >;
 using Lumens   = Quantity< units::Lumen >;
 using Nits     = Quantity< units::Nit >;
 using Luxs     = Quantity< units::Lux >;
@@ -1764,6 +1549,12 @@ namespace literals
     }
     [[nodiscard]] constexpr auto operator""_cd(unsigned long long x) noexcept {
         return Candelas{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_talbot(long double x) noexcept {
+        return Talbots{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_talbot(unsigned long long x) noexcept {
+        return Talbots{static_cast<double>(x)};
     }
     [[nodiscard]] constexpr auto operator""_lm(long double x) noexcept {
         return Lumens{static_cast<double>(x)};

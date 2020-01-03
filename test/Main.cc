@@ -291,12 +291,12 @@ inline constexpr bool Compiles = details::Detector<void, Op, Args...>::value;
 static void test002()
 {
     {
-#if !UNITS_IGNORE_KIND()
-        constexpr auto x = 1_m / 1_m;
-        constexpr auto y = 1_s / 1_s;
-        constexpr auto z = x * y;
-        static_assert(!Compiles<Add, decltype(x), decltype(y)>, "");
-#endif
+//#if !UNITS_IGNORE_KIND()
+//        constexpr auto x = 1_m / 1_m;
+//        constexpr auto y = 1_s / 1_s;
+//        constexpr auto z = x * y;
+//        static_assert(!Compiles<Add, decltype(x), decltype(y)>, "");
+//#endif
     }
     {
         constexpr auto x = 1_m;
@@ -308,13 +308,13 @@ static void test002()
 
 static void test003()
 {
-#if UNITS_IGNORE_KIND()
-    constexpr auto t0 = 1_rad;
-    constexpr auto t1 = 1_sr;
-    constexpr auto t2 = t0 + Radians{t1};
-    //constexpr auto t3 = Radians{1_m};
-    //constexpr auto t3 = t0 + t1;
-#endif
+//#if UNITS_IGNORE_KIND()
+//    constexpr auto t0 = 1_rad;
+//    constexpr auto t1 = 1_sr;
+//    constexpr auto t2 = t0 + Radians{t1};
+//    //constexpr auto t3 = Radians{1_m};
+//    //constexpr auto t3 = t0 + t1;
+//#endif
 }
 
 static void test004()
@@ -327,29 +327,29 @@ static void test004()
     constexpr MetresPerSecond t5 = t2;
 }
 
-#if UNITS_HAS_ANY()
-static constexpr int takesLength(Centimetres)
-{
-    return 0;
-}
-
-static void testFlatten()
-{
-    constexpr auto len1 = 1_m;
-    constexpr auto dur1 = 1_s;
-    //constexpr auto xxx1 = len1 * dur1 / dur1;
-    constexpr auto xxx1 = len1 / dur1 * dur1;
-    //constexpr auto res1 = takesLength(xxx1);
-    constexpr auto res2 = takesLength(flatten(xxx1));
-    //constexpr auto res3 = takesLength(as_any(xxx1));
-    //constexpr auto res4 = takesLength(as_length(xxx1));
-    //constexpr auto res5 = takesLength(as_length(1_s));
-    //constexpr auto xxx2 = kind_cast<kinds::Length>(xxx1);
-    //constexpr auto res6 = takesLength(xxx2);
-    //constexpr auto res6 = takesLength(as_any_quantity(1_m)); // any_kind_cast(1_s));
-    constexpr auto res7 = takesLength(1_m);
-}
-#endif
+//#if UNITS_HAS_ANY()
+//static constexpr int takesLength(Centimetres)
+//{
+//    return 0;
+//}
+//
+//static void testFlatten()
+//{
+//    constexpr auto len1 = 1_m;
+//    constexpr auto dur1 = 1_s;
+//    //constexpr auto xxx1 = len1 * dur1 / dur1;
+//    constexpr auto xxx1 = len1 / dur1 * dur1;
+//    //constexpr auto res1 = takesLength(xxx1);
+//    constexpr auto res2 = takesLength(flatten(xxx1));
+//    //constexpr auto res3 = takesLength(as_any(xxx1));
+//    //constexpr auto res4 = takesLength(as_length(xxx1));
+//    //constexpr auto res5 = takesLength(as_length(1_s));
+//    //constexpr auto xxx2 = kind_cast<kinds::Length>(xxx1);
+//    //constexpr auto res6 = takesLength(xxx2);
+//    //constexpr auto res6 = takesLength(as_any_quantity(1_m)); // any_kind_cast(1_s));
+//    constexpr auto res7 = takesLength(1_m);
+//}
+//#endif
 
 template <typename C>
 using AngularVelocity = Quantity< Unit< C, kinds::AngularVelocity > >;
@@ -437,11 +437,11 @@ static void test1()
     constexpr auto phi1 = Degrees{phi0};
     //constexpr auto phi2 = 1 / 1_gon + 1 / 1_deg;
     constexpr auto phi3 = 1 / 1_gon;
-    constexpr auto val3 = phi3.value();
+    //constexpr auto val3 = phi3.value();
     constexpr auto phi4 = 1 / 1_deg;
-    constexpr auto val4 = phi4.value();
+    //constexpr auto val4 = phi4.value();
     constexpr auto phi5 = phi3 + phi4;
-    constexpr auto val5 = phi5.value();
+    //constexpr auto val5 = phi5.value();
     //Incomplet<decltype(phi5)>{};
 
     static_assert(!Compiles<Add, Radians, Degrees>, "");
@@ -465,27 +465,27 @@ static void test1()
     constexpr auto phi9 = phi7 / phi8;
     //Incomplet<decltype(phi9)>{};
     constexpr auto phi10 = 1 / 1_m + 1 / 1_km;
-#if !UNITS_IGNORE_KIND()
-    static_assert(!Compiles<Add, decltype(phi9), decltype(phi10)>, "");
-#endif
+//#if !UNITS_IGNORE_KIND()
+//    static_assert(!Compiles<Add, decltype(phi9), decltype(phi10)>, "");
+//#endif
     using Phi9 = std::remove_const_t<decltype(phi9)>;
     constexpr auto phi12 = phi9 - Phi9(phi10);
     //Incomplet<decltype(phi12)>{};
-#if UNITS_IGNORE_KIND()
-    constexpr auto phi12a = phi9 - phi10;
-#endif
-#if UNITS_HAS_ANY()
-    constexpr auto phi13 = flatten(phi9) - flatten(phi10);
-    //Incomplet<decltype(phi13)>{};
-
-    constexpr Phi9 phi14 = flatten(phi10);
-
-    //constexpr auto phi15 = flatten(phi9) - phi10;
-    //Incomplet<decltype(phi15)>{};
-
-    constexpr auto phi16 = flatten(flatten(phi9) * flatten(phi10));
-    //Incomplet<decltype(phi16)>{};
-#endif
+//#if UNITS_IGNORE_KIND()
+//    constexpr auto phi12a = phi9 - phi10;
+//#endif
+//#if UNITS_HAS_ANY()
+//    constexpr auto phi13 = flatten(phi9) - flatten(phi10);
+//    //Incomplet<decltype(phi13)>{};
+//
+//    constexpr Phi9 phi14 = flatten(phi10);
+//
+//    //constexpr auto phi15 = flatten(phi9) - phi10;
+//    //Incomplet<decltype(phi15)>{};
+//
+//    constexpr auto phi16 = flatten(flatten(phi9) * flatten(phi10));
+//    //Incomplet<decltype(phi16)>{};
+//#endif
 }
 #endif
 
@@ -718,9 +718,9 @@ int main()
     constexpr auto rad2 = Radians{1_m / 1_m};
     constexpr auto rad3 = rad1 + rad2;
     //constexpr auto rad4 = rad1 + 1_m / 1_m;
-#if !UNITS_IGNORE_KIND()
-    static_assert(!Compiles<Add, Radians, decltype(1_m / 1_m)>, "");
-#endif
+//#if !UNITS_IGNORE_KIND()
+//    static_assert(!Compiles<Add, Radians, decltype(1_m / 1_m)>, "");
+//#endif
     //constexpr auto rad5 = rad3 + 1_sr;
     //constexpr auto rad6 = rad1 + 1_m;
     constexpr auto deg1 = Degrees{1_rad};
@@ -783,13 +783,13 @@ int main()
 
     constexpr auto Q1 = 1_m / 1_m;
     constexpr auto Q2 = 1_s / 1_s;
-#if UNITS_IGNORE_KIND()
-    constexpr auto Q3a = Q1 + Q2;
-    constexpr auto Q3b = (1_m * 1_s + 1_s * 1_m) / (1_m * 1_s);
-    static_assert(std::is_same<decltype(Q3a), decltype(Q3b)>::value, "");
-    constexpr auto Q3c = (1_m * 1_s + 1_s * 1_m) / 1_m / 1_s;
-    static_assert(std::is_same<decltype(Q3a), decltype(Q3c)>::value, "");
-#endif
+//#if UNITS_IGNORE_KIND()
+//    constexpr auto Q3a = Q1 + Q2;
+//    constexpr auto Q3b = (1_m * 1_s + 1_s * 1_m) / (1_m * 1_s);
+//    static_assert(std::is_same<decltype(Q3a), decltype(Q3b)>::value, "");
+//    constexpr auto Q3c = (1_m * 1_s + 1_s * 1_m) / 1_m / 1_s;
+//    static_assert(std::is_same<decltype(Q3a), decltype(Q3c)>::value, "");
+//#endif
     constexpr auto Q3 = (1_m * 1_s + 1_m * 1_s) / (1_m * 1_s);
     //Incomplet<decltype(Q3)>{};
     //using XXXXX = decltype(Q3);
