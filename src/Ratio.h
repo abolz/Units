@@ -54,40 +54,48 @@ namespace impl
         return Sgn(x) != Sgn(y) || (Abs(x) <= INTMAX_MAX - Abs(y));
     }
 
-#if 0
-    constexpr intmax_t Power(intmax_t x, intmax_t n) noexcept {
-        RATIO_ASSERT(x >= 1);
+#if 1
+    // Computes y^n.
+    // Does not check for overflow.
+    constexpr intmax_t Power(intmax_t y, intmax_t n) noexcept {
+        RATIO_ASSERT(y >= 1);
         RATIO_ASSERT(n >= 0);
 
         intmax_t p = 1;
-        if (x > 1) {
+        //if (y > 1) {
             for ( ; n > 0; --n) {
-                RATIO_ASSERT(p <= INTMAX_MAX / x);
-                p *= x;
+                RATIO_ASSERT(p <= INTMAX_MAX / y);
+                p *= y;
             }
-        }
+        //}
 
         return p;
     }
 
-    // Returns x^n > lower (without overflow).
-    constexpr bool IsPowerGreaterThan(intmax_t x, intmax_t n, intmax_t lower) noexcept {
-        RATIO_ASSERT(x >= 1);
+    // Returns y^n <=> x (without overflow).
+    constexpr int ComparePower(intmax_t y, intmax_t n, intmax_t x) noexcept {
+        RATIO_ASSERT(y >= 1);
         RATIO_ASSERT(n >= 0);
-        RATIO_ASSERT(lower >= 0);
+        RATIO_ASSERT(x >= 0);
 
-        const intmax_t lim = INTMAX_MAX / x;
-        const intmax_t max = lim < lower ? lim : lower; // = min(lim, lower)
+        const intmax_t lim = INTMAX_MAX / y;
+        const intmax_t max = lim < x ? lim : x; // = min(lim, x)
 
         intmax_t p = 1;
         for ( ; n > 0; --n) {
-            if (p > max) // p*x will overflow, or p > lower
-                return true;
-            p *= x;
+            if (p > max) // p*y will overflow, or p > x
+                return +1;
+            p *= y;
         }
 
-        return p > lower;
+        return p < x ? -1 : (x < p);
     }
+
+    //struct RootResult
+    //{
+    //    intmax_t value;
+    //    bool is_exact;
+    //};
 
     // Computes the n-th root y of x,
     // i.e. returns the largest y, such that y^n <= x
@@ -104,17 +112,55 @@ namespace impl
         // Since n >= 2, hi will not overflow here.
 
         for (;;) {
-            const intmax_t y = lo + (hi - lo) / 2;
-            if (y == lo)                           // hi - lo <= 1
+            const auto y = lo + (hi - lo) / 2;
+            if (y == lo)        // hi - lo <= 1
                 return y;
-            else if (IsPowerGreaterThan(y, n, x))  // y^n > x
-                hi = y;
-            else                                   // y^n <= x
+            const auto cmp = ComparePower(y, n, x);
+            if (cmp < 0)        // y^n < x
                 lo = y;
+            else if (0 < cmp)   // y^n > x
+                hi = y;
+            else                // y^n = x
+                return y;
         }
     }
 #endif
 }
+
+#if 0
+namespace impl
+{
+    template <intmax_t A, intmax_t B, bool Sfinae = true, bool Ok = (Abs(A) <= INTMAX_MAX / (B == 0 ? 1 : Abs(B)))>
+    struct CheckedMul64
+    {
+        static constexpr intmax_t value = A * B;
+    };
+
+    template <intmax_t A, intmax_t B, bool Sfinae>
+    struct CheckedMul64<A, B, Sfinae, false>
+    {
+        static_assert(Sfinae, "integer multiplication overflow");
+    };
+
+    template <intmax_t A, intmax_t B, bool Sfinae = true, bool Ok = (Sgn(x) != Sgn(y) || (Abs(x) <= INTMAX_MAX - Abs(y)))>
+    struct CheckedAdd64
+    {
+        static constexpr intmax_t value = A + B;
+    };
+
+    template <intmax_t A, intmax_t B, bool Sfinae>
+    struct CheckedAdd64<A, B, Sfinae, false>
+    {
+        static_assert(Sfinae, "integer addition overflow");
+    };
+}
+
+template <intmax_t A, intmax_t B, bool Sfinae = true>
+    inline constexpr intmax_t CheckedMul64 = impl::CheckedMul64<A, B, Sfinae>::value;
+
+template <intmax_t A, intmax_t B, bool Sfinae = true>
+    inline constexpr intmax_t CheckedAdd64 = impl::CheckedAdd64<A, B, Sfinae>::value;
+#endif
 
 template <intmax_t Num, intmax_t Den>
 struct Rational

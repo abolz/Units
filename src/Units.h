@@ -647,7 +647,7 @@ private:
         = std::enable_if_t< DivConversions<C2, C1>::den == 1 && DivConversions<C2, C1>::exp == 0, T >;
 
     template <typename K1, typename K2, typename T = int>
-    using EnableIfCompatible
+    using EnableIfSameDimension
         = std::enable_if_t< std::is_same< typename K1::dimension, typename K2::dimension >::value, T >;
 
     template <typename K2, typename T = int>
@@ -670,7 +670,7 @@ public:
     {
     }
 
-    template <typename C2, typename K2, EnableIfCompatible<K, K2> = 0>
+    template <typename C2, typename K2, EnableIfSameDimension<K, K2> = 0>
     constexpr explicit Quantity(Quantity<Unit<C2, K2>> q) noexcept
         : count_(DivConversions<C2, C>{}(q.count()))
     {
@@ -690,12 +690,12 @@ public:
     //    return conversion{}(count_);
     //}
 
-    template <typename C2, typename K2, EnableIfCompatible<K, K2> = 0>
+    template <typename C2, typename K2, EnableIfSameDimension<K, K2> = 0>
     [[nodiscard]] constexpr auto convert_to(Unit<C2, K2>) const noexcept {
         return Quantity<Unit<C2, K>>(DivConversions<C, C2>{}(count()));
     }
 
-    template <typename C2, typename K2, EnableIfCompatible<K, K2> = 0>
+    template <typename C2, typename K2, EnableIfSameDimension<K, K2> = 0>
     [[nodiscard]] constexpr auto convert_to(Quantity<Unit<C2, K2>>) const noexcept {
         return Quantity<Unit<C2, K>>(DivConversions<C, C2>{}(count()));
     }
@@ -830,9 +830,7 @@ public:
 
     template <typename C2, typename Q = Quantity<Unit<CommonConversion<C, C2>, K>>>
     [[nodiscard]] constexpr friend bool operator!=(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-        const Q x = lhs; // implicit conversion
-        const Q y = rhs; // implicit conversion
-        return x.count() != y.count();
+        return !(lhs == rhs);
     }
 
     template <typename C2, typename Q = Quantity<Unit<CommonConversion<C, C2>, K>>>
@@ -844,23 +842,17 @@ public:
 
     template <typename C2, typename Q = Quantity<Unit<CommonConversion<C, C2>, K>>>
     [[nodiscard]] constexpr friend bool operator>(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-        const Q x = lhs; // implicit conversion
-        const Q y = rhs; // implicit conversion
-        return x.count() > y.count();
+        return rhs < lhs;
     }
 
     template <typename C2, typename Q = Quantity<Unit<CommonConversion<C, C2>, K>>>
     [[nodiscard]] constexpr friend bool operator<=(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-        const Q x = lhs; // implicit conversion
-        const Q y = rhs; // implicit conversion
-        return x.count() <= y.count();
+        return !(rhs < lhs);
     }
 
     template <typename C2, typename Q = Quantity<Unit<CommonConversion<C, C2>, K>>>
     [[nodiscard]] constexpr friend bool operator>=(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-        const Q x = lhs; // implicit conversion
-        const Q y = rhs; // implicit conversion
-        return x.count() >= y.count();
+        return !(lhs < rhs);
     }
 
 #if UNITS_DELETE_EVERYTHING_ELSE()

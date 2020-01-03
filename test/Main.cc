@@ -182,15 +182,17 @@ template <typename...> struct Incomplet;
 //    using MeterSeconds = Quantity<MeterSecond>;
 //}
 
-#if 0
+#if 1
 namespace sc {
+    using impl::Root;
+    using impl::Power;
     static_assert(Root(1, 1) == 1, "");
     static_assert(Root(1, 2) == 1, "");
     static_assert(Root(1, 10) == 1, "");
-    static_assert(Root(1, INT64_MAX) == 1, "");
-    static_assert(Root(1, INT64_MAX / 2) == 1, "");
-    static_assert(Root(2, INT64_MAX) == 1, "");
-    static_assert(Root(2, INT64_MAX / 2) == 1, "");
+    static_assert(Root(1, INTMAX_MAX) == 1, "");
+    static_assert(Root(1, INTMAX_MAX / 2) == 1, "");
+    static_assert(Root(2, INTMAX_MAX) == 1, "");
+    static_assert(Root(2, INTMAX_MAX / 2) == 1, "");
     static_assert(Root(2, 2) == 1, "");
     static_assert(Root(2, 1) == 2, "");
     static_assert(Root(3, 2) == 1, "");
@@ -208,11 +210,12 @@ namespace sc {
     static_assert(Root(3530945043777457216, 6) == 1234, "");
     static_assert(Root(8650415919381337933, 17) == 13, "");
     static_assert(Root(8650415919381337934, 17) == 13, "");
-    static_assert(Root(INT64_MAX, 17) == 13, "");
-    static_assert(Root(INT64_MAX, INT64_MAX) == 1, "");
-    static_assert(Root(INT64_MAX, 2) == 3037000499, "");
-    static_assert(Root(INT64_MAX, 3) == 2097151, "");
-    static_assert(Root(INT64_MAX, 4) == 55108, "");
+    static_assert(Root(INTMAX_MAX, 17) == 13, "");
+    static_assert(Root(INTMAX_MAX, INTMAX_MAX) == 1, "");
+    static_assert(Root(INTMAX_MAX, 2) == 3037000499, "");
+    static_assert(Root(INTMAX_MAX, 3) == 2097151, "");
+    static_assert(Root(INTMAX_MAX, 4) == 55108, "");
+    static_assert(Root(INTMAX_MAX, 1) == INTMAX_MAX);
 }
 #endif
 
@@ -796,7 +799,8 @@ int main()
 
     constexpr auto area1 = 1_m * 1_m;
     constexpr auto area2 = 1_cm * 1_cm;
-    constexpr auto area3 = area1 + area2 + 1_mi * 1_yd;
+    constexpr auto area3 = 1_mi * 1_yd;
+    constexpr auto area4 = area1 + area2 + area3;
 
     constexpr auto ouch1 = 1_rad + Radians{1_rad / 1_rad};
 
