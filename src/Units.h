@@ -34,7 +34,7 @@ struct Kind
     using dimension = D;
 };
 
-template <typename R, intmax_t Exp>
+template <typename R, int64_t Exp>
 struct Conversion;
 
 template <typename C, typename K>
@@ -50,7 +50,7 @@ class Quantity;
 #if UNITS_PRIME_DIMENSION()
 // Doesn't support rational exponents...
 
-template <intmax_t Num = 1, intmax_t Den = 1>
+template <int64_t Num = 1, int64_t Den = 1>
 using Dimension = Ratio<Num, Den>;
 
 namespace dim // Base quantities
@@ -59,17 +59,17 @@ namespace dim // Base quantities
     // 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97
 
     // WARNING: _1 MUST BE == 1!
-    template <int _1> inline constexpr intmax_t Length            = 2;
-    template <int _1> inline constexpr intmax_t Mass              = 3;
-    template <int _1> inline constexpr intmax_t Time              = 5;
-    template <int _1> inline constexpr intmax_t ElectricCurrent   = 7;
-    template <int _1> inline constexpr intmax_t Temperature       = 11;
-    template <int _1> inline constexpr intmax_t AmountOfSubstance = 13;
-    template <int _1> inline constexpr intmax_t LuminousIntensity = 17;
-    template <int _1> inline constexpr intmax_t Bit               = 19;
-    template <int _1> inline constexpr intmax_t Currency          = 23;
-    template <int _1> inline constexpr intmax_t Pixel             = 29;
-    template <int _1> inline constexpr intmax_t Dot               = 31;
+    template <int _1> inline constexpr int64_t Length            = 2;
+    template <int _1> inline constexpr int64_t Mass              = 3;
+    template <int _1> inline constexpr int64_t Time              = 5;
+    template <int _1> inline constexpr int64_t ElectricCurrent   = 7;
+    template <int _1> inline constexpr int64_t Temperature       = 11;
+    template <int _1> inline constexpr int64_t AmountOfSubstance = 13;
+    template <int _1> inline constexpr int64_t LuminousIntensity = 17;
+    template <int _1> inline constexpr int64_t Bit               = 19;
+    template <int _1> inline constexpr int64_t Currency          = 23;
+    template <int _1> inline constexpr int64_t Pixel             = 29;
+    template <int _1> inline constexpr int64_t Dot               = 31;
 }
 
 template <typename D1, typename D2>
@@ -92,17 +92,17 @@ namespace dim // Base quantities
 
     // Length^(n/d), Mass^(n/d), etc...
 
-    template <int Num, int Den = 1> struct Length            { static constexpr intmax_t id =  2; }; // Meter m
-    template <int Num, int Den = 1> struct Mass              { static constexpr intmax_t id =  3; }; // Kilogram kg
-    template <int Num, int Den = 1> struct Time              { static constexpr intmax_t id =  5; }; // Second s
-    template <int Num, int Den = 1> struct ElectricCurrent   { static constexpr intmax_t id =  7; }; // Ampere A
-    template <int Num, int Den = 1> struct Temperature       { static constexpr intmax_t id = 11; }; // Kelvin K
-    template <int Num, int Den = 1> struct AmountOfSubstance { static constexpr intmax_t id = 13; }; // Mole mol
-    template <int Num, int Den = 1> struct LuminousIntensity { static constexpr intmax_t id = 17; }; // Candela cd
-    template <int Num, int Den = 1> struct Bit               { static constexpr intmax_t id = 19; };
-    template <int Num, int Den = 1> struct Currency          { static constexpr intmax_t id = 23; }; // TODO: Euro, Dollar, etc...
-    template <int Num, int Den = 1> struct Pixel             { static constexpr intmax_t id = 29; };
-    template <int Num, int Den = 1> struct Dot               { static constexpr intmax_t id = 31; };
+    template <int Num, int Den = 1> struct Length            { static constexpr int64_t id =  2; }; // Meter m
+    template <int Num, int Den = 1> struct Mass              { static constexpr int64_t id =  3; }; // Kilogram kg
+    template <int Num, int Den = 1> struct Time              { static constexpr int64_t id =  5; }; // Second s
+    template <int Num, int Den = 1> struct ElectricCurrent   { static constexpr int64_t id =  7; }; // Ampere A
+    template <int Num, int Den = 1> struct Temperature       { static constexpr int64_t id = 11; }; // Kelvin K
+    template <int Num, int Den = 1> struct AmountOfSubstance { static constexpr int64_t id = 13; }; // Mole mol
+    template <int Num, int Den = 1> struct LuminousIntensity { static constexpr int64_t id = 17; }; // Candela cd
+    template <int Num, int Den = 1> struct Bit               { static constexpr int64_t id = 19; };
+    template <int Num, int Den = 1> struct Currency          { static constexpr int64_t id = 23; }; // TODO: Euro, Dollar, etc...
+    template <int Num, int Den = 1> struct Pixel             { static constexpr int64_t id = 29; };
+    template <int Num, int Den = 1> struct Dot               { static constexpr int64_t id = 31; };
 }
 
 namespace impl
@@ -540,18 +540,18 @@ namespace kinds
 //  value = R * pi^Exp = (Num / Den) * pi^Exp
 //--------------------------------------------------------------------------------------------------
 
-template <intmax_t Num, intmax_t Den = 1, intmax_t Exp = 0>
+template <int64_t Num, int64_t Den = 1, int64_t Exp = 0>
 using Conversion_t
     = Conversion< Ratio<Num, Den>, Exp >;
 
-template <typename R, intmax_t Exp = 0>
+template <typename R, int64_t Exp = 0>
 struct Conversion
 {
-    static constexpr intmax_t Two53 = 9007199254740992; // == 2^53
+    static constexpr int64_t Two53 = 9007199254740992; // == 2^53
 
-    static constexpr intmax_t num = R::num;
-    static constexpr intmax_t den = R::den;
-    static constexpr intmax_t exp = Exp;
+    static constexpr int64_t num = R::num;
+    static constexpr int64_t den = R::den;
+    static constexpr int64_t exp = Exp;
 
     using rep = double;
     using ratio = typename R::type;
@@ -607,7 +607,7 @@ namespace impl
         // SFINAE: missing 'type'
     };
 
-    template <typename R1, typename R2, intmax_t CommonExp>
+    template <typename R1, typename R2, int64_t CommonExp>
     struct CommonConversion< Conversion<R1, CommonExp>, Conversion<R2, CommonExp> >
     {
         using type = Conversion< CommonRatio<R1, R2>, CommonExp >;
@@ -638,12 +638,12 @@ struct Unit
         return Unit<DivConversions<C, C2>, DivKinds<K, K2>>{};
     }
 
-    template <typename R2, intmax_t E2>
+    template <typename R2, int64_t E2>
     [[nodiscard]] constexpr friend auto operator*(Conversion<R2, E2> /*lhs*/, Unit /*rhs*/) noexcept {
         return Unit<MulConversions<Conversion<R2, E2>, C>, K>{};
     }
 
-    template <typename R2, intmax_t E2>
+    template <typename R2, int64_t E2>
     [[nodiscard]] constexpr friend auto operator*(Unit /*lhs*/, Conversion<R2, E2> /*rhs*/) noexcept {
         return Unit<MulConversions<C, Conversion<R2, E2>>, K>{};
     }

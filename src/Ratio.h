@@ -7,6 +7,7 @@
 #include <cassert>
 #include <cstdint>
 #include <climits>
+#include <ratio>
 #include <type_traits>
 
 #ifndef RATIO_ASSERT
@@ -22,18 +23,18 @@ namespace sc {
 
 namespace impl
 {
-    constexpr intmax_t Abs(intmax_t x) noexcept {
-        RATIO_ASSERT(x != INTMAX_MIN);
+    constexpr int64_t Abs(int64_t x) noexcept {
+        RATIO_ASSERT(x != INT64_MIN);
         return x < 0 ? -x : x;
     }
 
-    constexpr intmax_t Sgn(intmax_t x) noexcept {
+    constexpr int64_t Sgn(int64_t x) noexcept {
         return x < 0 ? -1 : 1;
     }
 
-    constexpr intmax_t Gcd(intmax_t a, intmax_t b) noexcept {
-        intmax_t x = Abs(a);
-        intmax_t y = Abs(b);
+    constexpr int64_t Gcd(int64_t a, int64_t b) noexcept {
+        int64_t x = Abs(a);
+        int64_t y = Abs(b);
         while (y > 0) {
             const auto r = x % y;
             x = y;
@@ -42,29 +43,70 @@ namespace impl
         return x;
     }
 
-    constexpr intmax_t Lcm(intmax_t a, intmax_t b) noexcept {
+    constexpr int64_t Lcm(int64_t a, int64_t b) noexcept {
         return (a / Gcd(a, b)) * b;
     }
 
-    constexpr bool CheckMul64(intmax_t x, intmax_t y) noexcept {
-        return Abs(x) <= INTMAX_MAX / (y == 0 ? 1 : Abs(y));
+    constexpr bool CheckMul64(int64_t x, int64_t y) noexcept {
+        return Abs(x) <= INT64_MAX / (y == 0 ? 1 : Abs(y));
     }
 
-    constexpr bool CheckAdd64(intmax_t x, intmax_t y) noexcept {
-        return Sgn(x) != Sgn(y) || (Abs(x) <= INTMAX_MAX - Abs(y));
+    constexpr bool CheckAdd64(int64_t x, int64_t y) noexcept {
+        return Sgn(x) != Sgn(y) || (Abs(x) <= INT64_MAX - Abs(y));
+    }
+
+    struct Uint64x2 {
+        uint64_t hi;
+        uint64_t lo;
+
+        constexpr friend bool operator<(Uint64x2 lhs, Uint64x2 rhs) noexcept {
+            return lhs.hi < rhs.hi || (lhs.hi == rhs.hi && lhs.lo < rhs.lo);
+        }
+    };
+
+    constexpr uint32_t Lo32(uint64_t x) noexcept {
+        return static_cast<uint32_t>(x & 0xFFFFFFFFu);
+    }
+
+    constexpr uint32_t Hi32(uint64_t x) noexcept {
+        return static_cast<uint32_t>(x >> 32);
+    }
+
+    constexpr uint64_t Load64(uint32_t hi, uint32_t lo) noexcept {
+        return uint64_t{hi} << 32 | lo;
+    }
+
+    constexpr Uint64x2 Mul64x64(uint64_t a, uint64_t b) noexcept {
+        const uint64_t b00 = uint64_t{Lo32(a)} * Lo32(b);
+        const uint64_t b01 = uint64_t{Lo32(a)} * Hi32(b);
+        const uint64_t b10 = uint64_t{Hi32(a)} * Lo32(b);
+        const uint64_t b11 = uint64_t{Hi32(a)} * Hi32(b);
+
+        const uint64_t mid1 = b10 + Hi32(b00);
+        const uint64_t mid2 = b01 + Lo32(mid1);
+
+        const uint64_t hi = b11 + Hi32(mid1) + Hi32(mid2);
+        const uint64_t lo = Load64(Lo32(mid2), Lo32(b00));
+        return {hi, lo};
+    }
+
+    constexpr Uint64x2 Mul64x64(int64_t a, int64_t b) noexcept {
+        RATIO_ASSERT(a >= 0);
+        RATIO_ASSERT(b >= 0);
+        return Mul64x64(static_cast<uint64_t>(a), static_cast<uint64_t>(b));
     }
 
 #if 1
     // Computes y^n.
     // Does not check for overflow.
-    constexpr intmax_t Power(intmax_t y, intmax_t n) noexcept {
+    constexpr int64_t Power(int64_t y, int64_t n) noexcept {
         RATIO_ASSERT(y >= 1);
         RATIO_ASSERT(n >= 0);
 
-        intmax_t p = 1;
+        int64_t p = 1;
         //if (y > 1) {
             for ( ; n > 0; --n) {
-                RATIO_ASSERT(p <= INTMAX_MAX / y);
+                RATIO_ASSERT(p <= INT64_MAX / y);
                 p *= y;
             }
         //}
@@ -73,15 +115,15 @@ namespace impl
     }
 
     // Returns y^n <=> x (without overflow).
-    constexpr int ComparePower(intmax_t y, intmax_t n, intmax_t x) noexcept {
+    constexpr int ComparePower(int64_t y, int64_t n, int64_t x) noexcept {
         RATIO_ASSERT(y >= 1);
         RATIO_ASSERT(n >= 0);
         RATIO_ASSERT(x >= 0);
 
-        const intmax_t lim = INTMAX_MAX / y;
-        const intmax_t max = lim < x ? lim : x; // = min(lim, x)
+        const int64_t lim = INT64_MAX / y;
+        const int64_t max = lim < x ? lim : x; // = min(lim, x)
 
-        intmax_t p = 1;
+        int64_t p = 1;
         for ( ; n > 0; --n) {
             if (p > max) // p*y will overflow, or p > x
                 return +1;
@@ -93,21 +135,21 @@ namespace impl
 
     //struct RootResult
     //{
-    //    intmax_t value;
+    //    int64_t value;
     //    bool is_exact;
     //};
 
     // Computes the n-th root y of x,
     // i.e. returns the largest y, such that y^n <= x
-    constexpr intmax_t Root(intmax_t x, intmax_t n) noexcept {
+    constexpr int64_t Root(int64_t x, int64_t n) noexcept {
         RATIO_ASSERT(x >= 0);
         RATIO_ASSERT(n >= 1);
 
         if (x <= 1 || n <= 1)
             return x;
 
-        intmax_t lo = 1;
-        intmax_t hi = 1 + x / n;
+        int64_t lo = 1;
+        int64_t hi = 1 + x / n;
         // Bernoulli  ==>  x^(1/n) <= 1 + (x - 1)/n < 1 + x/n
         // Since n >= 2, hi will not overflow here.
 
@@ -130,56 +172,56 @@ namespace impl
 #if 0
 namespace impl
 {
-    template <intmax_t A, intmax_t B, bool Sfinae = true, bool Ok = (Abs(A) <= INTMAX_MAX / (B == 0 ? 1 : Abs(B)))>
+    template <int64_t A, int64_t B, bool Sfinae = true, bool Ok = (Abs(A) <= INT64_MAX / (B == 0 ? 1 : Abs(B)))>
     struct CheckedMul64
     {
-        static constexpr intmax_t value = A * B;
+        static constexpr int64_t value = A * B;
     };
 
-    template <intmax_t A, intmax_t B, bool Sfinae>
+    template <int64_t A, int64_t B, bool Sfinae>
     struct CheckedMul64<A, B, Sfinae, false>
     {
         static_assert(Sfinae, "integer multiplication overflow");
     };
 
-    template <intmax_t A, intmax_t B, bool Sfinae = true, bool Ok = (Sgn(x) != Sgn(y) || (Abs(x) <= INTMAX_MAX - Abs(y)))>
+    template <int64_t A, int64_t B, bool Sfinae = true, bool Ok = (Sgn(x) != Sgn(y) || (Abs(x) <= INT64_MAX - Abs(y)))>
     struct CheckedAdd64
     {
-        static constexpr intmax_t value = A + B;
+        static constexpr int64_t value = A + B;
     };
 
-    template <intmax_t A, intmax_t B, bool Sfinae>
+    template <int64_t A, int64_t B, bool Sfinae>
     struct CheckedAdd64<A, B, Sfinae, false>
     {
         static_assert(Sfinae, "integer addition overflow");
     };
 }
 
-template <intmax_t A, intmax_t B, bool Sfinae = true>
-    inline constexpr intmax_t CheckedMul64 = impl::CheckedMul64<A, B, Sfinae>::value;
+template <int64_t A, int64_t B, bool Sfinae = true>
+    inline constexpr int64_t CheckedMul64 = impl::CheckedMul64<A, B, Sfinae>::value;
 
-template <intmax_t A, intmax_t B, bool Sfinae = true>
-    inline constexpr intmax_t CheckedAdd64 = impl::CheckedAdd64<A, B, Sfinae>::value;
+template <int64_t A, int64_t B, bool Sfinae = true>
+    inline constexpr int64_t CheckedAdd64 = impl::CheckedAdd64<A, B, Sfinae>::value;
 #endif
 
-template <intmax_t Num, intmax_t Den>
+template <int64_t Num, int64_t Den>
 struct Rational
 {
-    static_assert(Den != 0,
-        "invalid operation");
-    static_assert(-INTMAX_MAX <= Num,
+    static_assert(-INT64_MAX <= Num,
         "invalid argument");
-    static_assert(-INTMAX_MAX <= Den,
+    static_assert(-INT64_MAX <= Den,
+        "invalid argument");
+    static_assert(Den != 0,
         "invalid argument");
 
-    static constexpr intmax_t num = impl::Abs(Num) / impl::Gcd(Num, Den) * (impl::Sgn(Num) * impl::Sgn(Den));
-    static constexpr intmax_t den = impl::Abs(Den) / impl::Gcd(Num, Den);
+    static constexpr int64_t num = impl::Abs(Num) / impl::Gcd(Num, Den) * (impl::Sgn(Num) * impl::Sgn(Den));
+    static constexpr int64_t den = impl::Abs(Den) / impl::Gcd(Num, Den);
     using type = Rational<num, den>;
 
     template <typename ValueT>
     [[nodiscard]] constexpr auto operator()(ValueT x) noexcept
     {
-        using ResultT = std::common_type_t<std::remove_cv_t<ValueT>, intmax_t>;
+        using ResultT = std::common_type_t<std::remove_cv_t<ValueT>, int64_t>;
 
         if constexpr (den == 1)
         {
@@ -197,106 +239,121 @@ struct Rational
         }
     }
 
-    template <intmax_t Num2, intmax_t Den2>
+    template <int64_t Num2, int64_t Den2>
     [[nodiscard]] constexpr friend auto operator+(Rational, Rational<Num2, Den2>) noexcept
     {
-        constexpr intmax_t N1 = num;
-        constexpr intmax_t D1 = den;
-        constexpr intmax_t N2 = Rational<Num2, Den2>::num;
-        constexpr intmax_t D2 = Rational<Num2, Den2>::den;
+        constexpr int64_t N1 = num;
+        constexpr int64_t D1 = den;
+        constexpr int64_t N2 = Rational<Num2, Den2>::num;
+        constexpr int64_t D2 = Rational<Num2, Den2>::den;
 
-        constexpr intmax_t Gx = impl::Gcd(D1, D2);
+        constexpr int64_t Gd = impl::Gcd(D1, D2);
 
-        static_assert(impl::CheckMul64(N1, D2 / Gx),
+        static_assert(impl::CheckMul64(N1, D2 / Gd),
             "integer arithmetic overflow");
-        static_assert(impl::CheckMul64(N2, D1 / Gx),
+        static_assert(impl::CheckMul64(N2, D1 / Gd),
             "integer arithmetic overflow");
-        static_assert(impl::CheckAdd64(N1 * (D2 / Gx), N2 / (D1 / Gx)),
+        static_assert(impl::CheckAdd64(N1 * (D2 / Gd), N2 / (D1 / Gd)),
             "integer arithmetic overflow");
-        static_assert(impl::CheckMul64(D1, D2 / Gx),
+        static_assert(impl::CheckMul64(D1, D2 / Gd),
             "integer arithmetic overflow");
 
-        constexpr intmax_t Nr = N1 * (D2 / Gx) + N2 * (D1 / Gx);
-        constexpr intmax_t Dr = D1 * (D2 / Gx);
+        constexpr int64_t Nr = N1 * (D2 / Gd) + N2 * (D1 / Gd);
+        constexpr int64_t Dr = D1 * (D2 / Gd);
 
         return typename Rational<Nr, Dr>::type{}; // Nr/Dr needs to be reduced again!
     }
 
-    template <intmax_t Num2, intmax_t Den2>
+    template <int64_t Num2, int64_t Den2>
     [[nodiscard]] constexpr friend auto operator-(Rational lhs, Rational<Num2, Den2>) noexcept
     {
         using RHS = Rational<-Num2, Den2>; // No need to reduce again...
         return lhs * RHS{};
     }
 
-    template <intmax_t Num2, intmax_t Den2>
+    template <int64_t Num2, int64_t Den2>
     [[nodiscard]] constexpr friend auto operator*(Rational, Rational<Num2, Den2>) noexcept
     {
-        constexpr intmax_t N1 = num;
-        constexpr intmax_t D1 = den;
-        constexpr intmax_t N2 = Rational<Num2, Den2>::num;
-        constexpr intmax_t D2 = Rational<Num2, Den2>::den;
+        constexpr int64_t N1 = num;
+        constexpr int64_t D1 = den;
+        constexpr int64_t N2 = Rational<Num2, Den2>::num;
+        constexpr int64_t D2 = Rational<Num2, Den2>::den;
 
-        constexpr intmax_t Gx = impl::Gcd(N1, D2);
-        constexpr intmax_t Gy = impl::Gcd(N2, D1);
+        constexpr int64_t Gx = impl::Gcd(N1, D2);
+        constexpr int64_t Gy = impl::Gcd(N2, D1);
 
         static_assert(impl::CheckMul64(N1 / Gx, N2 / Gy),
             "integer arithmetic overflow");
         static_assert(impl::CheckMul64(D1 / Gy, D2 / Gx),
             "integer arithmetic overflow");
 
-        constexpr intmax_t Nr = (N1 / Gx) * (N2 / Gy);
-        constexpr intmax_t Dr = (D1 / Gy) * (D2 / Gx);
+        constexpr int64_t Nr = (N1 / Gx) * (N2 / Gy);
+        constexpr int64_t Dr = (D1 / Gy) * (D2 / Gx);
 
         return Rational<Nr, Dr>{};
     }
 
-    template <intmax_t Num2, intmax_t Den2>
+    template <int64_t Num2, int64_t Den2>
     [[nodiscard]] constexpr friend auto operator/(Rational lhs, Rational<Num2, Den2>) noexcept
     {
         using RHS = typename Rational<Den2, Num2>::type; // Reduce!
         return lhs * RHS{};
     }
 
-    template <intmax_t Num2, intmax_t Den2>
+    template <int64_t Num2, int64_t Den2>
     [[nodiscard]] constexpr friend bool operator==(Rational, Rational<Num2, Den2>) noexcept
     {
-        constexpr intmax_t N1 = num;
-        constexpr intmax_t D1 = den;
-        constexpr intmax_t N2 = Rational<Num2, Den2>::num;
-        constexpr intmax_t D2 = Rational<Num2, Den2>::den;
+        constexpr int64_t N1 = num;
+        constexpr int64_t D1 = den;
+        constexpr int64_t N2 = Rational<Num2, Den2>::num;
+        constexpr int64_t D2 = Rational<Num2, Den2>::den;
 
         return N1 == N2 && D1 == D2;
     }
 
-    template <intmax_t Num2, intmax_t Den2>
+    template <int64_t Num2, int64_t Den2>
     [[nodiscard]] constexpr friend bool operator!=(Rational lhs, Rational<Num2, Den2> rhs) noexcept
     {
         return !(lhs == rhs);
     }
 
-    //template <intmax_t Num2, intmax_t Den2>
-    //[[nodiscard]] constexpr friend bool operator<(Rational, Rational<Num2, Den2>) noexcept
-    //{
-    //}
+    template <int64_t Num2, int64_t Den2>
+    [[nodiscard]] constexpr friend bool operator<(Rational, Rational<Num2, Den2>) noexcept
+    {
+        constexpr int64_t N1 = num;
+        constexpr int64_t D1 = den;
+        constexpr int64_t N2 = Rational<Num2, Den2>::num;
+        constexpr int64_t D2 = Rational<Num2, Den2>::den;
 
-    //template <intmax_t Num2, intmax_t Den2>
-    //[[nodiscard]] constexpr friend bool operator>(Rational, Rational<Num2, Den2>) noexcept
-    //{
-    //}
+        if constexpr (impl::Sgn(N1) != impl::Sgn(N2))
+            return N1 < N2;
 
-    //template <intmax_t Num2, intmax_t Den2>
-    //[[nodiscard]] constexpr friend bool operator<=(Rational, Rational<Num2, Den2>) noexcept
-    //{
-    //}
+        if constexpr (N1 >= 0)
+            return impl::Mul64x64( N1, D2) < impl::Mul64x64( N2, D1);
+        else
+            return impl::Mul64x64(-N2, D1) < impl::Mul64x64(-N1, D2);
+    }
 
-    //template <intmax_t Num2, intmax_t Den2>
-    //[[nodiscard]] constexpr friend bool operator>=(Rational, Rational<Num2, Den2>) noexcept
-    //{
-    //}
+    template <int64_t Num2, int64_t Den2>
+    [[nodiscard]] constexpr friend bool operator>(Rational lhs, Rational<Num2, Den2> rhs) noexcept
+    {
+        return rhs < lhs;
+    }
+
+    template <int64_t Num2, int64_t Den2>
+    [[nodiscard]] constexpr friend bool operator<=(Rational lhs, Rational<Num2, Den2> rhs) noexcept
+    {
+        return !(rhs < lhs);
+    }
+
+    template <int64_t Num2, int64_t Den2>
+    [[nodiscard]] constexpr friend bool operator>=(Rational lhs, Rational<Num2, Den2> rhs) noexcept
+    {
+        return !(lhs < rhs);
+    }
 };
 
-template <intmax_t Num, intmax_t Den = 1>
+template <int64_t Num, int64_t Den = 1>
     using Ratio = typename Rational<Num, Den>::type;
 
 template <typename R1, typename R2>
@@ -319,60 +376,3 @@ template <typename R1, typename R2>
     using CommonRatio = Rational< impl::Gcd(R1::num, R2::num), impl::Lcm(R1::den, R2::den) >;
 
 } // namespace sc
-
-#if 0
-// ratio_less
-
-template <class _R1, class _R2, bool _Odd = false,
-          intmax_t _Q1 = _R1::num / _R1::den, intmax_t _M1 = _R1::num % _R1::den,
-          intmax_t _Q2 = _R2::num / _R2::den, intmax_t _M2 = _R2::num % _R2::den>
-struct __ratio_less1
-{
-    static const bool value = _Odd ? _Q2 < _Q1 : _Q1 < _Q2;
-};
-
-template <class _R1, class _R2, bool _Odd, intmax_t _Qp>
-struct __ratio_less1<_R1, _R2, _Odd, _Qp, 0, _Qp, 0>
-{
-    static const bool value = false;
-};
-
-template <class _R1, class _R2, bool _Odd, intmax_t _Qp, intmax_t _M2>
-struct __ratio_less1<_R1, _R2, _Odd, _Qp, 0, _Qp, _M2>
-{
-    static const bool value = !_Odd;
-};
-
-template <class _R1, class _R2, bool _Odd, intmax_t _Qp, intmax_t _M1>
-struct __ratio_less1<_R1, _R2, _Odd, _Qp, _M1, _Qp, 0>
-{
-    static const bool value = _Odd;
-};
-
-template <class _R1, class _R2, bool _Odd, intmax_t _Qp, intmax_t _M1,
-                                                        intmax_t _M2>
-struct __ratio_less1<_R1, _R2, _Odd, _Qp, _M1, _Qp, _M2>
-{
-    static const bool value = __ratio_less1<ratio<_R1::den, _M1>,
-                                            ratio<_R2::den, _M2>, !_Odd>::value;
-};
-
-template <class _R1, class _R2, intmax_t _S1 = __static_sign<_R1::num>::value,
-                                intmax_t _S2 = __static_sign<_R2::num>::value>
-struct __ratio_less
-{
-    static const bool value = _S1 < _S2;
-};
-
-template <class _R1, class _R2>
-struct __ratio_less<_R1, _R2, 1LL, 1LL>
-{
-    static const bool value = __ratio_less1<_R1, _R2>::value;
-};
-
-template <class _R1, class _R2>
-struct __ratio_less<_R1, _R2, -1LL, -1LL>
-{
-    static const bool value = __ratio_less1<ratio<-_R2::num, _R2::den>, ratio<-_R1::num, _R1::den> >::value;
-};
-#endif
