@@ -182,7 +182,7 @@ template <typename...> struct Incomplet;
 //    using MeterSeconds = Quantity<MeterSecond>;
 //}
 
-#if 1
+#if RATIO_ROOT()
 namespace sc {
     using impl::Root;
     using impl::Power;

@@ -4,6 +4,9 @@
 
 #pragma once
 
+#define RATIO_COMPARE_LESS() 0
+#define RATIO_ROOT() 0
+
 #include <cassert>
 #include <cstdint>
 #include <climits>
@@ -28,6 +31,7 @@ namespace impl
         return x < 0 ? -x : x;
     }
 
+    // Returns: x >= 0 ? 1 : -1
     constexpr int64_t Sgn(int64_t x) noexcept {
         return x < 0 ? -1 : 1;
     }
@@ -55,9 +59,14 @@ namespace impl
         return Sgn(x) != Sgn(y) || (Abs(x) <= INT64_MAX - Abs(y));
     }
 
+#if RATIO_COMPARE_LESS()
     struct Uint64x2 {
         uint64_t hi;
         uint64_t lo;
+
+        constexpr friend bool operator==(Uint64x2 lhs, Uint64x2 rhs) noexcept {
+            return lhs.hi == rhs.hi && lhs.lo == rhs.lo;
+        }
 
         constexpr friend bool operator<(Uint64x2 lhs, Uint64x2 rhs) noexcept {
             return lhs.hi < rhs.hi || (lhs.hi == rhs.hi && lhs.lo < rhs.lo);
@@ -95,8 +104,9 @@ namespace impl
         RATIO_ASSERT(b >= 0);
         return Mul64x64(static_cast<uint64_t>(a), static_cast<uint64_t>(b));
     }
+#endif
 
-#if 1
+#if RATIO_ROOT()
     // Computes y^n.
     // Does not check for overflow.
     constexpr int64_t Power(int64_t y, int64_t n) noexcept {
@@ -168,41 +178,6 @@ namespace impl
     }
 #endif
 }
-
-#if 0
-namespace impl
-{
-    template <int64_t A, int64_t B, bool Sfinae = true, bool Ok = (Abs(A) <= INT64_MAX / (B == 0 ? 1 : Abs(B)))>
-    struct CheckedMul64
-    {
-        static constexpr int64_t value = A * B;
-    };
-
-    template <int64_t A, int64_t B, bool Sfinae>
-    struct CheckedMul64<A, B, Sfinae, false>
-    {
-        static_assert(Sfinae, "integer multiplication overflow");
-    };
-
-    template <int64_t A, int64_t B, bool Sfinae = true, bool Ok = (Sgn(x) != Sgn(y) || (Abs(x) <= INT64_MAX - Abs(y)))>
-    struct CheckedAdd64
-    {
-        static constexpr int64_t value = A + B;
-    };
-
-    template <int64_t A, int64_t B, bool Sfinae>
-    struct CheckedAdd64<A, B, Sfinae, false>
-    {
-        static_assert(Sfinae, "integer addition overflow");
-    };
-}
-
-template <int64_t A, int64_t B, bool Sfinae = true>
-    inline constexpr int64_t CheckedMul64 = impl::CheckedMul64<A, B, Sfinae>::value;
-
-template <int64_t A, int64_t B, bool Sfinae = true>
-    inline constexpr int64_t CheckedAdd64 = impl::CheckedAdd64<A, B, Sfinae>::value;
-#endif
 
 template <int64_t Num, int64_t Den>
 struct Rational
@@ -317,6 +292,7 @@ struct Rational
         return !(lhs == rhs);
     }
 
+#if RATIO_COMPARE_LESS()
     template <int64_t Num2, int64_t Den2>
     [[nodiscard]] constexpr friend bool operator<(Rational, Rational<Num2, Den2>) noexcept
     {
@@ -351,6 +327,7 @@ struct Rational
     {
         return !(lhs < rhs);
     }
+#endif
 };
 
 template <int64_t Num, int64_t Den = 1>
