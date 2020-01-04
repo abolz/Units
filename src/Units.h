@@ -1262,12 +1262,18 @@ namespace literals
 
 namespace units
 {
+#if 0
+    using MetrePerSecond   = DivUnits<Metre, Second>;
+    using KilometrePerHour = DivUnits<Kilometre, Hour>;
+    using MilePerHour      = DivUnits<Mile, Hour>;
+#else
     using MetrePerSecond
         = Unit< DivConversions<Metre::conversion, Second::conversion>, kinds::Velocity >;
     using KilometrePerHour
         = Unit< DivConversions<Kilometre::conversion, Hour::conversion>, kinds::Velocity >;
     using MilePerHour
         = Unit< DivConversions<Mile::conversion, Hour::conversion>, kinds::Velocity >;
+#endif
 }
 
 using MetresPerSecond   = Quantity< units::MetrePerSecond >;
@@ -1301,7 +1307,11 @@ namespace literals
 
 namespace units
 {
+#if 0
+    using MetrePerSecondSquared = DivUnits< MetrePerSecond, Second >;
+#else
     using MetrePerSecondSquared = Unit< DivConversions<Metre::conversion, SquareConversion<Second::conversion>>, kinds::Acceleration >;
+#endif
 }
 
 using MetresPerSecondSquared = Quantity< units::MetrePerSecondSquared >;
@@ -1357,7 +1367,11 @@ namespace literals
 
 namespace units
 {
+#if 0
+    using Newton = MulUnits< Kilogram, MetrePerSecondSquared >;
+#else
     using Newton = Unit< MulConversions<Kilogram::conversion, MetrePerSecondSquared::conversion>, kinds::Force >;
+#endif
 }
 
 using Newton = Quantity< units::Newton >;
@@ -1544,24 +1558,26 @@ namespace literals
 
 namespace units
 {
-    using Candela
-        = Unit< Conversion_t<1>, kinds::LuminousIntensity >;
+    using Candela = Unit< Conversion_t<1>, kinds::LuminousIntensity >;
 
+#if 0
+    using Lumen   = MulUnits< Candela, Steradian >;
+    using Talbot  = MulUnits< Lumen, Second >;
+    using Nit     = DivUnits< Candela, SquareMetre >;
+    using Lux     = DivUnits< Lumen, SquareMetre >;
+#else
     using Lumen
         = Unit< MulConversions<Candela::conversion, Steradian::conversion>, kinds::LuminousFlux >;
 
-    //using LumenSecond
-    //    = Unit< MulConversions<Lumen::conversion, Second::conversion>, kinds::LuminousEnergy >;
     using Talbot
         = Unit< MulConversions<Lumen::conversion, Second::conversion>, kinds::LuminousEnergy >;
 
-    //using CandelaPerSquareMeter
-    //    = Unit< DivConversions<Candela::conversion, SquareMeter::conversion>, kinds::Luminance >;
     using Nit
         = Unit< DivConversions<Candela::conversion, SquareMetre::conversion>, kinds::Luminance >;
 
     using Lux
         = Unit< DivConversions<Lumen::conversion, SquareMetre::conversion>, kinds::Illuminance >;
+#endif
 }
 
 using Candelas = Quantity< units::Candela >;
