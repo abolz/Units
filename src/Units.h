@@ -6,6 +6,7 @@
 
 #define UNITS_DELETE_EVERYTHING_ELSE() 0
 #define UNITS_HAS_MATH() 0
+#define UNITS_PRIME_DIMENSION() 1
 
 #include "Ratio.h"
 
@@ -46,10 +47,63 @@ class Quantity;
 // Dimension
 //--------------------------------------------------------------------------------------------------
 
+#if UNITS_PRIME_DIMENSION()
+// Doesn't support rational exponents...
+
+template <intmax_t Num = 1, intmax_t Den = 1>
+using Dimension = Ratio<Num, Den>;
+
+namespace dim // Base quantities
+{
+    // Some prime numbers:
+    // 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97
+
+    // WARNING: _1 MUST BE == 1!
+    template <int _1> inline constexpr intmax_t Length            = 2;
+    template <int _1> inline constexpr intmax_t Mass              = 3;
+    template <int _1> inline constexpr intmax_t Time              = 5;
+    template <int _1> inline constexpr intmax_t ElectricCurrent   = 7;
+    template <int _1> inline constexpr intmax_t Temperature       = 11;
+    template <int _1> inline constexpr intmax_t AmountOfSubstance = 13;
+    template <int _1> inline constexpr intmax_t LuminousIntensity = 17;
+    template <int _1> inline constexpr intmax_t Bit               = 19;
+    template <int _1> inline constexpr intmax_t Currency          = 23;
+    template <int _1> inline constexpr intmax_t Pixel             = 29;
+    template <int _1> inline constexpr intmax_t Dot               = 31;
+}
+
+template <typename D1, typename D2>
+using MulDimensions = MulRatios<D1, D2>;
+
+template <typename D1, typename D2>
+using DivDimensions = DivRatios<D1, D2>;
+
+#else
+
 template <typename... BaseDimension>
 struct Dimension
 {
 };
+
+namespace dim // Base quantities
+{
+    // Some prime numbers:
+    // 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97
+
+    // Length^(n/d), Mass^(n/d), etc...
+
+    template <int Num, int Den = 1> struct Length            { static constexpr intmax_t id =  2; }; // Meter m
+    template <int Num, int Den = 1> struct Mass              { static constexpr intmax_t id =  3; }; // Kilogram kg
+    template <int Num, int Den = 1> struct Time              { static constexpr intmax_t id =  5; }; // Second s
+    template <int Num, int Den = 1> struct ElectricCurrent   { static constexpr intmax_t id =  7; }; // Ampere A
+    template <int Num, int Den = 1> struct Temperature       { static constexpr intmax_t id = 11; }; // Kelvin K
+    template <int Num, int Den = 1> struct AmountOfSubstance { static constexpr intmax_t id = 13; }; // Mole mol
+    template <int Num, int Den = 1> struct LuminousIntensity { static constexpr intmax_t id = 17; }; // Candela cd
+    template <int Num, int Den = 1> struct Bit               { static constexpr intmax_t id = 19; };
+    template <int Num, int Den = 1> struct Currency          { static constexpr intmax_t id = 23; }; // TODO: Euro, Dollar, etc...
+    template <int Num, int Den = 1> struct Pixel             { static constexpr intmax_t id = 29; };
+    template <int Num, int Den = 1> struct Dot               { static constexpr intmax_t id = 31; };
+}
 
 namespace impl
 {
@@ -132,26 +186,6 @@ namespace impl
     }
 }
 
-namespace dim // Base quantities
-{
-    // Some prime numbers:
-    // 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97
-
-    // Length^(n/d), Mass^(n/d), etc...
-
-    template <int Num, int Den = 1> struct Length            { static constexpr int64_t id =  2; }; // Meter m
-    template <int Num, int Den = 1> struct Mass              { static constexpr int64_t id =  3; }; // Kilogram kg
-    template <int Num, int Den = 1> struct Time              { static constexpr int64_t id =  5; }; // Second s
-    template <int Num, int Den = 1> struct ElectricCurrent   { static constexpr int64_t id =  7; }; // Ampere A
-    template <int Num, int Den = 1> struct Temperature       { static constexpr int64_t id = 11; }; // Kelvin K
-    template <int Num, int Den = 1> struct AmountOfSubstance { static constexpr int64_t id = 13; }; // Mole mol
-    template <int Num, int Den = 1> struct LuminousIntensity { static constexpr int64_t id = 17; }; // Candela cd
-    template <int Num, int Den = 1> struct Bit               { static constexpr int64_t id = 19; };
-    template <int Num, int Den = 1> struct Currency          { static constexpr int64_t id = 23; }; // TODO: Euro, Dollar, etc...
-    template <int Num, int Den = 1> struct Pixel             { static constexpr int64_t id = 29; };
-    template <int Num, int Den = 1> struct Dot               { static constexpr int64_t id = 31; };
-}
-
 //
 // TODO:
 // MulDimensions<D1, D2, Dn...>
@@ -161,6 +195,8 @@ using MulDimensions = decltype(impl::Merge(D1{}, D2{}));
 
 template <typename D1, typename D2>
 using DivDimensions = decltype(impl::Merge(D1{}, impl::InvertDimension(D2{})));
+
+#endif
 
 namespace kinds
 {
@@ -807,7 +843,7 @@ public:
     [[nodiscard]] constexpr friend int Compare(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
         const Q x = lhs; // implicit conversion
         const Q y = rhs; // implicit conversion
-        return (x.count() == y.count()) ? 0 : (x.count() < y.count() ? -1 : 1);
+        return (x.count() < y.count()) ? -1 : (y.count() < x.count());
     }
 
 #if UNITS_DELETE_EVERYTHING_ELSE()
