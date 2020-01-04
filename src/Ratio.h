@@ -301,10 +301,12 @@ struct Rational
         constexpr int64_t N2 = Rational<Num2, Den2>::num;
         constexpr int64_t D2 = Rational<Num2, Den2>::den;
 
-        if constexpr (impl::Sgn(N1) != impl::Sgn(N2))
+        if constexpr (N1 == N2)
+            return D2 < D1;
+        if constexpr (D1 == D2 || impl::Sgn(N1) != impl::Sgn(N2))
             return N1 < N2;
 
-        if constexpr (N1 >= 0)
+        if constexpr (impl::Sgn(N1) > 0)
             return impl::Mul64x64( N1, D2) < impl::Mul64x64( N2, D1);
         else
             return impl::Mul64x64(-N2, D1) < impl::Mul64x64(-N1, D2);
