@@ -304,7 +304,7 @@ static void test002()
     {
         constexpr auto x = 1_m;
         constexpr auto y = 1_s;
-        constexpr auto z = x * y;
+        static_assert( Compiles<Mul, decltype(x), decltype(y)>, "");
         static_assert(!Compiles<Add, decltype(x), decltype(y)>, "");
     }
 }
@@ -326,8 +326,8 @@ static void test004()
     constexpr auto t1 = 1_km / 1_h;
     constexpr auto t2 = 1_mps;
     constexpr auto t3 = 1_kmph;
-    constexpr MetresPerSecond t4 = t0;
-    constexpr MetresPerSecond t5 = t2;
+    static_assert(std::is_convertible_v<decltype(t0), MetresPerSecond>, "");
+    static_assert(std::is_convertible_v<decltype(t2), MetresPerSecond>, "");
 }
 
 //#if UNITS_HAS_ANY()
