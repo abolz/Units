@@ -517,7 +517,7 @@ static void test999()
     constexpr auto bits06 = 1_GB / 1_h;
     constexpr auto bits07 = bits06.convert_to(Megabytes{1} / Seconds{1});
     constexpr auto bits08 = bits06.convert_to(1_MB / 1_s);
-    constexpr auto bits09 = bits06.convert_to(units::Megabyte{} / units::Second{});
+    //constexpr auto bits09 = bits06.convert_to(units::Megabyte{} / units::Second{});
 }
 
 static void test998()
@@ -653,21 +653,21 @@ static void test700()
 
 static void test699()
 {
-#if UNITS_DIMENSIONLESS_ARITHMETIC()
-    constexpr auto r1 = 1_m / 1_m;
-    constexpr auto r2 = 1_s / 1_s;
-    static_assert(Compiles<Add, decltype(r1), double>, "");
-    static_assert(Compiles<Sub, decltype(r1), double>, "");
-    static_assert(Compiles<Add, double, decltype(r1)>, "");
-    static_assert(Compiles<Sub, double, decltype(r1)>, "");
-#else
+//#if UNITS_DIMENSIONLESS_ARITHMETIC()
+//    constexpr auto r1 = 1_m / 1_m;
+//    constexpr auto r2 = 1_s / 1_s;
+//    static_assert(Compiles<Add, decltype(r1), double>, "");
+//    static_assert(Compiles<Sub, decltype(r1), double>, "");
+//    static_assert(Compiles<Add, double, decltype(r1)>, "");
+//    static_assert(Compiles<Sub, double, decltype(r1)>, "");
+//#else
     constexpr auto r1 = 1_m / 1_m;
     constexpr auto r2 = 1_s / 1_s;
     static_assert(!Compiles<Add, decltype(r1), double>, "");
     static_assert(!Compiles<Sub, decltype(r1), double>, "");
     static_assert(!Compiles<Add, double, decltype(r1)>, "");
     static_assert(!Compiles<Sub, double, decltype(r1)>, "");
-#endif
+//#endif
 }
 
 //struct Width : Metres {};
