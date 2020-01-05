@@ -596,12 +596,26 @@ static void testIntegrate()
     constexpr auto i6 = integrate(2_m, 3_m, 6);
 }
 
-//static void test800()
-//{
-//    constexpr auto c1 = 20_degC;
-//    constexpr auto c2 = c1 + 100_K;
-//    constexpr auto c3 = 273.15_degC + 20_K;
-//}
+static void test800()
+{
+    // C = K + 273.15
+    // K = C - 273.15
+
+    // F -> C:  Kelvin{x - FahrenheitZero} + CelsiusZero
+    // C -> F:  Kelvin{x - CelsiusZero} + FahrenheitZero
+
+    ////constexpr auto c01 = 20_degC;
+    ////constexpr auto c02 = c01 + 100_K;
+    ////constexpr auto c03 = 200_degC - 10_degC;
+    ////constexpr auto c04 = Celsius{200_degC - 10_degC};
+    //////constexpr auto c05 = 200_degC + 10_degC;
+    ////constexpr auto c06 = 0_degC - CelsiusZero; // K
+    ////constexpr auto c07 = 0_K + CelsiusZero; // Torsor<K> = C
+    ////constexpr auto c08 = Kelvin{10_degF - FahrenheitZero};
+    ////constexpr auto c09 = Celsius{c08 + CelsiusZero};
+    ////constexpr auto c10 = Fahrenheit{ (Celsius{c09} - CelsiusZero) }; // XXXXXXXXXXXXXXXXXXXXXXXXXX this is wrong...
+    ////constexpr auto c11 = Fahrenheit{ FahrenheitZero + (Celsius{c09} - CelsiusZero) };
+}
 
 //using HorMPS = Quantity< Unit< Conversion_t<1>, TaggedKind< struct HorVel_t, kinds::Velocity > > >;
 //using VerMPS = Quantity< Unit< Conversion_t<1>, TaggedKind< struct VerVel_t, kinds::Velocity > > >;

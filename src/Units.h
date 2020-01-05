@@ -10,7 +10,7 @@
 #define UNITS_PRIME_DIMENSION() 0
 
 #include "Ratio.h"
-//#include "Torsor.h"
+#include "Torsor.h"
 
 #if UNITS_HAS_MATH()
 #include <cmath>
@@ -25,8 +25,6 @@ namespace sc {
 //==================================================================================================
 // Compile-time units
 //==================================================================================================
-
-struct Any {};
 
 template <typename K, typename D>
 struct Kind
@@ -47,6 +45,24 @@ struct Unit;
 
 template <typename U>
 class Quantity;
+
+//template <typename Rep, typename LinearConversion, typename Kind>
+//class Quantity;
+
+//template <typename Zero, typename QuantityType>
+//class QuantityPoint;
+
+template <typename U>
+using QuantityPoint = Absolute<Quantity<U>>;
+
+namespace units
+{
+    template <typename U>
+    struct ZeroPoint
+    {
+        static constexpr double value = 0.0;
+    };
+}
 
 //--------------------------------------------------------------------------------------------------
 // Dimension
@@ -130,31 +146,26 @@ namespace impl
     }
 
     template <typename... Un>
-    constexpr auto InvertDimension(Dimension<Un...>)
-    {
+    constexpr auto InvertDimension(Dimension<Un...>) {
         return Dimension<decltype(NegateDimension(Un{}))...>{};
     }
 
     template <typename... Ln, typename... Rn>
-    constexpr auto Concat(Dimension<Ln...>, Dimension<Rn...>)
-    {
+    constexpr auto Concat(Dimension<Ln...>, Dimension<Rn...>) {
         return Dimension<Ln..., Rn...>{};
     }
 
-    constexpr auto Merge(Dimension<>, Dimension<>)
-    {
+    constexpr auto Merge(Dimension<>, Dimension<>) {
         return Dimension<>{};
     }
 
     template <typename L1, typename... Ln>
-    constexpr auto Merge(Dimension<L1, Ln...> lhs, Dimension<>)
-    {
+    constexpr auto Merge(Dimension<L1, Ln...> lhs, Dimension<>) {
         return lhs;
     }
 
     template <typename R1, typename... Rn>
-    constexpr auto Merge(Dimension<>, Dimension<R1, Rn...> rhs)
-    {
+    constexpr auto Merge(Dimension<>, Dimension<R1, Rn...> rhs) {
         return rhs;
     }
 
@@ -456,10 +467,11 @@ namespace kinds
 
 #if 0
     // A / A = 1
+    // i.e. all ratio's are created equal...
     template <typename A> struct Quotient<A, A> { using type = One; };
 #endif
 
-#if 0
+#if 1
     // A * (B / A) = B
     template <typename A, typename B> struct Product< A, Quotient<B, A> > { using type = B; };
     // (B / A) * A = B
@@ -562,7 +574,7 @@ struct Conversion
     using rep = double;
     using ratio = typename R::type;
 
-    static_assert(num > 0,
+    static_assert(num >= -Two53,
         "invalid argument");
     static_assert(num <= Two53,
         "invalid argument");
@@ -630,6 +642,7 @@ using CommonConversion = typename impl::CommonConversion<C1, C2>::type;
 template <typename C, typename K>
 struct Unit
 {
+    using type = Unit;
     using conversion = C;
     using kind = K;
     using dimension = typename kind::dimension;
@@ -642,16 +655,6 @@ struct Unit
     template <typename C2, typename K2>
     [[nodiscard]] constexpr friend auto operator/(Unit /*lhs*/, Unit<C2, K2> /*rhs*/) noexcept {
         return Unit<DivConversions<C, C2>, DivKinds<K, K2>>{};
-    }
-
-    template <typename R2, int64_t E2>
-    [[nodiscard]] constexpr friend auto operator*(Conversion<R2, E2> /*lhs*/, Unit /*rhs*/) noexcept {
-        return Unit<MulConversions<Conversion<R2, E2>, C>, K>{};
-    }
-
-    template <typename R2, int64_t E2>
-    [[nodiscard]] constexpr friend auto operator*(Unit /*lhs*/, Conversion<R2, E2> /*rhs*/) noexcept {
-        return Unit<MulConversions<C, Conversion<R2, E2>>, K>{};
     }
 };
 
@@ -677,7 +680,7 @@ class Quantity<Unit<C, K>>
     //template <typename U2> friend class Quantity;
 
 public:
-    using quantity = Quantity;
+    using type = Quantity;
     using unit = Unit<C, K>;
     using conversion = C;
     using kind = K; // NO: typename K::kind
@@ -1088,14 +1091,33 @@ template <typename C, typename K>
 
 namespace units
 {
-    using Nanometre   = Unit< Conversion_t<1, 1000000000>, kinds::Length >;
-    using Micrometre  = Unit< Conversion_t<1, 1000000>, kinds::Length >;
-    using Millimetre  = Unit< Conversion_t<1, 1000>, kinds::Length >;
-    using Centimetre  = Unit< Conversion_t<1, 100>, kinds::Length >;
-    using Decimetre   = Unit< Conversion_t<1, 10>, kinds::Length >;
-    using Metre       = Unit< Conversion_t<1>, kinds::Length >;
-    using Hectometre  = Unit< Conversion_t<100>, kinds::Length >;
-    using Kilometre   = Unit< Conversion_t<1000>, kinds::Length >;
+#if 0
+    struct Nanometre
+        : Unit< Nanometre, Conversion_t<1, 1000000000>, kinds::Length > {};
+    struct Micrometre
+        : Unit< Micrometre, Conversion_t<1, 1000000>, kinds::Length > {};
+    struct Millimetre
+        : Unit< Millimetre, Conversion_t<1, 1000>, kinds::Length > {};
+    struct Centimetre
+        : Unit< Centimetre, Conversion_t<1, 100>, kinds::Length > {};
+    struct Decimetre
+        : Unit< Decimetre, Conversion_t<1, 10>, kinds::Length > {};
+    struct Metre
+        : Unit< Metre, Conversion_t<1>, kinds::Length > {};
+    struct Hectometre
+        : Unit< Hectometre, Conversion_t<100>, kinds::Length > {};
+    struct Kilometre
+        : Unit< Kilometre, Conversion_t<1000>, kinds::Length > {};
+#else
+    using Nanometre  = Unit< Conversion_t<1, 1000000000>, kinds::Length >;
+    using Micrometre = Unit< Conversion_t<1, 1000000>, kinds::Length >;
+    using Millimetre = Unit< Conversion_t<1, 1000>, kinds::Length >;
+    using Centimetre = Unit< Conversion_t<1, 100>, kinds::Length >;
+    using Decimetre  = Unit< Conversion_t<1, 10>, kinds::Length >;
+    using Metre      = Unit< Conversion_t<1>, kinds::Length >;
+    using Hectometre = Unit< Conversion_t<100>, kinds::Length >;
+    using Kilometre  = Unit< Conversion_t<1000>, kinds::Length >;
+#endif
 }
 
 using Nanometres  = Quantity< units::Nanometre >;
@@ -1438,12 +1460,35 @@ namespace literals
 //--------------------------------------------------------------------------------------------------
 // Temperature
 
+#if 0
+
 namespace units
 {
-    using Kelvin = Unit< Conversion_t<1>, kinds::Temperature >;
+    struct Kelvin
+        : Unit< Conversion_t<1>, kinds::Temperature > {};
+    struct Celsius
+        : Unit< Conversion_t<1>, kinds::Temperature > {};
+    struct Fahrenheit
+        : Unit< Conversion_t<5, 9>, kinds::Temperature > {};
+
+    //using Kelvin     = Unit< Conversion_t<1>, kinds::Temperature >;
+    //using Celsius    = ScaledUnit< Conversion_t<1>, Kelvin >;       // NB: implicitly convertible to Kelvin
+    //using Fahrenheit = ScaledUnit< Conversion_t<5, 9>, Kelvin >;    // NB: **not** implicitly convertible to Kelvin
+    //using Rankine    = ScaledUnit< Conversion_t<5, 9>, Kelvin >;    // NB: **not** implicitly convertible to Kelvin
+
+    //template<> struct ZeroPoint<Kelvin>     { static constexpr Quantity<Kelvin> value{0}; };
+    //template<> struct ZeroPoint<Celsius>    { static constexpr Quantity<Kelvin> value{273.15}; }; // 237.15 K == 0 °C
+    //template<> struct ZeroPoint<Fahrenheit> { static constexpr Quantity<Kelvin> value{459.67}; }; // 459.67 K == 0 °F
 }
 
-using Kelvin = Quantity< units::Kelvin  >;
+using Kelvin     = Quantity< units::Kelvin  >;
+using Celsius    = QuantityPoint< units::Celsius >;
+using Fahrenheit = QuantityPoint< units::Fahrenheit >;
+//using Rankine    = Quantity< units::Rankine >;
+
+inline constexpr Celsius CelsiusZero = Celsius{-273.15};
+inline constexpr Fahrenheit FahrenheitZero = Fahrenheit{-459.67};
+//inline constexpr Rankine RankineZero = Rankine{0.0};
 
 namespace literals
 {
@@ -1453,7 +1498,27 @@ namespace literals
     [[nodiscard]] constexpr auto operator""_K(unsigned long long x) noexcept {
         return Kelvin{static_cast<double>(x)};
     }
+    [[nodiscard]] constexpr auto operator""_degC(long double x) noexcept {
+        return Celsius{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_degC(unsigned long long x) noexcept {
+        return Celsius{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_degF(long double x) noexcept {
+        return Fahrenheit{static_cast<double>(x)};
+    }
+    [[nodiscard]] constexpr auto operator""_degF(unsigned long long x) noexcept {
+        return Fahrenheit{static_cast<double>(x)};
+    }
+    //[[nodiscard]] constexpr auto operator""_degR(long double x) noexcept {
+    //    return Rankine{static_cast<double>(x)};
+    //}
+    //[[nodiscard]] constexpr auto operator""_degR(unsigned long long x) noexcept {
+    //    return Rankine{static_cast<double>(x)};
+    //}
 }
+
+#endif
 
 //--------------------------------------------------------------------------------------------------
 // Amount of substance

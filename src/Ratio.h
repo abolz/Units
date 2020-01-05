@@ -202,6 +202,8 @@ struct Rational
         {
             if constexpr (num == 1)
                 return static_cast<ResultT>(x);
+            else if constexpr (num == -1)
+                return -static_cast<ResultT>(x);
             else
                 return static_cast<ResultT>(x) * static_cast<ResultT>(num);
         }
@@ -209,6 +211,8 @@ struct Rational
         {
             if constexpr (num == 1)
                 return static_cast<ResultT>(x) / static_cast<ResultT>(den);
+            else if (num == -1)
+                return -static_cast<ResultT>(x) / static_cast<ResultT>(den);
             else
                 return static_cast<ResultT>(x) * static_cast<ResultT>(num) / static_cast<ResultT>(den);
         }
