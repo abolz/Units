@@ -304,9 +304,22 @@ static void test002()
     {
         constexpr auto x = 1_m;
         constexpr auto y = 1_s;
+        //constexpr auto z = x + y;
         static_assert( Compiles<Mul, decltype(x), decltype(y)>, "");
         static_assert(!Compiles<Add, decltype(x), decltype(y)>, "");
     }
+    {
+        constexpr auto m01 = 1_m * 1_s;
+        constexpr auto m02 = 1_s * 1_m;
+        //static_assert(std::is_same_v< decltype(m01)::kind, kinds::Product<kinds::Length, kinds::Time> >, "");
+        //static_assert(kinds::CompatibleKinds<decltype(m01)::kind, decltype(m02)::kind>::value, "");
+        //constexpr auto m03 = m01 + m02;
+    }
+    //{
+    //    constexpr auto t01 = 1_m / 1_s;
+    //    constexpr auto t02 = 1_s / 1_m;
+    //    constexpr auto t03 = t01 + t02;
+    //}
 }
 
 static void test003()
@@ -581,6 +594,82 @@ static void testIntegrate()
     constexpr auto i4 = integrate(1_m, 2_m, 4);
     constexpr auto i5 = integrate(2_m, 3_m, 5);
     constexpr auto i6 = integrate(2_m, 3_m, 6);
+}
+
+//static void test800()
+//{
+//    constexpr auto c1 = 20_degC;
+//    constexpr auto c2 = c1 + 100_K;
+//    constexpr auto c3 = 273.15_degC + 20_K;
+//}
+
+//using HorMPS = Quantity< Unit< Conversion_t<1>, TaggedKind< struct HorVel_t, kinds::Velocity > > >;
+//using VerMPS = Quantity< Unit< Conversion_t<1>, TaggedKind< struct VerVel_t, kinds::Velocity > > >;
+
+//using HorMPS = Quantity< TaggedUnit< struct HorVel_t, units::MetrePerSecond > >;
+//using VerMPS = Quantity< TaggedUnit< struct VerVel_t, units::MetrePerSecond > >;
+
+using HorMPS = TaggedQuantity< struct HorVel, MetresPerSecond >;
+using VerMPS = TaggedQuantity< struct VerVel, MetresPerSecond >;
+
+static void test700_fun(HorMPS v1, VerMPS v2)
+{
+    //const auto v9 = v1 + v2;
+    const auto v0 = v1 + HorMPS{v2};
+    const auto v3 = v1 * v2;
+    const auto v4 = v2 * v1;
+    //const auto v5 = v3 + v4;
+}
+
+static void test700()
+{
+    constexpr HorMPS v1{1.0};
+    constexpr VerMPS v2{1.0};
+    constexpr HorMPS v3{1_mps};
+    constexpr HorMPS v4{1_kmph};
+    //v1 = v2;
+    //v1 = HorVel{v2};
+    static_assert(!Compiles<Add, HorMPS, VerMPS>, "");
+    static_assert(!Compiles<Add, VerMPS, HorMPS>, "");
+    //const auto v3 = v1 + v2;
+    //test700_fun(v2, v1);
+    test700_fun(v1, v2);
+    test700_fun(HorMPS{1_m / 1_s}, VerMPS{1_m / 1_s});
+}
+
+static void test699()
+{
+#if UNITS_DIMENSIONLESS_ARITHMETIC()
+    constexpr auto r1 = 1_m / 1_m;
+    constexpr auto r2 = 1_s / 1_s;
+    static_assert(Compiles<Add, decltype(r1), double>, "");
+    static_assert(Compiles<Sub, decltype(r1), double>, "");
+    static_assert(Compiles<Add, double, decltype(r1)>, "");
+    static_assert(Compiles<Sub, double, decltype(r1)>, "");
+#else
+    constexpr auto r1 = 1_m / 1_m;
+    constexpr auto r2 = 1_s / 1_s;
+    static_assert(!Compiles<Add, decltype(r1), double>, "");
+    static_assert(!Compiles<Sub, decltype(r1), double>, "");
+    static_assert(!Compiles<Add, double, decltype(r1)>, "");
+    static_assert(!Compiles<Sub, double, decltype(r1)>, "");
+#endif
+}
+
+//struct Width : Metres {};
+//struct Height : Metres {};
+using Width = TaggedQuantity< struct Width_t, Metres >;
+using Height = TaggedQuantity< struct Height_t, Metres >;
+
+static constexpr void test698a(Width w, Height h)
+{
+    //const auto z = 1_m + 1_s;
+    //const auto x = w + h;
+    const auto y = w * h;
+}
+
+static void test698()
+{
 }
 
 int main()

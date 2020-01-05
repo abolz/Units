@@ -4,13 +4,13 @@
 
 #pragma once
 
+#define RATIO_COMPARE() 0
 #define RATIO_COMPARE_LESS() 0
 #define RATIO_ROOT() 0
 
 #include <cassert>
 #include <cstdint>
 #include <climits>
-#include <ratio>
 #include <type_traits>
 
 #ifndef RATIO_ASSERT
@@ -59,7 +59,7 @@ namespace impl
         return Sgn(x) != Sgn(y) || (Abs(x) <= INT64_MAX - Abs(y));
     }
 
-#if RATIO_COMPARE_LESS()
+#if RATIO_COMPARE() && RATIO_COMPARE_LESS()
     struct Uint64x2 {
         uint64_t hi;
         uint64_t lo;
@@ -214,6 +214,7 @@ struct Rational
         }
     }
 
+#if 0
     template <int64_t Num2, int64_t Den2>
     [[nodiscard]] constexpr friend auto operator+(Rational, Rational<Num2, Den2>) noexcept
     {
@@ -274,7 +275,9 @@ struct Rational
         using RHS = typename Rational<Den2, Num2>::type; // Reduce!
         return lhs * RHS{};
     }
+#endif
 
+#if RATIO_COMPARE()
     template <int64_t Num2, int64_t Den2>
     [[nodiscard]] constexpr friend bool operator==(Rational, Rational<Num2, Den2>) noexcept
     {
@@ -329,23 +332,74 @@ struct Rational
     {
         return !(lhs < rhs);
     }
-#endif
+#endif // RATIO_COMPARE_LESS
+#endif // RATIO_COMPARE
 };
+
+namespace impl
+{
+    template <typename R1, typename R2>
+    struct RationalAdd
+    {
+        static constexpr int64_t N1 = R1::num;
+        static constexpr int64_t D1 = R1::den;
+        static constexpr int64_t N2 = R2::num;
+        static constexpr int64_t D2 = R2::den;
+
+        static constexpr int64_t Gd = impl::Gcd(D1, D2);
+
+        static_assert(impl::CheckMul64(N1, D2 / Gd),
+            "integer arithmetic overflow");
+        static_assert(impl::CheckMul64(N2, D1 / Gd),
+            "integer arithmetic overflow");
+        static_assert(impl::CheckAdd64(N1 * (D2 / Gd), N2 / (D1 / Gd)),
+            "integer arithmetic overflow");
+        static_assert(impl::CheckMul64(D1, D2 / Gd),
+            "integer arithmetic overflow");
+
+        static constexpr int64_t Nr = N1 * (D2 / Gd) + N2 * (D1 / Gd);
+        static constexpr int64_t Dr = D1 * (D2 / Gd);
+
+        using type = typename Rational<Nr, Dr>::type; // Nr/Dr needs to be reduced again!
+    };
+
+    template <typename R1, typename R2>
+    struct RationalMultiply
+    {
+        static constexpr int64_t N1 = R1::num;
+        static constexpr int64_t D1 = R1::den;
+        static constexpr int64_t N2 = R2::num;
+        static constexpr int64_t D2 = R2::den;
+
+        static constexpr int64_t Gx = impl::Gcd(N1, D2);
+        static constexpr int64_t Gy = impl::Gcd(N2, D1);
+
+        static_assert(impl::CheckMul64(N1 / Gx, N2 / Gy),
+            "integer arithmetic overflow");
+        static_assert(impl::CheckMul64(D1 / Gy, D2 / Gx),
+            "integer arithmetic overflow");
+
+        static constexpr int64_t Nr = (N1 / Gx) * (N2 / Gy);
+        static constexpr int64_t Dr = (D1 / Gy) * (D2 / Gx);
+
+        using type = Rational<Nr, Dr>; // Nr/Dr is already reduced
+    };
+}
 
 template <int64_t Num, int64_t Den = 1>
     using Ratio = typename Rational<Num, Den>::type;
 
 template <typename R1, typename R2>
-    using AddRatios = decltype(R1{} + R2{});
+    using AddRatios = typename impl::RationalAdd<R1, R2>::type;
 
 template <typename R1, typename R2>
-    using SubRatios = decltype(R1{} - R2{});
+    using SubRatios = typename impl::RationalAdd<R1, Rational<-R2::num, R2::den>>::type;
 
 template <typename R1, typename R2>
-    using MulRatios = decltype(R1{} * R2{});
+    using MulRatios = typename impl::RationalMultiply<R1, R2>::type;
 
 template <typename R1, typename R2>
-    using DivRatios = decltype(R1{} / R2{});
+    using DivRatios = typename impl::RationalMultiply<R1, Rational<R2::den, R2::num>>::type;
 
 template <typename R1, typename R2>
     using RatioDivides = std::bool_constant< DivRatios<R2, R1>::den == 1 >;

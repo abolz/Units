@@ -5,10 +5,12 @@
 #pragma once
 
 #define UNITS_DELETE_EVERYTHING_ELSE() 0
+#define UNITS_DIMENSIONLESS_ARITHMETIC() 0
 #define UNITS_HAS_MATH() 0
-#define UNITS_PRIME_DIMENSION() 1
+#define UNITS_PRIME_DIMENSION() 0
 
 #include "Ratio.h"
+//#include "Torsor.h"
 
 #if UNITS_HAS_MATH()
 #include <cmath>
@@ -29,10 +31,13 @@ struct Any {};
 template <typename K, typename D>
 struct Kind
 {
-    using type = Kind;
+    using type = K; // NO: Kind
     using kind = K;
     using dimension = D;
 };
+
+template <typename Tag, typename K>
+struct TaggedKind : Kind< Tag, typename K::dimension > {};
 
 template <typename R, int64_t Exp>
 struct Conversion;
@@ -212,10 +217,6 @@ namespace kinds
     {
     };
 
-    // Typedefs:
-    //  weak:     using X = Kind< Any, ... >
-    //  strong:  struct X : Kind< X, ... >
-
     //--------------------------------------------------------------------------
     // Base kinds:
 
@@ -247,6 +248,11 @@ namespace kinds
     // Kelvin K
     struct Temperature
         : Kind< Temperature,
+                Dimension<dim::Temperature<1>> > {};
+
+    // Celsius °C
+    struct TemperatureCelsius
+        : Kind< TemperatureCelsius,
                 Dimension<dim::Temperature<1>> > {};
 
     // Mole mol
@@ -658,6 +664,9 @@ using DivUnits = decltype(U1{} / U2{});
 template <typename S, typename U, typename K = typename U::kind >
 using ScaledUnit = Unit< MulConversions<S, typename U::conversion>, K >;
 
+template <typename Tag, typename U>
+using TaggedUnit = Unit< typename U::conversion, TaggedKind< Tag, typename U::kind > >;
+
 //--------------------------------------------------------------------------------------------------
 // Quantity (value + compile-time unit)
 //--------------------------------------------------------------------------------------------------
@@ -671,24 +680,24 @@ public:
     using quantity = Quantity;
     using unit = Unit<C, K>;
     using conversion = C;
-    using kind = K;
+    using kind = K; // NO: typename K::kind
     using dimension = typename kind::dimension;
 
 private:
     double count_ = 0;
 
 private:
-    template <typename C1, typename C2, typename T = int>
-    using EnableIfDivides
-        = std::enable_if_t< DivConversions<C2, C1>::den == 1 && DivConversions<C2, C1>::exp == 0, T >;
+    template <typename C1>
+    using IsIntegral = std::bool_constant< C1::den == 1 && C1::exp == 0 >;
 
-    template <typename K1, typename K2, typename T = int>
-    using EnableIfSameDimension
-        = std::enable_if_t< std::is_same< typename K1::dimension, typename K2::dimension >::value, T >;
+    template <typename C1, typename C2>
+    using Divides = IsIntegral< DivConversions<C2, C1> >;
 
-    template <typename K2, typename T = int>
-    using EnableIfDimensionless
-        = std::enable_if_t< std::is_same< typename K2::dimension, Dimension<> >::value, T >;
+    template <typename K1, typename K2>
+    using IsSameDimension = std::is_same<typename K1::dimension, typename K2::dimension>;
+
+    template <typename K1>
+    using IsDimensionless = std::is_same<typename K1::dimension, Dimension<>>;
 
 public:
     constexpr Quantity() noexcept = default;
@@ -700,13 +709,13 @@ public:
     {
     }
 
-    template <typename C2, EnableIfDivides<C, C2> = 0>
+    template <typename C2, std::enable_if_t< Divides<C, C2>::value, int > = 0>
     constexpr Quantity(Quantity<Unit<C2, K>> q) noexcept
         : count_(DivConversions<C2, C>{}(q.count()))
     {
     }
 
-    template <typename C2, typename K2, EnableIfSameDimension<K, K2> = 0>
+    template <typename C2, typename K2, std::enable_if_t< IsSameDimension<K, K2>::value, int > = 0>
     constexpr explicit Quantity(Quantity<Unit<C2, K2>> q) noexcept
         : count_(DivConversions<C2, C>{}(q.count()))
     {
@@ -726,12 +735,12 @@ public:
     //    return conversion{}(count_);
     //}
 
-    template <typename C2, typename K2, EnableIfSameDimension<K, K2> = 0>
+    template <typename C2, typename K2, std::enable_if_t< IsSameDimension<K, K2>::value, int > = 0>
     [[nodiscard]] constexpr auto convert_to(Unit<C2, K2>) const noexcept {
         return Quantity<Unit<C2, K>>(DivConversions<C, C2>{}(count()));
     }
 
-    template <typename C2, typename K2, EnableIfSameDimension<K, K2> = 0>
+    template <typename C2, typename K2, std::enable_if_t< IsSameDimension<K, K2>::value, int > = 0>
     [[nodiscard]] constexpr auto convert_to(Quantity<Unit<C2, K2>>) const noexcept {
         return Quantity<Unit<C2, K>>(DivConversions<C, C2>{}(count()));
     }
@@ -755,18 +764,22 @@ public:
 
     template <typename C2, typename Q = Quantity<Unit<CommonConversion<C, C2>, K>>>
     [[nodiscard]] constexpr friend auto operator+(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-        const Q x = lhs; // implicit conversion
-        const Q y = rhs; // implicit conversion
-        return Q(x.count() + y.count());
+        static_assert(std::is_convertible<decltype(lhs), Q>::value, "internal error");
+        static_assert(std::is_convertible<decltype(rhs), Q>::value, "internal error");
+        return Q(Q(lhs).count() + Q(rhs).count());
     }
 
     template <typename C2, typename Q = Quantity<Unit<CommonConversion<C, C2>, K>>>
     [[nodiscard]] constexpr friend auto operator-(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-        const Q x = lhs; // implicit conversion
-        const Q y = rhs; // implicit conversion
-        return Q(x.count() - y.count());
+        static_assert(std::is_convertible<decltype(lhs), Q>::value, "internal error");
+        static_assert(std::is_convertible<decltype(rhs), Q>::value, "internal error");
+        return Q(Q(lhs).count() - Q(rhs).count());
     }
 
+    //
+    // NB:
+    // This operator **is not** commutative!
+    //
     template <typename U2>
     [[nodiscard]] constexpr friend auto operator*(Quantity lhs, Quantity<U2> rhs) noexcept {
         return Quantity<MulUnits<unit, U2>>(lhs.count() * rhs.count());
@@ -803,18 +816,42 @@ public:
         = delete;
 #endif
 
+#if UNITS_DIMENSIONLESS_ARITHMETIC()
+    template <typename K2 = K, std::enable_if_t< IsDimensionless<K2>::value, int > = 0>
+    constexpr friend auto operator+(Quantity lhs, double rhs) noexcept {
+        return Quantity(lhs.count() + rhs);
+    }
+
+    template <typename K2 = K, std::enable_if_t< IsDimensionless<K2>::value, int > = 0>
+    constexpr friend auto operator+(double lhs, Quantity rhs) noexcept {
+        return Quantity(lhs + rhs.count());
+    }
+
+    template <typename K2 = K, std::enable_if_t< IsDimensionless<K2>::value, int > = 0>
+    constexpr friend auto operator-(Quantity lhs, double rhs) noexcept {
+        return Quantity(lhs.count() - rhs);
+    }
+
+    template <typename K2 = K, std::enable_if_t< IsDimensionless<K2>::value, int > = 0>
+    constexpr friend auto operator-(double lhs, Quantity rhs) noexcept {
+        return Quantity(lhs - rhs.count());
+    }
+#endif
+
     //------------------------------------------------------------------------------
     // Assignment operators
 
-    template <typename C2, EnableIfDivides<C, C2> = 0>
+    template <typename C2, std::enable_if_t< Divides<C, C2>::value, int > = 0>
     constexpr friend Quantity& operator+=(Quantity& lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-        lhs.count_ += DivConversions<C2, C>{}(rhs.count());
+//      lhs.count_ += DivConversions<C2, C>{}(rhs.count());
+        lhs.count_ += DivConversions<C2, C>::num * rhs.count();
         return lhs;
     }
 
-    template <typename C2, EnableIfDivides<C, C2> = 0>
+    template <typename C2, std::enable_if_t< Divides<C, C2>::value, int > = 0>
     constexpr friend Quantity& operator-=(Quantity& lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-        lhs.count_ -= DivConversions<C2, C>{}(rhs.count());
+//      lhs.count_ -= DivConversions<C2, C>{}(rhs.count());
+        lhs.count_ -= DivConversions<C2, C>::num * rhs.count();
         return lhs;
     }
 
@@ -839,11 +876,17 @@ public:
     //------------------------------------------------------------------------------
     // Comparisons
 
+private:
+    static constexpr int CompareRep(double lhs, double rhs) noexcept {
+        return (lhs < rhs) ? -1 : (rhs < lhs);
+    }
+
+public:
     template <typename C2, typename Q = Quantity<Unit<CommonConversion<C, C2>, K>>>
     [[nodiscard]] constexpr friend int Compare(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-        const Q x = lhs; // implicit conversion
-        const Q y = rhs; // implicit conversion
-        return (x.count() < y.count()) ? -1 : (y.count() < x.count());
+        static_assert(std::is_convertible<decltype(lhs), Q>::value, "internal error");
+        static_assert(std::is_convertible<decltype(rhs), Q>::value, "internal error");
+        return CompareRep(Q(lhs).count(), Q(rhs).count());
     }
 
 #if UNITS_DELETE_EVERYTHING_ELSE()
@@ -856,39 +899,49 @@ public:
     // lhs >= rhs <==> lhs - rhs >= 0
     // etc...
     // If you can add them, you can compare them...
+    //
+    // But we use the correct comparison operator here, to support NaNs for floating-point representations...
 
     template <typename C2, typename Q = Quantity<Unit<CommonConversion<C, C2>, K>>>
     [[nodiscard]] constexpr friend bool operator==(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-        const Q x = lhs; // implicit conversion
-        const Q y = rhs; // implicit conversion
-        return x.count() == y.count();
+        static_assert(std::is_convertible<decltype(lhs), Q>::value, "internal error");
+        static_assert(std::is_convertible<decltype(rhs), Q>::value, "internal error");
+        return Q(lhs).count() == Q(rhs).count();
     }
 
     template <typename C2, typename Q = Quantity<Unit<CommonConversion<C, C2>, K>>>
     [[nodiscard]] constexpr friend bool operator!=(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-        return !(lhs == rhs);
+        static_assert(std::is_convertible<decltype(lhs), Q>::value, "internal error");
+        static_assert(std::is_convertible<decltype(rhs), Q>::value, "internal error");
+        return Q(lhs).count() != Q(rhs).count();
     }
 
     template <typename C2, typename Q = Quantity<Unit<CommonConversion<C, C2>, K>>>
     [[nodiscard]] constexpr friend bool operator<(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-        const Q x = lhs; // implicit conversion
-        const Q y = rhs; // implicit conversion
-        return x.count() < y.count();
+        static_assert(std::is_convertible<decltype(lhs), Q>::value, "internal error");
+        static_assert(std::is_convertible<decltype(rhs), Q>::value, "internal error");
+        return Q(lhs).count() < Q(rhs).count();
     }
 
     template <typename C2, typename Q = Quantity<Unit<CommonConversion<C, C2>, K>>>
     [[nodiscard]] constexpr friend bool operator>(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-        return rhs < lhs;
+        static_assert(std::is_convertible<decltype(lhs), Q>::value, "internal error");
+        static_assert(std::is_convertible<decltype(rhs), Q>::value, "internal error");
+        return Q(lhs).count() > Q(rhs).count();
     }
 
     template <typename C2, typename Q = Quantity<Unit<CommonConversion<C, C2>, K>>>
     [[nodiscard]] constexpr friend bool operator<=(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-        return !(rhs < lhs);
+        static_assert(std::is_convertible<decltype(lhs), Q>::value, "internal error");
+        static_assert(std::is_convertible<decltype(rhs), Q>::value, "internal error");
+        return Q(lhs).count() <= Q(rhs).count();
     }
 
     template <typename C2, typename Q = Quantity<Unit<CommonConversion<C, C2>, K>>>
     [[nodiscard]] constexpr friend bool operator>=(Quantity lhs, Quantity<Unit<C2, K>> rhs) noexcept {
-        return !(lhs < rhs);
+        static_assert(std::is_convertible<decltype(lhs), Q>::value, "internal error");
+        static_assert(std::is_convertible<decltype(rhs), Q>::value, "internal error");
+        return Q(lhs).count() >= Q(rhs).count();
     }
 
 #if UNITS_DELETE_EVERYTHING_ELSE()
@@ -969,7 +1022,7 @@ public:
     // exp(a b) = exp(a) exp(b)
     //  check!
 
-    template <typename K2 = K, EnableIfDimensionless<K2> = 0>
+    template <typename K2 = K, std::enable_if_t< IsDimensionless<K2>::value, int > = 0>
     friend auto Exp(Quantity q) noexcept {
         return Quantity(std::exp(q.count()));
     }
@@ -977,20 +1030,16 @@ public:
     // log_a(t) = log_b(t) / log_b(a)
     //  ... !?!?
 
-    template <typename K2 = K, EnableIfDimensionless<K2> = 0>
+    template <typename K2 = K, std::enable_if_t< IsDimensionless<K2>::value, int > = 0>
     friend auto Log(Quantity q) noexcept {
         return Quantity(std::log(q.count()));
     }
 
-    template <typename C1>
-    using SqrtTypeSfinae = void;
-
-    template <typename Q = SqrtTypeSfinae<C>>
-    friend auto Sqrt(Quantity q) noexcept {
-    }
-
 #endif
 };
+
+template <typename Tag, typename Q>
+using TaggedQuantity = Quantity< TaggedUnit< Tag, typename Q::unit > >;
 
 template <typename T, typename U> // T = Quantity or Unit
 [[nodiscard]] constexpr auto quantity_cast(Quantity<U> q) noexcept -> decltype( q.convert_to(T{}) ) {
@@ -1391,12 +1440,10 @@ namespace literals
 
 namespace units
 {
-    using Kelvin  = Unit< Conversion_t<1>, kinds::Temperature >;
-    //using Celsius = Unit< Conversion_t<1>, kinds::Temperature >;
+    using Kelvin = Unit< Conversion_t<1>, kinds::Temperature >;
 }
 
-using Kelvin  = Quantity< units::Kelvin >;
-//using Celsius = Quantity< units::Celsius >;
+using Kelvin = Quantity< units::Kelvin  >;
 
 namespace literals
 {
@@ -1406,12 +1453,6 @@ namespace literals
     [[nodiscard]] constexpr auto operator""_K(unsigned long long x) noexcept {
         return Kelvin{static_cast<double>(x)};
     }
-    //[[nodiscard]] constexpr auto operator""_degC(long double x) noexcept {
-    //    return Celsius{static_cast<double>(x)};
-    //}
-    //[[nodiscard]] constexpr auto operator""_degC(unsigned long long x) noexcept {
-    //    return Celsius{static_cast<double>(x)};
-    //}
 }
 
 //--------------------------------------------------------------------------------------------------
