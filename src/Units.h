@@ -13,6 +13,7 @@
 #if UNITS_HAS_MATH()
 #include <cmath>
 #endif
+#include <chrono>
 
 #ifndef UNITS_ASSERT
 #define UNITS_ASSERT(X) assert(X)
@@ -44,9 +45,6 @@ struct Unit;
 template <typename U>
 class Quantity;
 
-template <typename Q, typename Zero>
-class QuantityPoint;
-
 namespace units
 {
     struct DefaultZeroPoint
@@ -59,6 +57,9 @@ namespace units
     {
     };
 }
+
+template <typename U>
+class QuantityPoint;
 
 //--------------------------------------------------------------------------------------------------
 // Dimension
@@ -561,14 +562,12 @@ using Conversion_t
 template <typename R, int64_t Exp = 0>
 struct Conversion
 {
-    static constexpr int64_t Two53 = 9007199254740992; // == 2^53
-
     static constexpr int64_t num = R::num;
     static constexpr int64_t den = R::den;
     static constexpr int64_t exp = Exp;
-
-    using rep = double;
     using ratio = typename R::type;
+
+    static constexpr int64_t Two53 = 9007199254740992; // == 2^53
 
     static_assert(num >= -Two53,
         "invalid argument");
@@ -582,7 +581,7 @@ struct Conversion
         "argument out of range (sorry, not implemented...)");
 
     // Returns: (x * num / den) * pi^exp
-    [[nodiscard]] constexpr rep operator()(rep x) const noexcept {
+    [[nodiscard]] constexpr double operator()(double x) const noexcept {
         constexpr double Powers[] = {
             1,                 // pi^0
             3.141592653589793, // pi^1
@@ -591,13 +590,13 @@ struct Conversion
             97.40909103400244, // pi^4
         };
 
-        const rep scaled = ratio{}(x);
+        const double scaled = ratio{}(x);
         if constexpr (exp == 0)
             return scaled;
         else if constexpr (exp > 0)
-            return scaled * static_cast<rep>(Powers[exp]);
+            return scaled * Powers[exp];
         else
-            return scaled / static_cast<rep>(Powers[-exp]);
+            return scaled / Powers[-exp];
     }
 };
 
@@ -642,37 +641,7 @@ struct Unit
     using conversion = C;
     using kind = K;
     using dimension = typename kind::dimension;
-
-    //template <typename C2, typename K2>
-    //[[nodiscard]] constexpr friend auto operator*(Unit /*lhs*/, Unit<C2, K2> /*rhs*/) noexcept {
-    //    return Unit<MulConversions<C, C2>, MulKinds<K, K2>>{};
-    //}
-
-    //template <typename C2, typename K2>
-    //[[nodiscard]] constexpr friend auto operator/(Unit /*lhs*/, Unit<C2, K2> /*rhs*/) noexcept {
-    //    return Unit<DivConversions<C, C2>, DivKinds<K, K2>>{};
-    //}
 };
-
-//template <typename U1, typename U2>
-//struct ProductUnit
-//{
-//    //using type       = ProductUnit;
-//    using conversion = MulConversions<typename U1::conversion, typename U2::conversion>;
-//    using kind       = MulKinds<typename U1::kind, typename U2::kind>;
-//    using unit       = Unit<conversion, kind>;
-//    //using dimension  = typename kind::dimension;
-//};
-//
-//template <typename U1, typename U2>
-//struct QuotientUnit
-//{
-//    //using type       = QuotientUnit;
-//    using conversion = DivConversions<typename U1::conversion, typename U2::conversion>;
-//    using kind       = DivKinds<typename U1::kind, typename U2::kind>;
-//    using unit       = Unit<conversion, kind>;
-//    //using dimension  = typename kind::dimension;
-//};
 
 template <typename U1, typename U2>
 using MulUnits = Unit<MulConversions<typename U1::conversion, typename U2::conversion>, MulKinds<typename U1::kind, typename U2::kind>>;
@@ -696,11 +665,12 @@ class Quantity<Unit<C, K>>
     //template <typename U2> friend class Quantity;
 
 public:
-    using type = Quantity;
-    using unit = Unit<C, K>;
+    using type       = Quantity;
+//  using point      = QuantityPoint<type>;
+    using unit       = Unit<C, K>;
     using conversion = C;
-    using kind = K; // **NO**: typename K::kind
-    using dimension = typename kind::dimension;
+    using kind       = K; // **NO**: typename K::kind
+    using dimension  = typename kind::dimension;
 
 private:
     double count_ = 0;
