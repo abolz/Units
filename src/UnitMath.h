@@ -305,11 +305,11 @@ template <int64_t N, typename U>
     using dimension_root = impl::RationalRoot<dimension, N>;
 
     static_assert(conversion_root::is_exact,
-        "rational powers are not supported");
+        "inexact roots are not supported");
     static_assert(conversion::exp % N == 0,
-        "rational powers are not supported");
+        "inexact roots are not supported");
     static_assert(dimension_root::is_exact,
-        "rational powers are not supported");
+        "inexact roots are not supported");
 
     using C = Conversion<typename conversion_root::ratio, conversion::exp / N>;
     using D = typename dimension_root::ratio;
