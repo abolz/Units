@@ -182,9 +182,6 @@ namespace kinds
 
                 static constexpr uint64_t h1 = impl::TypeId<T1>();
                 static constexpr uint64_t h2 = impl::TypeId<T2>();
-                static_assert(std::is_same_v<T1, T2> || h1 != h2,
-                    "collision detected");
-
                 if constexpr (h1 < h2)
                 {
                     using F = Factor<T1, e1>;
@@ -197,10 +194,8 @@ namespace kinds
                 }
                 else
                 {
-                    //
-                    // FIXME:
-                    // For 'Simple' types the exponent should always be == 1
-                    //
+                    static_assert(std::is_same_v<T1, T2>,
+                        "collision detected");
 
 //                  static constexpr int64_t e = e1 + e2;
                     static constexpr int64_t e = e1 + e2 == 0 ? 0 : (std::is_same_v<Simple, T1> ? 1 : (e1 + e2));
