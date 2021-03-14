@@ -375,6 +375,14 @@ namespace uom::literals {
 {
     return Joules(static_cast<double>(x));
 }
+[[nodiscard]] constexpr auto operator""_kJ(long double x) noexcept
+{
+    return Kilojoules(static_cast<double>(x));
+}
+[[nodiscard]] constexpr auto operator""_kJ(unsigned long long x) noexcept
+{
+    return Kilojoules(static_cast<double>(x));
+}
 
 //[[nodiscard]] constexpr auto operator""_Nm(long double x) noexcept
 //{
@@ -448,6 +456,27 @@ namespace uom::literals {
 [[nodiscard]] constexpr auto operator""_GB(unsigned long long x) noexcept
 {
     return Gigabytes(static_cast<double>(x));
+}
+
+//--------------------------------------------------------------------------------------------------
+// Area per Length
+
+[[nodiscard]] constexpr auto operator""_cm2_per_m(long double x) noexcept
+{
+    return SquareCentimetresPerMetre(static_cast<double>(x));
+}
+[[nodiscard]] constexpr auto operator""_cm2_per_m(unsigned long long x) noexcept
+{
+    return SquareCentimetresPerMetre(static_cast<double>(x));
+}
+
+[[nodiscard]] constexpr auto operator""_m2_per_m(long double x) noexcept
+{
+    return SquareMetresPerMetre(static_cast<double>(x));
+}
+[[nodiscard]] constexpr auto operator""_m2_per_m(unsigned long long x) noexcept
+{
+    return SquareMetresPerMetre(static_cast<double>(x));
 }
 
 } // namespace uom::literals

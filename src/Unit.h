@@ -767,6 +767,7 @@ namespace units
     // Energy
 
     using Joule             = Unit<MulConversions<Newton::conversion, Metre::conversion>, kinds::Energy>;
+    using Kilojoule         = ScaledUnit<Conversion<Ratio<1000>>, Joule>;
 
     //--------------------------------------------------------------------------
     // Torque
@@ -1047,6 +1048,29 @@ constexpr QuantityT<Quantity<U>, K> kind_cast(Quantity<U> q) noexcept
 // Typedefs
 //--------------------------------------------------------------------------------------------------
 
+#if 0
+template <typename Conv, typename Q>
+using ScaledQuantity
+    = Quantity<Unit<MulConversions<Conv, typename Q::conversion>, typename Q::kind>>;
+
+//  template <typename Q> using Atto  = ScaledQuantity< Conversion< std::atto  >, Q >;
+//  template <typename Q> using Femto = ScaledQuantity< Conversion< std::femto >, Q >;
+//  template <typename Q> using Pico  = ScaledQuantity< Conversion< std::pico  >, Q >;
+    template <typename Q> using Nano  = ScaledQuantity< Conversion< std::nano  >, Q >;
+    template <typename Q> using Micro = ScaledQuantity< Conversion< std::micro >, Q >;
+    template <typename Q> using Milli = ScaledQuantity< Conversion< std::milli >, Q >;
+    template <typename Q> using Centi = ScaledQuantity< Conversion< std::centi >, Q >;
+    template <typename Q> using Deci  = ScaledQuantity< Conversion< std::deci  >, Q >;
+    template <typename Q> using Deca  = ScaledQuantity< Conversion< std::deca  >, Q >;
+    template <typename Q> using Hecto = ScaledQuantity< Conversion< std::hecto >, Q >;
+    template <typename Q> using Kilo  = ScaledQuantity< Conversion< std::kilo  >, Q >;
+    template <typename Q> using Mega  = ScaledQuantity< Conversion< std::mega  >, Q >;
+    template <typename Q> using Giga  = ScaledQuantity< Conversion< std::giga  >, Q >;
+//  template <typename Q> using Tera  = ScaledQuantity< Conversion< std::tera  >, Q >;
+//  template <typename Q> using Peta  = ScaledQuantity< Conversion< std::peta  >, Q >;
+//  template <typename Q> using Exa   = ScaledQuantity< Conversion< std::exa   >, Q >;
+#endif
+
 //------------------------------------------------------------------------------
 // One
 
@@ -1155,6 +1179,7 @@ using Kilonewtons       = Quantity<units::Kilonewton>;
 // Energy
 
 using Joules            = Quantity<units::Joule>;
+using Kilojoules        = Quantity<units::Kilojoule>;
 
 //--------------------------------------------------------------------------
 // Torque
@@ -1183,15 +1208,11 @@ using Gigabytes         = Quantity<units::Gigabyte>;
 //--------------------------------------------------------------------------
 // Area per Length
 
-#if 1
-
 using SquareCentimetresPerMetre
     = Tagged<decltype(SquareCentimetres{} / Metres{}), kinds::AreaPerLength>;
 
 using SquareMetresPerMetre
     = Tagged<decltype(SquareMetres{}      / Metres{}), kinds::AreaPerLength>;
-
-#endif
 
 //==================================================================================================
 //
