@@ -333,13 +333,8 @@ namespace kinds {
         = MulKinds<Area, Length>;
 
     // Steradian sr = rad^2
-#if 1
     struct SolidAngle
         : Kind<SolidAngle, MulKinds<PlaneAngle, PlaneAngle>::dimension> {};
-#else
-    using SolidAngle
-        = MulKinds<PlaneAngle, PlaneAngle>;
-#endif
 
     // m/s
     using Velocity
