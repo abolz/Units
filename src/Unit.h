@@ -1020,6 +1020,18 @@ public:
     }
 };
 
+template <typename U>
+[[nodiscard]] constexpr auto simplify(Quantity<U> q) noexcept -> decltype(q.simplify())
+{
+    return q.simplify();
+}
+
+template <typename Q, typename U>
+[[nodiscard]] constexpr auto count(Quantity<U> q) noexcept -> decltype(q.template count<Q>())
+{
+    return q.count<Q>();
+}
+
 //--------------------------------------------------------------------------------------------------
 // Typedefs
 //--------------------------------------------------------------------------------------------------
