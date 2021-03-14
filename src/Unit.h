@@ -19,27 +19,27 @@ namespace uom {
 // Gcd/Lcm
 //==================================================================================================
 
-namespace impl {
-
-// <numeric> std::gcd ?
-constexpr int64_t Gcd(int64_t x, int64_t y) noexcept
+namespace impl
 {
-    UNITS_ASSERT(x >= 0);
-    UNITS_ASSERT(y >= 1);
+    // <numeric> std::gcd ?
+    constexpr int64_t Gcd(int64_t x, int64_t y) noexcept
+    {
+        UNITS_ASSERT(x >= 0);
+        UNITS_ASSERT(y >= 1);
 
-    while (y > 0) {
-        const auto r = x % y;
-        x = y;
-        y = r;
+        while (y > 0) {
+            const auto r = x % y;
+            x = y;
+            y = r;
+        }
+        return x;
     }
-    return x;
-}
 
-// <numeric> std::lcm ?
-constexpr int64_t Lcm(int64_t x, int64_t y) noexcept
-{
-    return (x / Gcd(x, y)) * y;
-}
+    // <numeric> std::lcm ?
+    constexpr int64_t Lcm(int64_t x, int64_t y) noexcept
+    {
+        return (x / Gcd(x, y)) * y;
+    }
 
 } // namespace impl
 
@@ -278,8 +278,8 @@ template <typename K1, typename K2>
 using DivKinds = Kind< DivTags<typename K1::tag, typename K2::tag>,
                        DivDimensions<typename K1::dimension, typename K2::dimension> >;
 
-namespace kinds {
-
+namespace kinds
+{
     //----------------------------------------------------------------------
     // Base kinds
 
@@ -452,7 +452,8 @@ namespace kinds {
     // Lux lx = lm/m^2
     using Illuminance
         = DivKinds<LuminousFlux, Area>;
-}
+
+} // namespace kinds
 
 //==================================================================================================
 // Conversion
@@ -806,12 +807,6 @@ namespace impl
 
 } // namespace impl
 
-#if 0
-template <typename Q, typename Tag>
-using QuantityT // a.k.a. Change-Kind
-    = Quantity<Unit<typename Q::conversion, Kind<Tag, typename Q::dimension>>>;
-#endif
-
 template <typename Q, typename Tag>
 using Tagged // a.k.a. Change-Kind
     = Quantity<Unit<typename Q::conversion, Kind<Tag, typename Q::dimension>>>;
@@ -1030,15 +1025,6 @@ public:
     }
 };
 
-#if 0
-template <typename K, typename U>
-    // requires K::dimension == U::dimension
-constexpr QuantityT<Quantity<U>, K> kind_cast(Quantity<U> q) noexcept
-{
-    return QuantityT<Quantity<U>, K>(q.count_unsafe());
-}
-#endif
-
 //--------------------------------------------------------------------------------------------------
 // Typedefs
 //--------------------------------------------------------------------------------------------------
@@ -1214,22 +1200,22 @@ using SquareMetresPerMetre
 //==================================================================================================
 
 #if 0
-inline constexpr Dimensionless operator+(Dimensionless lhs, double rhs) noexcept
+[[nodiscard]] inline constexpr Dimensionless operator+(Dimensionless lhs, double rhs) noexcept
 {
     return Dimensionless(lhs.count_unsafe() + rhs);
 }
 
-inline constexpr Dimensionless operator-(Dimensionless lhs, double rhs) noexcept
+[[nodiscard]] inline constexpr Dimensionless operator-(Dimensionless lhs, double rhs) noexcept
 {
     return Dimensionless(lhs.count_unsafe() - rhs);
 }
 
-inline constexpr Dimensionless operator+(double lhs, Dimensionless rhs) noexcept
+[[nodiscard]] inline constexpr Dimensionless operator+(double lhs, Dimensionless rhs) noexcept
 {
     return Dimensionless(lhs + rhs.count_unsafe());
 }
 
-inline constexpr Dimensionless operator-(double lhs, Dimensionless rhs) noexcept
+[[nodiscard]] inline constexpr Dimensionless operator-(double lhs, Dimensionless rhs) noexcept
 {
     return Dimensionless(lhs - rhs.count_unsafe());
 }
