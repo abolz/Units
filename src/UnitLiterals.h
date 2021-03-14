@@ -101,6 +101,14 @@ namespace uom::literals {
 //--------------------------------------------------------------------------------------------------
 // Area
 
+[[nodiscard]] constexpr auto operator""_mm2(long double x) noexcept
+{
+    return SquareMillimetres(static_cast<double>(x));
+}
+[[nodiscard]] constexpr auto operator""_mm2(unsigned long long x) noexcept
+{
+    return SquareMillimetres(static_cast<double>(x));
+}
 [[nodiscard]] constexpr auto operator""_cm2(long double x) noexcept
 {
     return SquareCentimetres(static_cast<double>(x));
@@ -129,6 +137,14 @@ namespace uom::literals {
 //--------------------------------------------------------------------------------------------------
 // Volume
 
+[[nodiscard]] constexpr auto operator""_mm3(long double x) noexcept
+{
+    return CubicMillimetres(static_cast<double>(x));
+}
+[[nodiscard]] constexpr auto operator""_mm3(unsigned long long x) noexcept
+{
+    return CubicMillimetres(static_cast<double>(x));
+}
 [[nodiscard]] constexpr auto operator""_cm3(long double x) noexcept
 {
     return CubicCentimetres(static_cast<double>(x));

@@ -1072,6 +1072,7 @@ using Miles             = Quantity<units::Mile>;
 //------------------------------------------------------------------------------
 // Area
 
+using SquareMillimetres = Quantity<units::SquareMillimetre>;
 using SquareCentimetres = Quantity<units::SquareCentimetre>;
 using SquareMetres      = Quantity<units::SquareMetre>;
 using SquareKilometres  = Quantity<units::SquareKilometre>;
@@ -1079,6 +1080,7 @@ using SquareKilometres  = Quantity<units::SquareKilometre>;
 //------------------------------------------------------------------------------
 // Volume
 
+using CubicMillimetres  = Quantity<units::CubicMillimetre>;
 using CubicCentimetres  = Quantity<units::CubicCentimetre>;
 using CubicDecimetres   = Quantity<units::CubicDecimetre>;
 using CubicMetres       = Quantity<units::CubicMetre>;
