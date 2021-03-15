@@ -326,7 +326,7 @@ static void test2()
     {
         Millimetres mm{1.0};
         mm += 1_cm;
-        assert(mm.count() == 11.0);
+        assert(mm.count_unsafe() == 11.0);
     }
     {
         using Width  = Tagged<Millimetres, class _width>;
