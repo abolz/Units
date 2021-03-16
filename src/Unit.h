@@ -96,9 +96,9 @@ namespace kinds
         constexpr uint64_t TypeId() noexcept
         {
 #if defined(_MSC_VER) && !defined(__clang__)
-            return FNV1a(__FUNCSIG__);
+            return impl::FNV1a(__FUNCSIG__);
 #else
-            return FNV1a(__PRETTY_FUNCTION__);
+            return impl::FNV1a(__PRETTY_FUNCTION__);
 #endif
         }
 
@@ -144,28 +144,26 @@ namespace kinds
 
                 using T1 = typename H1::tag;
                 using T2 = typename H2::tag;
-                static constexpr int64_t e1 = H1::exponent;
-                static constexpr int64_t e2 = MT == MergeType::div ? -H2::exponent : H2::exponent;
 
-                static constexpr uint64_t h1 = impl::TypeId<T1>();
-                static constexpr uint64_t h2 = impl::TypeId<T2>();
+                constexpr uint64_t h1 = impl::TypeId<T1>();
+                constexpr uint64_t h2 = impl::TypeId<T2>();
                 if constexpr (h1 < h2)
                 {
-                    using F = Factor<T1, e1>;
-                    return Complex<F>{} + impl::Merge<MT>(impl::Tail(lhs), rhs);
+                    return Complex<H1>{} + impl::Merge<MT>(impl::Tail(lhs), rhs);
                 }
                 else if constexpr (h1 > h2)
                 {
-                    using F = Factor<T2, e2>;
-                    return Complex<F>{} + impl::Merge<MT>(lhs, impl::Tail(rhs));
+                    return Complex<H2>{} + impl::Merge<MT>(lhs, impl::Tail(rhs));
                 }
                 else
                 {
                     static_assert(std::is_same_v<T1, T2>,
                         "collision detected - please try changing the tag name");
 
-//                  static constexpr int64_t e = e1 + e2;
-                    static constexpr int64_t e = e1 + e2 == 0 ? 0 : (std::is_same_v<Simple, T1> ? 1 : (e1 + e2));
+                    constexpr int64_t e1 = H1::exponent;
+                    constexpr int64_t e2 = MT == MergeType::mul ? H2::exponent : -H2::exponent;
+
+                    constexpr int64_t e = (e1 + e2 == 0) ? 0 : (std::is_same_v<Simple, T1> ? 1 : (e1 + e2));
                     if constexpr (e != 0)
                     {
                         using F = Factor<T1, e>;
@@ -785,67 +783,67 @@ public:
     //--------------------------------------------------------------------------
     // Arithmetic
 
-    [[nodiscard]] constexpr friend auto operator+(Quantity q) noexcept
+    [[nodiscard]] constexpr friend Quantity operator+(Quantity q) noexcept
     {
         return q;
     }
 
-    [[nodiscard]] constexpr friend auto operator-(Quantity q) noexcept
+    [[nodiscard]] constexpr friend Quantity operator-(Quantity q) noexcept
     {
-        return Quantity(-q._count);
+        return Quantity(-q.count_unsafe());
     }
 
-    [[nodiscard]] constexpr friend auto operator+(Quantity lhs, Quantity rhs) noexcept
+    [[nodiscard]] constexpr friend Quantity operator+(Quantity lhs, Quantity rhs) noexcept
     {
-        return Quantity(lhs._count + rhs._count);
+        return Quantity(lhs.count_unsafe() + rhs.count_unsafe());
     }
 
-    [[nodiscard]] constexpr friend auto operator-(Quantity lhs, Quantity rhs) noexcept
+    [[nodiscard]] constexpr friend Quantity operator-(Quantity lhs, Quantity rhs) noexcept
     {
-        return Quantity(lhs._count - rhs._count);
+        return Quantity(lhs.count_unsafe() - rhs.count_unsafe());
     }
 
     template <typename U2>
     [[nodiscard]] constexpr friend auto operator*(Quantity lhs, Quantity<U2> rhs) noexcept
     {
-        return Quantity<MulUnits<unit, U2>>(lhs._count * rhs.count_unsafe());
+        return Quantity<MulUnits<unit, U2>>(lhs.count_unsafe() * rhs.count_unsafe());
     }
 
     template <typename U2>
     [[nodiscard]] constexpr friend auto operator/(Quantity lhs, Quantity<U2> rhs) noexcept
     {
-        return Quantity<DivUnits<unit, U2>>(lhs._count / rhs.count_unsafe());
+        return Quantity<DivUnits<unit, U2>>(lhs.count_unsafe() / rhs.count_unsafe());
     }
 
-    [[nodiscard]] constexpr friend auto operator*(Quantity lhs, scalar_type rhs) noexcept
+    [[nodiscard]] constexpr friend Quantity operator*(Quantity lhs, scalar_type rhs) noexcept
     {
-        return Quantity(lhs._count * rhs);
+        return Quantity(lhs.count_unsafe() * rhs);
     }
 
-    [[nodiscard]] constexpr friend auto operator/(Quantity lhs, scalar_type rhs) noexcept
+    [[nodiscard]] constexpr friend Quantity operator/(Quantity lhs, scalar_type rhs) noexcept
     {
-        return Quantity(lhs._count / rhs);
+        return Quantity(lhs.count_unsafe() / rhs);
     }
 
-    [[nodiscard]] constexpr friend auto operator*(scalar_type lhs, Quantity rhs) noexcept
+    [[nodiscard]] constexpr friend Quantity operator*(scalar_type lhs, Quantity rhs) noexcept
     {
-        return Quantity(lhs * rhs._count);
+        return Quantity(lhs * rhs.count_unsafe());
     }
 
     [[nodiscard]] constexpr friend auto operator/(scalar_type lhs, Quantity rhs) noexcept
     {
-        return Quantity<DivUnits<units::One, unit>>(lhs / rhs._count);
+        return Quantity<DivUnits<units::One, unit>>(lhs / rhs.count_unsafe());
     }
 
     constexpr friend Quantity& operator+=(Quantity& lhs, Quantity rhs) noexcept
     {
-        lhs._count += rhs._count;
+        lhs._count += rhs.count_unsafe();
         return lhs;
     }
 
     constexpr friend Quantity& operator-=(Quantity& lhs, Quantity rhs) noexcept
     {
-        lhs._count -= rhs._count;
+        lhs._count -= rhs.count_unsafe();
         return lhs;
     }
 
@@ -922,7 +920,7 @@ template <typename U>
 template <typename Q, typename U>
 [[nodiscard]] constexpr auto count(Quantity<U> q) noexcept -> decltype(q.template count<Q>())
 {
-    return q.count<Q>();
+    return q.template count<Q>();
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1080,22 +1078,22 @@ using SquareMetersPerMeter
 //==================================================================================================
 
 #if 0
-[[nodiscard]] inline constexpr Dimensionless operator+(Dimensionless lhs, double rhs) noexcept
+[[nodiscard]] constexpr Dimensionless operator+(Dimensionless lhs, double rhs) noexcept
 {
     return Dimensionless(lhs.count_unsafe() + rhs);
 }
 
-[[nodiscard]] inline constexpr Dimensionless operator-(Dimensionless lhs, double rhs) noexcept
+[[nodiscard]] constexpr Dimensionless operator-(Dimensionless lhs, double rhs) noexcept
 {
     return Dimensionless(lhs.count_unsafe() - rhs);
 }
 
-[[nodiscard]] inline constexpr Dimensionless operator+(double lhs, Dimensionless rhs) noexcept
+[[nodiscard]] constexpr Dimensionless operator+(double lhs, Dimensionless rhs) noexcept
 {
     return Dimensionless(lhs + rhs.count_unsafe());
 }
 
-[[nodiscard]] inline constexpr Dimensionless operator-(double lhs, Dimensionless rhs) noexcept
+[[nodiscard]] constexpr Dimensionless operator-(double lhs, Dimensionless rhs) noexcept
 {
     return Dimensionless(lhs - rhs.count_unsafe());
 }
@@ -1135,6 +1133,28 @@ public:
     [[nodiscard]] constexpr difference_type value() const noexcept
     {
         return _value;
+    }
+
+    // count_unsafe   ??
+    // count_whatever ??
+    // count_any      ??
+    // count_this     ??
+    // count_current  ??
+    // explicit operator double() ??
+    [[nodiscard]] constexpr double count_unsafe() const noexcept
+    {
+        return _value.count_unsafe();
+    }
+
+    [[nodiscard]] constexpr explicit operator double() const noexcept
+    {
+        return static_cast<double>(_value);
+    }
+
+    template <typename Q>
+    [[nodiscard]] constexpr auto count() const noexcept -> decltype(_value.template count<Q>())
+    {
+        return _value.template count<Q>();
     }
 
     [[nodiscard]] constexpr friend QuantityPoint operator+(QuantityPoint lhs, difference_type rhs) noexcept

@@ -15,30 +15,10 @@ namespace uom {
 //
 //==================================================================================================
 
-inline constexpr double kSqrtTwo                 = 1.41421356237309504880168872421e+00;
-inline constexpr double kInvSqrtTwo              = 7.07106781186547524400844362105e-01;
-#if 0
-inline constexpr double kDegToRad                = 1.74532925199432957692369076849e-02;
-inline constexpr double kRadToDeg                = 5.72957795130823208767981548141e+01;
-#endif
-inline constexpr double kPi                      = 3.14159265358979323846264338328e+00;
-inline constexpr double kInvPi                   = 3.18309886183790671537767526745e-01;
-inline constexpr double kPiHalf                  = 1.57079632679489661923132169164e+00;
-inline constexpr double kTwoPi                   = 6.28318530717958647692528676656e+00;
-inline constexpr double kFourPi                  = 1.25663706143591729538505735331e+01;
-inline constexpr double kInvTwoPi                = 1.59154943091895335768883763373e-01;
-inline constexpr double kInvFourPi               = 7.95774715459476678844418816863e-02;
-inline constexpr double kSqrtPi                  = 1.77245385090551602729816748334e+00;
-inline constexpr double kSqrtTwoPi               = 2.50662827463100050241576528481e+00;
-inline constexpr double kInvSqrtTwoPi            = 3.98942280401432677939946059934e-01;
-inline constexpr double kFirstRadiationConstant  = 1.191042953e-16;
-inline constexpr double kSecondRadiationConstant = 1.43877736e-2;
-
-//==================================================================================================
-//
-//==================================================================================================
-
 namespace impl {
+
+    inline constexpr double kPi    = 3.14159265358979323846264338328;
+    inline constexpr double kTwoPi = 6.28318530717958647692528676656;
 
     constexpr bool MulOverflows(const int64_t x, const int64_t y) noexcept
     {
@@ -261,7 +241,7 @@ template <int64_t N, typename U>
     // Complex-tags?
     //
 
-    using C = Conversion<RatioPower<conversion::ratio, N>, conversion::exp * N>;
+    using C = Conversion<RatioPower<typename conversion::ratio, N>, conversion::exp * N>;
     using D = RatioPower<dimension, N>;
 
     using K = Kind<kinds::Simple, D>;
@@ -301,7 +281,7 @@ template <int64_t N, typename U>
     // Complex-tags?
     //
 
-    using conversion_root = impl::RationalRoot<conversion::ratio, N>;
+    using conversion_root = impl::RationalRoot<typename conversion::ratio, N>;
     using dimension_root = impl::RationalRoot<dimension, N>;
 
     static_assert(conversion_root::is_exact,
@@ -610,13 +590,13 @@ namespace impl
 // Reduce x to [0, 2pi)
 inline Radians normalize_positive(Radians x) noexcept
 {
-    return Radians(impl::NormalizePositive(x.count_unsafe(), kTwoPi));
+    return Radians(impl::NormalizePositive(x.count_unsafe(), impl::kTwoPi));
 }
 
 // Reduce x to [-pi, pi)
 inline Radians normalize_symmetric(Radians x) noexcept
 {
-    return Radians(impl::NormalizeSymmetric(x.count_unsafe(), kTwoPi));
+    return Radians(impl::NormalizeSymmetric(x.count_unsafe(), impl::kTwoPi));
 }
 
 // Reduce x to [0, 360)

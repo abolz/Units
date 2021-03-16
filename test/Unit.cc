@@ -432,3 +432,7 @@ static void test3()
         const auto xxx = fma(1_cm, 1_cm, 1_cm2);
     }
 }
+
+int main()
+{
+}
