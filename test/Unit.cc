@@ -49,20 +49,20 @@ template <typename T1, typename T2>
 inline constexpr bool IsSame = std::is_same_v<std::remove_const_t<std::remove_reference_t<T1>>,
                                               std::remove_const_t<std::remove_reference_t<T2>>>;
 
-static constexpr void fun_mm(Millimetres mm)
+static constexpr void fun_mm(Millimeters mm)
 {
 }
-static constexpr void fun_mm(Centimetres cm)
+static constexpr void fun_mm(Centimeters cm)
 {
 }
-//static constexpr void fun_mm(Metres m)
+//static constexpr void fun_mm(Meters m)
 //{
 //}
 
-static constexpr void fun_cm(Centimetres cm)
+static constexpr void fun_cm(Centimeters cm)
 {
 }
-static constexpr void fun_cm(Metres m)
+static constexpr void fun_cm(Meters m)
 {
 }
 
@@ -70,22 +70,22 @@ static constexpr void test()
 {
     {
         constexpr auto t0 = 1_m + 1_m;
-        static_assert(t0.count<Metres>() == 2.0);
+        static_assert(t0.count<Meters>() == 2.0);
         constexpr auto t1 = 1_cm + 1_cm;
-        static_assert(t1.count<Millimetres>() == 20.0);
+        static_assert(t1.count<Millimeters>() == 20.0);
         constexpr auto t2 = 1_cm + 1_mm;
-        static_assert(IsSame<Millimetres, decltype(t2)>);
+        static_assert(IsSame<Millimeters, decltype(t2)>);
         static_assert(t2.count_unsafe() == 11.0);
         constexpr auto t3 = 1_mm + 1_cm;
-        static_assert(IsSame<Millimetres, decltype(t3)>);
+        static_assert(IsSame<Millimeters, decltype(t3)>);
         static_assert(t3.count_unsafe() == 11.0);
         static_assert(t2 == t3);
         constexpr auto t4 = 1_mm - 1_cm;
-        static_assert(IsSame<Millimetres, decltype(t4)>);
+        static_assert(IsSame<Millimeters, decltype(t4)>);
         static_assert(t4.count_unsafe() == -9.0);
         static_assert(t4 < t3);
         constexpr auto t5 = 1_cm - 1_mm;
-        static_assert(IsSame<Millimetres, decltype(t5)>);
+        static_assert(IsSame<Millimeters, decltype(t5)>);
         static_assert(t5.count_unsafe() == 9.0);
         static_assert(t5 < 1_cm);
     }
@@ -129,15 +129,15 @@ static constexpr void test()
     {
         constexpr auto t0 = 1_m / 1_s; // 1_mps;
         constexpr auto t1 = 1_mi / 1_h; // 1_miph;
-        static_assert( std::is_constructible_v<MetresPerSecond, decltype(t1)>);
-        static_assert(!std::is_convertible_v<decltype(t1), MetresPerSecond>);
-        constexpr auto t2 = MetresPerSecond(t1);
+        static_assert( std::is_constructible_v<MetersPerSecond, decltype(t1)>);
+        static_assert(!std::is_convertible_v<decltype(t1), MetersPerSecond>);
+        constexpr auto t2 = MetersPerSecond(t1);
         constexpr auto t3 = 1_km / 1_h;
-        //MetresPerSecond t4;
+        //MetersPerSecond t4;
         //t4 = t3;
-        constexpr MetresPerSecond t4(t3);
-        constexpr KilometresPerHour t5(1_mps);
-        constexpr auto t6 = 1_m / 1_s + MetresPerSecond(1_km / 1_h);
+        constexpr MetersPerSecond t4(t3);
+        constexpr KilometersPerHour t5(1_mps);
+        constexpr auto t6 = 1_m / 1_s + MetersPerSecond(1_km / 1_h);
     }
 #endif
 
@@ -204,17 +204,17 @@ static constexpr void test()
     }
 
     {
-        constexpr Metres t1(1_m);
+        constexpr Meters t1(1_m);
         constexpr auto t2 = 1_cm;
         constexpr auto t3 = 1_mm;
         constexpr auto ts = t1 + t2 + t3;
-        static_assert( std::is_convertible_v<Metres, Centimetres>);
-        static_assert( std::is_convertible_v<Metres, Millimetres>);
-        static_assert( std::is_convertible_v<Centimetres, Millimetres>);
-        static_assert(!std::is_convertible_v<Centimetres, Inches>);
-        static_assert(!std::is_convertible_v<Centimetres, Feet>);
-        static_assert(!std::is_convertible_v<Metres, Miles>);
-        constexpr auto tx = Centimetres(1_in);
+        static_assert( std::is_convertible_v<Meters, Centimeters>);
+        static_assert( std::is_convertible_v<Meters, Millimeters>);
+        static_assert( std::is_convertible_v<Centimeters, Millimeters>);
+        static_assert(!std::is_convertible_v<Centimeters, Inches>);
+        static_assert(!std::is_convertible_v<Centimeters, Feet>);
+        static_assert(!std::is_convertible_v<Meters, Miles>);
+        constexpr auto tx = Centimeters(1_in);
         static_assert(tx.count_unsafe() == 2.54);
 
         static_assert(compare(1_m, 1_m) == 0);
@@ -240,45 +240,45 @@ static constexpr void test()
         //struct ReinforcementContentKind
         //    : Kind<ReinforcementContentKind, Dimension<dim::Length> /* cm^2/m */> {};
 
-        //using SquareCentimetresPerMetre = QuantityT<decltype(1_cm2 / 1_m), class AreaPerLength>;
-        //using SquareMetresPerMetre      = QuantityT<decltype(1_m2 / 1_m), class AreaPerLength>;
+        //using SquareCentimetersPerMeter = QuantityT<decltype(1_cm2 / 1_m), class AreaPerLength>;
+        //using SquareMetersPerMeter      = QuantityT<decltype(1_m2 / 1_m), class AreaPerLength>;
 
-        using SimplifedSquareMetresPerMetre = decltype((1_m*1_m)/1_m);
+        using SimplifedSquareMetersPerMeter = decltype((1_m*1_m)/1_m);
 
-        static_assert(IsSame<Metres, SimplifedSquareMetresPerMetre>);
-        static_assert( std::is_convertible_v<SimplifedSquareMetresPerMetre, Metres>);
-        static_assert( std::is_constructible_v<Metres, SimplifedSquareMetresPerMetre>);
+        static_assert(IsSame<Meters, SimplifedSquareMetersPerMeter>);
+        static_assert( std::is_convertible_v<SimplifedSquareMetersPerMeter, Meters>);
+        static_assert( std::is_constructible_v<Meters, SimplifedSquareMetersPerMeter>);
 
-        static_assert(!std::is_convertible_v<SimplifedSquareMetresPerMetre, SquareMetresPerMetre>);
-        static_assert( std::is_constructible_v<SquareMetresPerMetre, SimplifedSquareMetresPerMetre>);
+        static_assert(!std::is_convertible_v<SimplifedSquareMetersPerMeter, SquareMetersPerMeter>);
+        static_assert( std::is_constructible_v<SquareMetersPerMeter, SimplifedSquareMetersPerMeter>);
 
         constexpr auto t0 = 1_m * 1_m;
         constexpr auto t1 = t0 / 1_m;
-        static_assert( std::is_convertible_v<decltype(t1), Metres>);
-        static_assert( std::is_constructible_v<Metres, decltype(t1)>);
+        static_assert( std::is_convertible_v<decltype(t1), Meters>);
+        static_assert( std::is_constructible_v<Meters, decltype(t1)>);
         constexpr auto t2 = (1_m * 1_m) / 1_m;
-        static_assert(IsSame<decltype(t2), Metres>);
+        static_assert(IsSame<decltype(t2), Meters>);
         //constexpr decltype(t2) t22 = t1;
         constexpr decltype(t1) t22 = t2;
         //using ReinfCont = decltype(t1);
         //using ReinfCont = decltype(quantity_kind_cast<kinds::ReinforcementContent>(1_cm2 / 1_m));
         //constexpr ReinfCont t3(t2);
         //constexpr ReinfCont t3(quantity_kind_cast<ReinfCont>(t2));
-        constexpr SquareCentimetresPerMetre t4(1_cm2 / 1_m);
-        static_assert(!std::is_convertible_v<decltype(1_cm2/1_m), SquareCentimetresPerMetre>);
-        static_assert( std::is_constructible_v<SquareCentimetresPerMetre, decltype(1_cm2/1_m)>);
+        constexpr SquareCentimetersPerMeter t4(1_cm2 / 1_m);
+        static_assert(!std::is_convertible_v<decltype(1_cm2/1_m), SquareCentimetersPerMeter>);
+        static_assert( std::is_constructible_v<SquareCentimetersPerMeter, decltype(1_cm2/1_m)>);
         constexpr decltype(1_cm2 / 1_m) t44(t4);
         static_assert(t4.count_unsafe() == 1.0);
-        static_assert(!std::is_assignable_v<SquareCentimetresPerMetre, decltype((1_cm / 1_m) * 1_cm)>);
+        static_assert(!std::is_assignable_v<SquareCentimetersPerMeter, decltype((1_cm / 1_m) * 1_cm)>);
         //static_assert( std::is_assignable_v<ReinfCont, decltype((1_cm / 1_m) * 1_cm)>);
-        static_assert(!std::is_assignable_v<decltype(t1), Metres>);
+        static_assert(!std::is_assignable_v<decltype(t1), Meters>);
 
-        constexpr SquareCentimetresPerMetre t5(1_m2 / 1_cm);
+        constexpr SquareCentimetersPerMeter t5(1_m2 / 1_cm);
         static_assert(t5.count_unsafe() == 1'000'000.0);
     }
     {
-        static_assert( Compiles<AssignAdd, Millimetres, Centimetres>);
-        static_assert(!Compiles<AssignAdd, Centimetres, Millimetres>);
+        static_assert( Compiles<AssignAdd, Millimeters, Centimeters>);
+        static_assert(!Compiles<AssignAdd, Centimeters, Millimeters>);
         static_assert((1_cm + 1_mm).count_unsafe() == 11.0);
     }
     {
@@ -289,50 +289,50 @@ static constexpr void test()
         //static_assert( std::is_constructible_v<Radians, decltype(radian)>);
     }
     {
-        using TonsPerCubicMetre = decltype(1_t/1_m3);
-        using GramsPerCubicDecimetre = decltype(1_g/1_dm3);
-        constexpr TonsPerCubicMetre w(1.0);
+        using TonsPerCubicMeter = decltype(1_t/1_m3);
+        using GramsPerCubicDecimeter = decltype(1_g/1_dm3);
+        constexpr TonsPerCubicMeter w(1.0);
         constexpr Grams     m0 = w * 1_m3;
         constexpr Kilograms m1 = w * 1_m3;
-        constexpr Tonnes    m2 = w * 1_m3;
-        constexpr Tonnes    m3 = Tonnes(w * 1_dm3);
+        constexpr Tons      m2 = w * 1_m3;
+        constexpr Tons      m3 = Tons(w * 1_dm3);
         constexpr Kilograms m4 = w * 1_dm3;
-        constexpr Kilograms m5 = GramsPerCubicDecimetre(1.0) * 1_m3;
-        constexpr Tonnes    m6 = Tonnes(GramsPerCubicDecimetre(1.0) * 1_m3);
+        constexpr Kilograms m5 = GramsPerCubicDecimeter(1.0) * 1_m3;
+        constexpr Tons      m6 = Tons(GramsPerCubicDecimeter(1.0) * 1_m3);
     }
 }
 
 static void test2()
 {
     {
-        Millimetres mm;
+        Millimeters mm;
         mm += 1_mm;
         mm += 1_cm;
         mm += 1_m;
         assert(mm == 1000_mm + 10_mm + 1_mm);
 
-        Centimetres cm;
-        static_assert(!Compiles<AssignAdd, Centimetres, Millimetres>);
+        Centimeters cm;
+        static_assert(!Compiles<AssignAdd, Centimeters, Millimeters>);
         cm += 1_cm;
         cm += 1_m;
         assert(cm == 100_cm + 1_cm);
 
-        Metres m;
-        static_assert(!Compiles<AssignAdd, Metres, Millimetres>);
-        static_assert(!Compiles<AssignAdd, Metres, Centimetres>);
+        Meters m;
+        static_assert(!Compiles<AssignAdd, Meters, Millimeters>);
+        static_assert(!Compiles<AssignAdd, Meters, Centimeters>);
         m += 1_m;
         assert(m == 1_m);
     }
     {
-        Millimetres mm{1.0};
+        Millimeters mm{1.0};
         mm += 1_cm;
         assert(mm.count_unsafe() == 11.0);
     }
     {
-        using Width  = Tagged<Millimetres, class _width>;
-        using Height = Tagged<Millimetres, class _height>;
+        using Width  = Tagged<Millimeters, class _width>;
+        using Height = Tagged<Millimeters, class _height>;
 
-        static_assert(!Compiles<Add, Width, Millimetres>);
+        static_assert(!Compiles<Add, Width, Millimeters>);
 
         constexpr Width w1(1_cm);
         constexpr Height h1(1_cm + 1_mm);
@@ -351,12 +351,12 @@ static void test2()
       //const auto xxx = w + h;
         //const auto xxx = w + 1_m;
 
-        const Centimetres mmm = 1_m + 1_km + 1_cm;
+        const Centimeters mmm = 1_m + 1_km + 1_cm;
     }
     {
-        using Length   = Tagged<Millimetres, class _length>;
-        using Height   = Tagged<Millimetres, class _height>;
-        using Width    = Tagged<Millimetres, class _width>;
+        using Length   = Tagged<Millimeters, class _length>;
+        using Height   = Tagged<Millimeters, class _height>;
+        using Width    = Tagged<Millimeters, class _width>;
         using Position = QuantityPoint<Length>;
 
         const Height h(0);
@@ -369,7 +369,7 @@ static void test2()
         //y += y;
         x += x;
         //x += y;
-        const auto t = Millimetres(x);
+        const auto t = Millimeters(x);
         const auto z = x + y;
         const auto w = y + x;
         x = y - y;
@@ -388,7 +388,7 @@ static void test2()
         constexpr Height h2(20.0);
         constexpr Width w2(30.0);
         constexpr auto p = h2 * w2;
-        constexpr auto p2 = SquareCentimetres(p);
+        constexpr auto p2 = SquareCentimeters(p);
         assert(p2 == 6_cm2);
     }
     {
@@ -419,8 +419,8 @@ static void test2()
         //constexpr Radians rad = sr / 1_rad;
     }
     {
-        //constexpr SquareCentimetres x = 1_cm * 1_cm;
-        //constexpr Centimetres y = x / 1_cm;
+        //constexpr SquareCentimeters x = 1_cm * 1_cm;
+        //constexpr Centimeters y = x / 1_cm;
     }
 }
 

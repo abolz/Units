@@ -5,7 +5,7 @@
 using namespace uom;
 using namespace uom::literals;
 
-inline constexpr Kilometres EarthRadius = 6371_km;
+inline constexpr Kilometers EarthRadius = 6371_km;
 
 using Latitude
     = Tagged<Degrees, class _latitude>;

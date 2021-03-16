@@ -44,48 +44,6 @@ namespace impl
 } // namespace impl
 
 //==================================================================================================
-// Dimension
-//==================================================================================================
-
-template <int64_t Num = 1, int64_t Den = 1>
-using Dimension = typename std::ratio<Num, Den>::type;
-
-template <typename D1, typename D2>
-using MulDimensions = typename std::ratio_multiply<D1, D2>::type;
-
-template <typename D1, typename D2>
-using DivDimensions = typename std::ratio_divide<D1, D2>::type;
-
-#if 0
-
-// Returns the largest E, such that BASE^E divides PRODUCT.
-inline constexpr int64_t exponent_of(int64_t base, int64_t product)
-{
-    UNITS_ASSERT(base >= 1);
-    UNITS_ASSERT(product >= 0);
-
-    int64_t e = 0;
-    for (;;) {
-        if (product % base != 0)
-            break;
-        product /= base;
-        ++e;
-    }
-
-    return e;
-}
-
-template <int64_t Num, int64_t Den>
-inline constexpr int64_t exponent_of(int64_t base, Dimension<Num, Den>)
-{
-    const int64_t e_num = exponent_of(base, Dimension<Num, Den>::num);
-    const int64_t e_den = exponent_of(base, Dimension<Num, Den>::den);
-    return e_num - e_den;
-}
-
-#endif
-
-//==================================================================================================
 // Kind
 //==================================================================================================
 
@@ -99,6 +57,15 @@ struct Kind
 
 namespace kinds
 {
+    template <int64_t Num = 1, int64_t Den = 1>
+    using Dimension = typename std::ratio<Num, Den>::type;
+
+    template <typename D1, typename D2>
+    using MulDimensions = typename std::ratio_multiply<D1, D2>::type;
+
+    template <typename D1, typename D2>
+    using DivDimensions = typename std::ratio_divide<D1, D2>::type;
+
     struct Simple {};
 
     template <typename ...Factors>
@@ -195,7 +162,7 @@ namespace kinds
                 else
                 {
                     static_assert(std::is_same_v<T1, T2>,
-                        "collision detected");
+                        "collision detected - please try changing the tag name");
 
 //                  static constexpr int64_t e = e1 + e2;
                     static constexpr int64_t e = e1 + e2 == 0 ? 0 : (std::is_same_v<Simple, T1> ? 1 : (e1 + e2));
@@ -236,13 +203,13 @@ namespace kinds
     using Unwrap = typename impl::Unwrap1<T>::type;
 
     template <typename T1, typename T2>
-    struct MulTags
+    struct MulTags1
     {
         using type = Unwrap< decltype( impl::Merge<impl::MergeType::mul>(Wrap<T1>{}, Wrap<T2>{}) ) >;
     };
 
     template <typename T1, typename T2>
-    struct DivTags
+    struct DivTags1
     {
         using type = Unwrap< decltype( impl::Merge<impl::MergeType::div>(Wrap<T1>{}, Wrap<T2>{}) ) >;
     };
@@ -250,28 +217,28 @@ namespace kinds
 #if 1
     // (reduce compile-time???)
     template <>
-    struct MulTags<Simple, Simple> { using type = Simple; };
+    struct MulTags1<Simple, Simple> { using type = Simple; };
 
     // (reduce compile-time???)
     template <>
-    struct DivTags<Simple, Simple> { using type = Simple; };
+    struct DivTags1<Simple, Simple> { using type = Simple; };
 #endif
+
+    template <typename T1, typename T2>
+    using MulTags = typename kinds::MulTags1<T1, T2>::type;
+
+    template <typename T1, typename T2>
+    using DivTags = typename kinds::DivTags1<T1, T2>::type;
 
 } // namespace kinds
 
-template <typename T1, typename T2>
-using MulTags = typename kinds::MulTags<T1, T2>::type;
-
-template <typename T1, typename T2>
-using DivTags = typename kinds::DivTags<T1, T2>::type;
+template <typename K1, typename K2>
+using MulKinds = Kind< kinds::MulTags<typename K1::tag, typename K2::tag>,
+                       kinds::MulDimensions<typename K1::dimension, typename K2::dimension> >;
 
 template <typename K1, typename K2>
-using MulKinds = Kind< MulTags<typename K1::tag, typename K2::tag>,
-                       MulDimensions<typename K1::dimension, typename K2::dimension> >;
-
-template <typename K1, typename K2>
-using DivKinds = Kind< DivTags<typename K1::tag, typename K2::tag>,
-                       DivDimensions<typename K1::dimension, typename K2::dimension> >;
+using DivKinds = Kind< kinds::DivTags<typename K1::tag, typename K2::tag>,
+                       kinds::DivDimensions<typename K1::dimension, typename K2::dimension> >;
 
 namespace kinds
 {
@@ -285,7 +252,7 @@ namespace kinds
     namespace dim
     {
         using One               = Dimension< 1>; // 1
-        using Length            = Dimension< 2>; // Metre m
+        using Length            = Dimension< 2>; // Meter m
         using Mass              = Dimension< 3>; // Kilogram kg
         using Time              = Dimension< 5>; // Second s
         using ElectricCurrent   = Dimension< 7>; // Ampere A
@@ -301,7 +268,7 @@ namespace kinds
     } // namespace dim
 
     using One               = Kind< Simple, dim::One               >; // 1
-    using Length            = Kind< Simple, dim::Length            >; // Metre m
+    using Length            = Kind< Simple, dim::Length            >; // Meter m
     using Mass              = Kind< Simple, dim::Mass              >; // Kilogram kg
     using Time              = Kind< Simple, dim::Time              >; // Second s
     using ElectricCurrent   = Kind< Simple, dim::ElectricCurrent   >; // Ampere A
@@ -600,7 +567,7 @@ using PowConversion = typename impl::PowConversion<C, E>::type;
 // Unit
 //==================================================================================================
 
-template <typename C, typename K/*, ctstring Symbol*/>
+template <typename C, typename K>
 struct Unit final
 {
     using type       = Unit;
@@ -638,150 +605,41 @@ namespace impl
 
 namespace units
 {
-    template <typename C, typename U, typename K = typename U::kind>
-    using ScaledUnit = typename Unit<MulConversions<C, typename U::conversion>, K>::type;
-
     //--------------------------------------------------------------------------
     // One
 
-    // 1
     using One               = Unit<Conversion<Ratio<1>>, kinds::One>;
     using Dimensionless     = Unit<Conversion<Ratio<1>>, kinds::One>;
-    using Percent           = ScaledUnit<Conversion<Ratio<1, 100>>, One>;
-    using Permill           = ScaledUnit<Conversion<Ratio<1, 1000>>, One>;
 
     //--------------------------------------------------------------------------
     // Length
 
-    using Metre             = Unit<Conversion<Ratio<1>>, kinds::Length>;
-    using Millimetre        = ScaledUnit<Conversion<Ratio<1, 1000>>, Metre>;
-    using Centimetre        = ScaledUnit<Conversion<Ratio<1, 100>>, Metre>;
-    using Decimetre         = ScaledUnit<Conversion<Ratio<1, 10>>, Metre>;
-    using Kilometre         = ScaledUnit<Conversion<Ratio<1000>>, Metre>;
-
-    using Inch              = ScaledUnit<Conversion<Ratio<254, 100>>, Centimetre>;    // (international)
-    using Foot              = ScaledUnit<Conversion<Ratio<12>>, Inch>;                // (international)
-    using Yard              = ScaledUnit<Conversion<Ratio<3>>, Foot>;                 // (international)
-    using Mile              = ScaledUnit<Conversion<Ratio<1760>>, Yard>;              // (international)
-
-    //--------------------------------------------------------------------------
-    // Area
-
-    using SquareMillimetre  = Unit<PowConversion<Millimetre::conversion, 2>, kinds::Area>;
-    using SquareCentimetre  = Unit<PowConversion<Centimetre::conversion, 2>, kinds::Area>;
-    using SquareMetre       = Unit<PowConversion<Metre::conversion, 2>, kinds::Area>;
-    using SquareKilometre   = Unit<PowConversion<Kilometre::conversion, 2>, kinds::Area>;
-
-    //--------------------------------------------------------------------------
-    // Volume
-
-    using CubicMillimetre   = Unit<PowConversion<Millimetre::conversion, 3>, kinds::Volume>;
-    using CubicCentimetre   = Unit<PowConversion<Centimetre::conversion, 3>, kinds::Volume>;
-    using CubicDecimetre    = Unit<PowConversion<Decimetre::conversion, 3>, kinds::Volume>;
-    using CubicMetre        = Unit<PowConversion<Metre::conversion, 3>, kinds::Volume>;
+    using Meter             = Unit<Conversion<Ratio<1>>, kinds::Length>;
 
     //--------------------------------------------------------------------------
     // Time
 
     using Second            = Unit<Conversion<Ratio<1>>, kinds::Time>;
-    using Millisecond       = ScaledUnit<Conversion<Ratio<1, 1000>>, Second>;
-    using Minute            = ScaledUnit<Conversion<Ratio<60>>, Second>;
-    using Hour              = ScaledUnit<Conversion<Ratio<60>>, Minute>;
-    using Day               = ScaledUnit<Conversion<Ratio<24>>, Hour>;
-    using Week              = ScaledUnit<Conversion<Ratio<7>>, Day>;
-    using Year              = ScaledUnit<Conversion<Ratio<146097, 400>>, Day>;
-    using Month             = ScaledUnit<Conversion<Ratio<1, 12>>, Year>;
-
-    //--------------------------------------------------------------------------
-    // Frequency
-
-    using Hertz             = Unit<DivConversions<One::conversion, Second::conversion>, kinds::Frequency>;
-    using Kilohertz         = ScaledUnit<Conversion<Ratio<1000>>, Hertz>;
-    using Megahertz         = ScaledUnit<Conversion<Ratio<1000>>, Kilohertz>;
-    using Gigahertz         = ScaledUnit<Conversion<Ratio<1000>>, Megahertz>;
 
     //--------------------------------------------------------------------------
     // Mass
 
     using Kilogram          = Unit<Conversion<Ratio<1>>, kinds::Mass>;
-    using Gram              = ScaledUnit<Conversion<Ratio<1, 1000>>, Kilogram>;
-    using Milligram         = ScaledUnit<Conversion<Ratio<1, 1000>>, Gram>;
-    using Tonne             = ScaledUnit<Conversion<Ratio<1000>>, Kilogram>;
-
-    //--------------------------------------------------------------------------
-    // Velocity
-
-    using MetrePerSecond    = Unit<DivConversions<Metre::conversion, Second::conversion>, kinds::Velocity>;
-
-    using KilometrePerHour  = Unit<DivConversions<Kilometre::conversion, Hour::conversion>, kinds::Velocity>;
-
-    //--------------------------------------------------------------------------
-    // Acceleration
-
-    using MetrePerSecondSquared
-        = Unit<DivConversions<MetrePerSecond::conversion, Second::conversion>, kinds::Acceleration>;
 
     //--------------------------------------------------------------------------
     // Temperature
 
     using Kelvin            = Unit<Conversion<Ratio<1>>, kinds::Temperature>;
-    using Celsius           = ScaledUnit<Conversion<Ratio<1>>, Kelvin>;
-    using Fahrenheit        = ScaledUnit<Conversion<Ratio<5, 9>>, Kelvin>;
-    using Rankine           = ScaledUnit<Conversion<Ratio<5, 9>>, Kelvin>;
 
     //--------------------------------------------------------------------------
     // Plane angle
 
     using Radian            = Unit<Conversion<Ratio<1>>, kinds::PlaneAngle>;
-    using Degree            = ScaledUnit<Conversion<Ratio<1, 180>, /* pi^ */ 1>, Radian>;
-    using Gon               = ScaledUnit<Conversion<Ratio<1, 200>, /* pi^ */ 1>, Radian>;
-    using Revolution        = ScaledUnit<Conversion<Ratio<2,   1>, /* pi^ */ 1>, Radian>;
-
-    using ArcMinute         = ScaledUnit<Conversion<Ratio<1, 60>>, Degree>;
-    using ArcSecond         = ScaledUnit<Conversion<Ratio<1, 60>>, ArcMinute>;
-
-    using ReciprocalRadian  = DivUnits<One, Radian>;
-
-    //--------------------------------------------------------------------------
-    // Solid angle
-
-    using Steradian         = Unit<Conversion<Ratio<1>>, kinds::SolidAngle>;
-    using SquareDegree      = Unit<PowConversion<Degree::conversion, 2>, kinds::SolidAngle>; // sq.deg = deg^2
-
-    //--------------------------------------------------------------------------
-    // Force
-
-    using Newton            = Unit<MulConversions<Kilogram::conversion, MetrePerSecondSquared::conversion>, kinds::Force>;
-    using Kilonewton        = ScaledUnit<Conversion<Ratio<1000>>, Newton>;
-
-    //--------------------------------------------------------------------------
-    // Energy
-
-    using Joule             = Unit<MulConversions<Newton::conversion, Metre::conversion>, kinds::Energy>;
-    using Kilojoule         = ScaledUnit<Conversion<Ratio<1000>>, Joule>;
-
-    //--------------------------------------------------------------------------
-    // Torque
-
-    using NewtonMetre       = Unit<DivConversions<Joule::conversion, Radian::conversion>, kinds::Torque>;
-
-    //--------------------------------------------------------------------------
-    // Power
-
-    using Watt              = Unit<DivConversions<Joule::conversion, Second::conversion>, kinds::Power>;
-    using Kilowatt          = ScaledUnit<Conversion<Ratio<1000>>, Watt>;
-
-    using VoltAmpere        = Unit<Watt::conversion, kinds::ElectricPower>;
 
     //--------------------------------------------------------------------------
     // Data
 
     using Bit               = Unit<Conversion<Ratio<1>>, kinds::Bit>;
-    using Nibble            = ScaledUnit<Conversion<Ratio<4>>, Bit>;
-    using Byte              = ScaledUnit<Conversion<Ratio<8>>, Bit>;
-    using Kilobyte          = ScaledUnit<Conversion<Ratio<1000>>, Byte>;
-    using Megabyte          = ScaledUnit<Conversion<Ratio<1000>>, Kilobyte>;
-    using Gigabyte          = ScaledUnit<Conversion<Ratio<1000>>, Megabyte>;
 
 } // namespace units
 
@@ -792,6 +650,11 @@ namespace units
 template <typename U>
 class Quantity;
 
+template <typename OldTag, typename NewTag>
+struct Retag
+{
+};
+
 namespace impl
 {
     template <typename T>
@@ -800,11 +663,34 @@ namespace impl
     template <typename U>
     inline constexpr bool IsQuantity<Quantity<U>> = true;
 
+    template <typename T>
+    struct Untag1
+    {
+        using type = T;
+    };
+
+    template <typename OldTag, typename NewTag>
+    struct Untag1<Retag<OldTag, NewTag>>
+    {
+        using type = OldTag;
+    };
+
+    template <typename T>
+    using Untag = typename Untag1<T>::type;
+
 } // namespace impl
 
 template <typename Q, typename Tag>
 using Tagged // a.k.a. Change-Kind
-    = Quantity<Unit<typename Q::conversion, Kind<Tag, typename Q::dimension>>>;
+    = Quantity<Unit<typename Q::conversion, Kind<Retag<typename Q::tag, Tag>, typename Q::dimension>>>;
+
+template <typename Q>
+using Untagged // a.k.a. Change-Kind
+    = Quantity<Unit<typename Q::conversion, Kind<impl::Untag<typename Q::tag>, typename Q::dimension>>>;
+
+//--------------------------------------------------------------------------------------------------
+//
+//--------------------------------------------------------------------------------------------------
 
 template <typename U>
 class Quantity final
@@ -819,7 +705,9 @@ public:
     using conversion  = typename U::conversion;
     using kind        = typename U::kind;
     using dimension   = typename U::dimension;
+    using tag         = typename kind::tag;
 
+    using untagged_type = Untagged<Quantity>;
     using simplified_type = Tagged<Quantity, kinds::Simple>;
 
 private:
@@ -859,15 +747,14 @@ public:
     {
     }
 
+    [[nodiscard]] constexpr untagged_type untag() const noexcept
+    {
+        return untagged_type(_count);
+    }
+
     [[nodiscard]] constexpr simplified_type simplify() const noexcept
     {
         return simplified_type(_count);
-    }
-
-    template <typename Q, EnableExplicitConversion<typename Q::kind, kind, int> = 0>
-    [[nodiscard]] constexpr Q as() const noexcept
-    {
-        return Q(*this);
     }
 
     // count_unsafe   ??
@@ -875,7 +762,13 @@ public:
     // count_any      ??
     // count_this     ??
     // count_current  ??
+    // explicit operator double() ??
     [[nodiscard]] constexpr double count_unsafe() const noexcept
+    {
+        return _count;
+    }
+
+    [[nodiscard]] constexpr explicit operator double() const noexcept
     {
         return _count;
     }
@@ -899,60 +792,60 @@ public:
 
     [[nodiscard]] constexpr friend auto operator-(Quantity q) noexcept
     {
-        return Quantity(-q.count_unsafe());
+        return Quantity(-q._count);
     }
 
     [[nodiscard]] constexpr friend auto operator+(Quantity lhs, Quantity rhs) noexcept
     {
-        return Quantity(lhs.count_unsafe() + rhs.count_unsafe());
+        return Quantity(lhs._count + rhs._count);
     }
 
     [[nodiscard]] constexpr friend auto operator-(Quantity lhs, Quantity rhs) noexcept
     {
-        return Quantity(lhs.count_unsafe() - rhs.count_unsafe());
+        return Quantity(lhs._count - rhs._count);
     }
 
     template <typename U2>
     [[nodiscard]] constexpr friend auto operator*(Quantity lhs, Quantity<U2> rhs) noexcept
     {
-        return Quantity<MulUnits<unit, U2>>(lhs.count_unsafe() * rhs.count_unsafe());
+        return Quantity<MulUnits<unit, U2>>(lhs._count * rhs.count_unsafe());
     }
 
     template <typename U2>
     [[nodiscard]] constexpr friend auto operator/(Quantity lhs, Quantity<U2> rhs) noexcept
     {
-        return Quantity<DivUnits<unit, U2>>(lhs.count_unsafe() / rhs.count_unsafe());
+        return Quantity<DivUnits<unit, U2>>(lhs._count / rhs.count_unsafe());
     }
 
     [[nodiscard]] constexpr friend auto operator*(Quantity lhs, scalar_type rhs) noexcept
     {
-        return Quantity(lhs.count_unsafe() * rhs);
+        return Quantity(lhs._count * rhs);
     }
 
     [[nodiscard]] constexpr friend auto operator/(Quantity lhs, scalar_type rhs) noexcept
     {
-        return Quantity(lhs.count_unsafe() / rhs);
+        return Quantity(lhs._count / rhs);
     }
 
     [[nodiscard]] constexpr friend auto operator*(scalar_type lhs, Quantity rhs) noexcept
     {
-        return Quantity(lhs * rhs.count_unsafe());
+        return Quantity(lhs * rhs._count);
     }
 
     [[nodiscard]] constexpr friend auto operator/(scalar_type lhs, Quantity rhs) noexcept
     {
-        return Quantity<DivUnits<units::One, unit>>(lhs / rhs.count_unsafe());
+        return Quantity<DivUnits<units::One, unit>>(lhs / rhs._count);
     }
 
     constexpr friend Quantity& operator+=(Quantity& lhs, Quantity rhs) noexcept
     {
-        lhs._count += rhs.count_unsafe();
+        lhs._count += rhs._count;
         return lhs;
     }
 
     constexpr friend Quantity& operator-=(Quantity& lhs, Quantity rhs) noexcept
     {
-        lhs._count -= rhs.count_unsafe();
+        lhs._count -= rhs._count;
         return lhs;
     }
 
@@ -1036,173 +929,151 @@ template <typename Q, typename U>
 // Typedefs
 //--------------------------------------------------------------------------------------------------
 
-#if 0
 template <typename Conv, typename Q>
 using ScaledQuantity
     = Quantity<Unit<MulConversions<Conv, typename Q::conversion>, typename Q::kind>>;
 
-//  template <typename Q> using Atto  = ScaledQuantity< Conversion< std::atto  >, Q >;
-//  template <typename Q> using Femto = ScaledQuantity< Conversion< std::femto >, Q >;
-//  template <typename Q> using Pico  = ScaledQuantity< Conversion< std::pico  >, Q >;
-    template <typename Q> using Nano  = ScaledQuantity< Conversion< std::nano  >, Q >;
-    template <typename Q> using Micro = ScaledQuantity< Conversion< std::micro >, Q >;
-    template <typename Q> using Milli = ScaledQuantity< Conversion< std::milli >, Q >;
-    template <typename Q> using Centi = ScaledQuantity< Conversion< std::centi >, Q >;
-    template <typename Q> using Deci  = ScaledQuantity< Conversion< std::deci  >, Q >;
-    template <typename Q> using Deca  = ScaledQuantity< Conversion< std::deca  >, Q >;
-    template <typename Q> using Hecto = ScaledQuantity< Conversion< std::hecto >, Q >;
-    template <typename Q> using Kilo  = ScaledQuantity< Conversion< std::kilo  >, Q >;
-    template <typename Q> using Mega  = ScaledQuantity< Conversion< std::mega  >, Q >;
-    template <typename Q> using Giga  = ScaledQuantity< Conversion< std::giga  >, Q >;
-//  template <typename Q> using Tera  = ScaledQuantity< Conversion< std::tera  >, Q >;
-//  template <typename Q> using Peta  = ScaledQuantity< Conversion< std::peta  >, Q >;
-//  template <typename Q> using Exa   = ScaledQuantity< Conversion< std::exa   >, Q >;
-#endif
-
 //------------------------------------------------------------------------------
 // One
 
-using One               = Quantity<units::One>;
 using Dimensionless     = Quantity<units::Dimensionless>;
-using Percent           = Quantity<units::Percent>;
-using Permill           = Quantity<units::Permill>;
+using Percent           = ScaledQuantity<Conversion<Ratio<1, 100>>, Dimensionless>;
+using Permill           = ScaledQuantity<Conversion<Ratio<1, 1000>>, Dimensionless>;
 
 //------------------------------------------------------------------------------
 // Length
 
-using Millimetres       = Quantity<units::Millimetre>;
-using Centimetres       = Quantity<units::Centimetre>;
-using Decimetres        = Quantity<units::Decimetre>;
-using Metres            = Quantity<units::Metre>;
-using Kilometres        = Quantity<units::Kilometre>;
+using Meters            = Quantity<units::Meter>;
+using Millimeters       = ScaledQuantity<Conversion<Ratio<1, 1000>>, Meters>;
+using Centimeters       = ScaledQuantity<Conversion<Ratio<1, 100>>, Meters>;
+using Decimeters        = ScaledQuantity<Conversion<Ratio<1, 10>>, Meters>;
+using Kilometers        = ScaledQuantity<Conversion<Ratio<1000>>, Meters>;
 
-using Inches            = Quantity<units::Inch>;
-using Feet              = Quantity<units::Foot>;
-using Yards             = Quantity<units::Yard>;
-using Miles             = Quantity<units::Mile>;
+using Inches            = ScaledQuantity<Conversion<Ratio<254, 100>>, Centimeters>; // (international)
+using Feet              = ScaledQuantity<Conversion<Ratio<12>>, Inches>;            // (international)
+using Yards             = ScaledQuantity<Conversion<Ratio<3>>, Feet>;               // (international)
+using Miles             = ScaledQuantity<Conversion<Ratio<1760>>, Yards>;           // (international)
 
 //------------------------------------------------------------------------------
 // Area
 
-using SquareMillimetres = Quantity<units::SquareMillimetre>;
-using SquareCentimetres = Quantity<units::SquareCentimetre>;
-using SquareMetres      = Quantity<units::SquareMetre>;
-using SquareKilometres  = Quantity<units::SquareKilometre>;
+using SquareMillimeters = decltype(Millimeters{} * Millimeters{});
+using SquareCentimeters = decltype(Centimeters{} * Centimeters{});
+using SquareDecimeters  = decltype(Decimeters{} * Decimeters{});
+using SquareMeters      = decltype(Meters{} * Meters{});
+using SquareKilometers  = decltype(Kilometers{} * Kilometers{});
 
 //------------------------------------------------------------------------------
 // Volume
 
-using CubicMillimetres  = Quantity<units::CubicMillimetre>;
-using CubicCentimetres  = Quantity<units::CubicCentimetre>;
-using CubicDecimetres   = Quantity<units::CubicDecimetre>;
-using CubicMetres       = Quantity<units::CubicMetre>;
+using CubicMillimeters  = decltype(SquareMillimeters{} * Millimeters{});
+using CubicCentimeters  = decltype(SquareCentimeters{} * Centimeters{});
+using CubicDecimeters   = decltype(SquareDecimeters{} * Decimeters{});
+using CubicMeters       = decltype(SquareMeters{} * Meters{});
 
 //------------------------------------------------------------------------------
 // Time
 
-using Milliseconds      = Quantity<units::Millisecond>;
 using Seconds           = Quantity<units::Second>;
-using Minutes           = Quantity<units::Minute>;
-using Hours             = Quantity<units::Hour>;
-using Days              = Quantity<units::Day>;
-using Weeks             = Quantity<units::Week>;
-using Months            = Quantity<units::Month>;
-using Years             = Quantity<units::Year>;
+using Milliseconds      = ScaledQuantity<Conversion<Ratio<1, 1000>>, Seconds>;
+using Minutes           = ScaledQuantity<Conversion<Ratio<60>>, Seconds>;
+using Hours             = ScaledQuantity<Conversion<Ratio<60>>, Minutes>;
+using Days              = ScaledQuantity<Conversion<Ratio<24>>, Hours>;
+using Weeks             = ScaledQuantity<Conversion<Ratio<7>>, Days>;
+using Years             = ScaledQuantity<Conversion<Ratio<146097, 400>>, Days>;
+using Months            = ScaledQuantity<Conversion<Ratio<1, 12>>, Years>;
 
 //------------------------------------------------------------------------------
 // Frequency
 
-using Hertz             = Quantity<units::Hertz>;
-using Kilohertz         = Quantity<units::Kilohertz>;
-using Megahertz         = Quantity<units::Megahertz>;
-using Gigahertz         = Quantity<units::Gigahertz>;
+using Hertz             = decltype(Dimensionless{} / Seconds{});
+using Kilohertz         = ScaledQuantity<Conversion<Ratio<1000>>, Hertz>;
+using Megahertz         = ScaledQuantity<Conversion<Ratio<1000>>, Kilohertz>;
+using Gigahertz         = ScaledQuantity<Conversion<Ratio<1000>>, Megahertz>;
 
 //------------------------------------------------------------------------------
 // Mass
 
-using Grams             = Quantity<units::Gram>;
 using Kilograms         = Quantity<units::Kilogram>;
-using Milligrams        = Quantity<units::Milligram>;
-using Tonnes            = Quantity<units::Tonne>;
+using Grams             = ScaledQuantity<Conversion<Ratio<1, 1000>>, Kilograms>;
+using Milligrams        = ScaledQuantity<Conversion<Ratio<1, 1000>>, Grams>;
+using Tons              = ScaledQuantity<Conversion<Ratio<1000>>, Kilograms>;
 
 //------------------------------------------------------------------------------
 // Velocity
 
-using MetresPerSecond   = Quantity<units::MetrePerSecond>; // decltype(1_m/1_s);
+using MetersPerSecond   = decltype(Meters{} / Seconds{});
 
-using KilometresPerHour = Quantity<units::KilometrePerHour>; // decltype(1_km/1_h);
+using KilometersPerHour = decltype(Kilometers{} / Hours{});
 
 //------------------------------------------------------------------------------
 // Temperature
 
 using Kelvin            = Quantity<units::Kelvin>;
-using Celsius           = Quantity<units::Celsius>;
-using Fahrenheit        = Quantity<units::Fahrenheit>;
-using Rankine           = Quantity<units::Rankine>;
 
 //------------------------------------------------------------------------------
 // Plane angle
 
 using Radians           = Quantity<units::Radian>;
-using Degrees           = Quantity<units::Degree>;
-using Gons              = Quantity<units::Gon>;
-using Revolutions       = Quantity<units::Revolution>;
+using Degrees           = ScaledQuantity<Conversion<Ratio<1, 180>, /* pi^ */ 1>, Radians>;
+using Gons              = ScaledQuantity<Conversion<Ratio<1, 200>, /* pi^ */ 1>, Radians>;
+using Revolutions       = ScaledQuantity<Conversion<Ratio<2,   1>, /* pi^ */ 1>, Radians>;
 
-using ArcMinutes        = Quantity<units::ArcMinute>;
-using ArcSeconds        = Quantity<units::ArcSecond>;
+using ArcMinutes        = ScaledQuantity<Conversion<Ratio<1, 60>>, Degrees>;
+using ArcSeconds        = ScaledQuantity<Conversion<Ratio<1, 60>>, ArcMinutes>;
 
-using ReciprocalRadians = Quantity<units::ReciprocalRadian>;
+using ReciprocalRadians = decltype(Dimensionless{} / Radians{});
 
 //------------------------------------------------------------------------------
 // Solid angle
 
-using Steradians        = Quantity<units::Steradian>;
-using SquareDegrees     = Quantity<units::SquareDegree>;
+using Steradians        = Tagged<decltype(Radians{} * Radians{}), kinds::SolidAngle>;
+using SquareDegrees     = Tagged<decltype(Degrees{} * Degrees{}), kinds::SolidAngle>;
 
 //--------------------------------------------------------------------------
 // Force
 
-using Newtons           = Quantity<units::Newton>;
-using Kilonewtons       = Quantity<units::Kilonewton>;
+using Newtons           = decltype(Kilograms{} * Meters{} / (Seconds{} * Seconds{}));
+using Kilonewtons       = ScaledQuantity<Conversion<Ratio<1000>>, Newtons>;
 
 //--------------------------------------------------------------------------
 // Energy
 
-using Joules            = Quantity<units::Joule>;
-using Kilojoules        = Quantity<units::Kilojoule>;
+using Joules            = decltype(Newtons{} * Meters{});
+using Kilojoules        = ScaledQuantity<Conversion<Ratio<1000>>, Joules>;
 
 //--------------------------------------------------------------------------
 // Torque
 
-using NewtonMetres      = Quantity<units::NewtonMetre>;
+using NewtonMeters      = decltype(Newtons{} * Meters{} / Radians{});
 
 //--------------------------------------------------------------------------
 // Power
 
-using Watts             = Quantity<units::Watt>;
-using Kilowatts         = Quantity<units::Kilowatt>;
+using Watts             = decltype(Joules{} / Seconds{});
+using Kilowatts         = ScaledQuantity<Conversion<Ratio<1000>>, Watts>;
 
-using Vars              = Quantity<units::VoltAmpere>;
-using Kilovars          = Quantity<units::ScaledUnit<Conversion<Ratio<1000>>, units::VoltAmpere>>;
+using Vars              = Tagged<Watts, kinds::ElectricPower>;
+using Kilovars          = ScaledQuantity<Conversion<Ratio<1000>>, Vars>;
 
 //--------------------------------------------------------------------------
 // Data
 
 using Bits              = Quantity<units::Bit>;
-using Nibbles           = Quantity<units::Nibble>;
-using Bytes             = Quantity<units::Byte>;
-using Kilobytes         = Quantity<units::Kilobyte>;
-using Megabytes         = Quantity<units::Megabyte>;
-using Gigabytes         = Quantity<units::Gigabyte>;
+using Nibbles           = ScaledQuantity<Conversion<Ratio<4>>, Bits>;
+using Bytes             = ScaledQuantity<Conversion<Ratio<8>>, Bits>;
+using Kilobytes         = ScaledQuantity<Conversion<Ratio<1000>>, Bytes>;
+using Megabytes         = ScaledQuantity<Conversion<Ratio<1000>>, Kilobytes>;
+using Gigabytes         = ScaledQuantity<Conversion<Ratio<1000>>, Megabytes>;
 
 //--------------------------------------------------------------------------
 // Area per Length
 
-using SquareCentimetresPerMetre
-    = Tagged<decltype(SquareCentimetres{} / Metres{}), kinds::AreaPerLength>;
+using SquareCentimetersPerMeter
+    = Tagged<decltype(SquareCentimeters{} / Meters{}), kinds::AreaPerLength>;
 
-using SquareMetresPerMetre
-    = Tagged<decltype(SquareMetres{}      / Metres{}), kinds::AreaPerLength>;
+using SquareMetersPerMeter
+    = Tagged<decltype(SquareMeters{}      / Meters{}), kinds::AreaPerLength>;
 
 //==================================================================================================
 //

@@ -26,43 +26,43 @@ namespace uom::literals {
 
 [[nodiscard]] constexpr auto operator""_mm(long double x) noexcept
 {
-    return Millimetres(static_cast<double>(x));
+    return Millimeters(static_cast<double>(x));
 }
 [[nodiscard]] constexpr auto operator""_mm(unsigned long long x) noexcept
 {
-    return Millimetres(static_cast<double>(x));
+    return Millimeters(static_cast<double>(x));
 }
 [[nodiscard]] constexpr auto operator""_cm(long double x) noexcept
 {
-    return Centimetres(static_cast<double>(x));
+    return Centimeters(static_cast<double>(x));
 }
 [[nodiscard]] constexpr auto operator""_cm(unsigned long long x) noexcept
 {
-    return Centimetres(static_cast<double>(x));
+    return Centimeters(static_cast<double>(x));
 }
 [[nodiscard]] constexpr auto operator""_dm(long double x) noexcept
 {
-    return Decimetres(static_cast<double>(x));
+    return Decimeters(static_cast<double>(x));
 }
 [[nodiscard]] constexpr auto operator""_dm(unsigned long long x) noexcept
 {
-    return Decimetres(static_cast<double>(x));
+    return Decimeters(static_cast<double>(x));
 }
 [[nodiscard]] constexpr auto operator""_m(long double x) noexcept
 {
-    return Metres(static_cast<double>(x));
+    return Meters(static_cast<double>(x));
 }
 [[nodiscard]] constexpr auto operator""_m(unsigned long long x) noexcept
 {
-    return Metres(static_cast<double>(x));
+    return Meters(static_cast<double>(x));
 }
 [[nodiscard]] constexpr auto operator""_km(long double x) noexcept
 {
-    return Kilometres(static_cast<double>(x));
+    return Kilometers(static_cast<double>(x));
 }
 [[nodiscard]] constexpr auto operator""_km(unsigned long long x) noexcept
 {
-    return Kilometres(static_cast<double>(x));
+    return Kilometers(static_cast<double>(x));
 }
 
 [[nodiscard]] constexpr auto operator""_in(long double x) noexcept
@@ -103,35 +103,43 @@ namespace uom::literals {
 
 [[nodiscard]] constexpr auto operator""_mm2(long double x) noexcept
 {
-    return SquareMillimetres(static_cast<double>(x));
+    return SquareMillimeters(static_cast<double>(x));
 }
 [[nodiscard]] constexpr auto operator""_mm2(unsigned long long x) noexcept
 {
-    return SquareMillimetres(static_cast<double>(x));
+    return SquareMillimeters(static_cast<double>(x));
 }
 [[nodiscard]] constexpr auto operator""_cm2(long double x) noexcept
 {
-    return SquareCentimetres(static_cast<double>(x));
+    return SquareCentimeters(static_cast<double>(x));
 }
 [[nodiscard]] constexpr auto operator""_cm2(unsigned long long x) noexcept
 {
-    return SquareCentimetres(static_cast<double>(x));
+    return SquareCentimeters(static_cast<double>(x));
+}
+[[nodiscard]] constexpr auto operator""_dm2(long double x) noexcept
+{
+    return SquareDecimeters(static_cast<double>(x));
+}
+[[nodiscard]] constexpr auto operator""_dm2(unsigned long long x) noexcept
+{
+    return SquareDecimeters(static_cast<double>(x));
 }
 [[nodiscard]] constexpr auto operator""_m2(long double x) noexcept
 {
-    return SquareMetres(static_cast<double>(x));
+    return SquareMeters(static_cast<double>(x));
 }
 [[nodiscard]] constexpr auto operator""_m2(unsigned long long x) noexcept
 {
-    return SquareMetres(static_cast<double>(x));
+    return SquareMeters(static_cast<double>(x));
 }
 [[nodiscard]] constexpr auto operator""_km2(long double x) noexcept
 {
-    return SquareKilometres(static_cast<double>(x));
+    return SquareKilometers(static_cast<double>(x));
 }
 [[nodiscard]] constexpr auto operator""_km2(unsigned long long x) noexcept
 {
-    return SquareKilometres(static_cast<double>(x));
+    return SquareKilometers(static_cast<double>(x));
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -139,35 +147,35 @@ namespace uom::literals {
 
 [[nodiscard]] constexpr auto operator""_mm3(long double x) noexcept
 {
-    return CubicMillimetres(static_cast<double>(x));
+    return CubicMillimeters(static_cast<double>(x));
 }
 [[nodiscard]] constexpr auto operator""_mm3(unsigned long long x) noexcept
 {
-    return CubicMillimetres(static_cast<double>(x));
+    return CubicMillimeters(static_cast<double>(x));
 }
 [[nodiscard]] constexpr auto operator""_cm3(long double x) noexcept
 {
-    return CubicCentimetres(static_cast<double>(x));
+    return CubicCentimeters(static_cast<double>(x));
 }
 [[nodiscard]] constexpr auto operator""_cm3(unsigned long long x) noexcept
 {
-    return CubicCentimetres(static_cast<double>(x));
+    return CubicCentimeters(static_cast<double>(x));
 }
 [[nodiscard]] constexpr auto operator""_dm3(long double x) noexcept
 {
-    return CubicDecimetres(static_cast<double>(x));
+    return CubicDecimeters(static_cast<double>(x));
 }
 [[nodiscard]] constexpr auto operator""_dm3(unsigned long long x) noexcept
 {
-    return CubicDecimetres(static_cast<double>(x));
+    return CubicDecimeters(static_cast<double>(x));
 }
 [[nodiscard]] constexpr auto operator""_m3(long double x) noexcept
 {
-    return CubicMetres(static_cast<double>(x));
+    return CubicMeters(static_cast<double>(x));
 }
 [[nodiscard]] constexpr auto operator""_m3(unsigned long long x) noexcept
 {
-    return CubicMetres(static_cast<double>(x));
+    return CubicMeters(static_cast<double>(x));
 }
 
 //[[nodiscard]] constexpr auto operator""_L(long double x) noexcept
@@ -272,11 +280,11 @@ namespace uom::literals {
 }
 [[nodiscard]] constexpr auto operator""_t(long double x) noexcept
 {
-    return Tonnes(static_cast<double>(x));
+    return Tons(static_cast<double>(x));
 }
 [[nodiscard]] constexpr auto operator""_t(unsigned long long x) noexcept
 {
-    return Tonnes(static_cast<double>(x));
+    return Tons(static_cast<double>(x));
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -284,20 +292,20 @@ namespace uom::literals {
 
 [[nodiscard]] constexpr auto operator""_m_per_s(long double x) noexcept
 {
-    return MetresPerSecond(static_cast<double>(x));
+    return MetersPerSecond(static_cast<double>(x));
 }
 [[nodiscard]] constexpr auto operator""_m_per_s(unsigned long long x) noexcept
 {
-    return MetresPerSecond(static_cast<double>(x));
+    return MetersPerSecond(static_cast<double>(x));
 }
 
 [[nodiscard]] constexpr auto operator""_km_per_h(long double x) noexcept
 {
-    return KilometresPerHour(static_cast<double>(x));
+    return KilometersPerHour(static_cast<double>(x));
 }
 [[nodiscard]] constexpr auto operator""_km_per_h(unsigned long long x) noexcept
 {
-    return KilometresPerHour(static_cast<double>(x));
+    return KilometersPerHour(static_cast<double>(x));
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -414,20 +422,20 @@ namespace uom::literals {
 
 //[[nodiscard]] constexpr auto operator""_J_per_rad(long double x) noexcept
 //{
-//    return NewtonMetres(static_cast<double>(x));
+//    return NewtonMeters(static_cast<double>(x));
 //}
 //[[nodiscard]] constexpr auto operator""_J_per_rad(unsigned long long x) noexcept
 //{
-//    return NewtonMetres(static_cast<double>(x));
+//    return NewtonMeters(static_cast<double>(x));
 //}
 
 [[nodiscard]] constexpr auto operator""_Nm_per_rad(long double x) noexcept
 {
-    return NewtonMetres(static_cast<double>(x));
+    return NewtonMeters(static_cast<double>(x));
 }
 [[nodiscard]] constexpr auto operator""_Nm_per_rad(unsigned long long x) noexcept
 {
-    return NewtonMetres(static_cast<double>(x));
+    return NewtonMeters(static_cast<double>(x));
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -479,20 +487,20 @@ namespace uom::literals {
 
 [[nodiscard]] constexpr auto operator""_cm2_per_m(long double x) noexcept
 {
-    return SquareCentimetresPerMetre(static_cast<double>(x));
+    return SquareCentimetersPerMeter(static_cast<double>(x));
 }
 [[nodiscard]] constexpr auto operator""_cm2_per_m(unsigned long long x) noexcept
 {
-    return SquareCentimetresPerMetre(static_cast<double>(x));
+    return SquareCentimetersPerMeter(static_cast<double>(x));
 }
 
 [[nodiscard]] constexpr auto operator""_m2_per_m(long double x) noexcept
 {
-    return SquareMetresPerMetre(static_cast<double>(x));
+    return SquareMetersPerMeter(static_cast<double>(x));
 }
 [[nodiscard]] constexpr auto operator""_m2_per_m(unsigned long long x) noexcept
 {
-    return SquareMetresPerMetre(static_cast<double>(x));
+    return SquareMetersPerMeter(static_cast<double>(x));
 }
 
 } // namespace uom::literals

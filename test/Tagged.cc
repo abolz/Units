@@ -7,8 +7,8 @@ using namespace uom::literals;
 
 static void test()
 {
-    using Width  = Tagged<Millimetres, struct _width>;
-    using Height = Tagged<Centimetres, struct _height>;
+    using Width  = Tagged<Millimeters, struct _width>;
+    using Height = Tagged<Centimeters, struct _height>;
 
     Width  w(1.0);
     Height h(2.0_cm);
@@ -21,9 +21,9 @@ static void test()
     const auto area = w * h; // (some kind of "area")
     w = area / h; // works
     h = area / w; // works
-    const auto value = count<SquareCentimetres>(area);
+    const auto value = area.count<SquareCentimeters>();
 
-    const auto a = SquareMillimetres(area); // explicit cast works
+    const auto a = SquareMillimeters(area); // explicit cast works
 }
 
 //int main()

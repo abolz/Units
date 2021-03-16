@@ -7,25 +7,25 @@
 using namespace uom;
 using namespace uom::literals;
 
-using MetresPerSecond
+using MetersPerSecond
     = decltype(1_m / 1_s);
 using SquareSeconds
     = decltype(pow<2>(1_s));
-using SquareMetresPerSquareSecond
+using SquareMetersPerSquareSecond
     = decltype(pow<2>(1_m) / pow<2>(1_s));
-using CubicMetres
+using CubicMeters
     = decltype(pow<3>(1_m));
-using CubicMetresPerSquareSecond
+using CubicMetersPerSquareSecond
     = decltype(pow<3>(1_m) / pow<2>(1_s));
 
 using GravitationalParameter
-    = CubicMetresPerSquareSecond;
+    = CubicMetersPerSquareSecond;
 
 class HohmannTransfer
 {
-    static MetresPerSecond dVApo(const GravitationalParameter mu, const Metres r_1, const Metres r_2)
+    static MetersPerSecond dVApo(const GravitationalParameter mu, const Meters r_1, const Meters r_2)
     {
-        const SquareMetresPerSquareSecond A2
+        const SquareMetersPerSquareSecond A2
             = mu / r_2;
         const Dimensionless B
             = 1.0_q - sqrt(2 / (1.0_q + r_2 / r_1));
@@ -33,9 +33,9 @@ class HohmannTransfer
         return sqrt(A2) * B;
     }
 
-    static MetresPerSecond dVPer(const GravitationalParameter mu, const Metres r_1, const Metres r_2)
+    static MetersPerSecond dVPer(const GravitationalParameter mu, const Meters r_1, const Meters r_2)
     {
-        const SquareMetresPerSquareSecond A2
+        const SquareMetersPerSquareSecond A2
             = mu / r_1;
         const Dimensionless B
             = sqrt((2 * r_2 / r_1) / (1.0_q + r_2 / r_1)) - 1.0_q;
@@ -45,12 +45,12 @@ class HohmannTransfer
 
 public:
     const GravitationalParameter mu;
-    const Metres r_1;
-    const Metres r_2;
-    const MetresPerSecond dV_P;
-    const MetresPerSecond dV_A;
+    const Meters r_1;
+    const Meters r_2;
+    const MetersPerSecond dV_P;
+    const MetersPerSecond dV_A;
 
-    HohmannTransfer(const GravitationalParameter _mu, const Metres _r_1, const Metres _r_2)
+    HohmannTransfer(const GravitationalParameter _mu, const Meters _r_1, const Meters _r_2)
         : mu(_mu)
         , r_1(_r_1)
         , r_2(_r_2)

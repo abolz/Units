@@ -8,13 +8,13 @@ using namespace uom;
 using namespace uom::literals;
 
 // f(x) = x^2
-static constexpr auto f(Metres x)
+static constexpr auto f(Meters x)
 {
     return x * x - 2.0_m2;
 }
 
 // f'(x) = 2x
-static constexpr auto f_prime(Metres x)
+static constexpr auto f_prime(Meters x)
 {
     // constexpr decltype(x) h(1.0e-10);
     // return (f(x + h) - f(x - h)) / (2 * h);
@@ -23,7 +23,7 @@ static constexpr auto f_prime(Metres x)
 }
 
 // x_{n+1} = x_n - f(x_n) / f'(x_n)
-static constexpr auto newton_step(Metres x)
+static constexpr auto newton_step(Meters x)
 {
     return x - f(x) / f_prime(x);
 }
@@ -41,7 +41,7 @@ static constexpr void testNewton()
     constexpr auto s9 = newton_step(s8);
 }
 
-static constexpr auto integrate_step(Metres x, Metres h, int n) -> Metres
+static constexpr auto integrate_step(Meters x, Meters h, int n) -> Meters
 {
     if (n <= 0)
         return 0_m;
@@ -49,7 +49,7 @@ static constexpr auto integrate_step(Metres x, Metres h, int n) -> Metres
         return f_prime(x) + integrate_step(x + h, h, n - 1);
 }
 
-static constexpr auto integrate(Metres a, Metres b, int n)
+static constexpr auto integrate(Meters a, Meters b, int n)
 {
     const auto h = (b - a) / n;
 
