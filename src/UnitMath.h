@@ -289,7 +289,7 @@ template <int64_t N, typename U>
     static_assert(conversion::exp % N == 0,
         "inexact roots are not supported");
     static_assert(dimension_root::is_exact,
-        "inexact roots are not supported");
+        "rational roots are not supported");
 
     using C = Conversion<typename conversion_root::ratio, conversion::exp / N>;
     using D = typename dimension_root::ratio;
