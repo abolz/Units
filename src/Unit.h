@@ -297,121 +297,121 @@ namespace kinds
         : Kind<SolidAngle, MulKinds<PlaneAngle, PlaneAngle>::dimension> {};
 
     // m/s
-    using Velocity
-        = DivKinds<Length, Time>;
+    //using Velocity
+    //    = DivKinds<Length, Time>;
 
     // (m/s)/s = m/s^2
-    using Acceleration
-        = DivKinds<Velocity, Time>;
+    //using Acceleration
+    //    = DivKinds<Velocity, Time>;
 
     // kg (m/s)
-    using Momentum
-        = MulKinds<Mass, Velocity>;
+    //using Momentum
+    //    = MulKinds<Mass, Velocity>;
 
     // Newton N = kg m/s^2
-    using Force
-        = MulKinds<Mass, Acceleration>;
+    //using Force
+    //    = MulKinds<Mass, Acceleration>;
 
     // Joule J = N m = kg m^2/s^2
-    using Energy
-        = MulKinds<Force, Length>;
+    //using Energy
+    //    = MulKinds<Force, Length>;
 
     // Torque = N m/rad = J/rad = kg m^2/(s^2 rad)
-    using Torque
-        = DivKinds<Energy, PlaneAngle>;
+    //using Torque
+    //    = DivKinds<Energy, PlaneAngle>;
 
     // J s = kg m^2/s
-    using Action
-        = MulKinds<Energy, Time>;
+    //using Action
+    //    = MulKinds<Energy, Time>;
 
     // Watt W = J/s = kg m^2/s^3
-    using Power
-        = DivKinds<Energy, Time>;
+    //using Power
+    //    = DivKinds<Energy, Time>;
 
-    // Watt W = J/s = kg m^2/s^3 = reactive power
-    struct ElectricPower
-        : Kind<ElectricPower, Power::dimension> {};
+    // Watt W = J/s = kg m^2/s^3
+    //struct ElectricPower
+    //    : Kind<ElectricPower, Power::dimension> {};
 
     // Pascal Pa = N/m^2 = kg/(m s^2)
-    using Pressure
-        = DivKinds<Force, Area>;
+    //using Pressure
+    //    = DivKinds<Force, Area>;
 
     // kg/m^2
-    using MassPerArea
-        = DivKinds<Mass, Area>;
+    //using MassPerArea
+    //    = DivKinds<Mass, Area>;
 
     // kg/m^3
-    using MassPerVolume
-        = DivKinds<Mass, Volume>;
+    //using MassPerVolume
+    //    = DivKinds<Mass, Volume>;
 
     // m^3/m^2
     struct VolumePerArea
         : Kind<VolumePerArea, DivKinds<Volume, Area>::dimension> {};
 
     // Hertz Hz = 1/s
-    using Frequency
-        = DivKinds<One, Time>;
+    //using Frequency
+    //    = DivKinds<One, Time>;
 
     // rad/s
-    using AngularVelocity
-        = DivKinds<PlaneAngle, Time>;
+    //using AngularVelocity
+    //    = DivKinds<PlaneAngle, Time>;
 
     // rad/s^2
-    using AngularAcceleration
-        = DivKinds<AngularVelocity, Time>;
+    //using AngularAcceleration
+    //    = DivKinds<AngularVelocity, Time>;
 
     // Coulomb C = A s
-    using ElectricCharge
-        = MulKinds<ElectricCurrent, Time>;
+    //using ElectricCharge
+    //    = MulKinds<ElectricCurrent, Time>;
 
     // Volt V = W/A = kg m^2/(s^3 A)
-#if 1
-    using ElectricPotentialDifference
-        = DivKinds<ElectricPower, ElectricCurrent>;
-#else
-    using ElectricPotentialDifference
-        = DivKinds<Power, ElectricCurrent>;
-#endif
+    //#if 1
+    //    using ElectricPotentialDifference
+    //        = DivKinds<ElectricPower, ElectricCurrent>;
+    //#else
+    //    using ElectricPotentialDifference
+    //        = DivKinds<Power, ElectricCurrent>;
+    //#endif
 
     // Farad F = C/V = s^4 A/(kg m^2)
-    using Capacitance
-        = DivKinds<ElectricCharge, ElectricPotentialDifference>;
+    //using Capacitance
+    //    = DivKinds<ElectricCharge, ElectricPotentialDifference>;
 
     // Ohm = V/A = kg m^2/(s^3 A^2)
-    using ElectricResistance
-        = DivKinds<ElectricPotentialDifference, ElectricCurrent>;
+    //using ElectricResistance
+    //    = DivKinds<ElectricPotentialDifference, ElectricCurrent>;
 
     // Siemens = A/V = s^3 A^2/(kg m^2)
-    using ElectricConductance
-        = DivKinds<ElectricCurrent, ElectricPotentialDifference>;
+    //using ElectricConductance
+    //    = DivKinds<ElectricCurrent, ElectricPotentialDifference>;
 
     // Dose J/kg = m^2/s^2
-    using Dose
-        = DivKinds<Power, Mass>;
+    //using Dose
+    //    = DivKinds<Power, Mass>;
 
     // Gray Gy = J/kg = m^2/s^2
-    struct AbsorbedDose
-        : Kind<AbsorbedDose, Dose::dimension> {};
+    //struct AbsorbedDose
+    //    : Kind<AbsorbedDose, Dose::dimension> {};
 
     // Sievert Sv = J/kg = m^2/s^2
-    struct DoseEquivalent
-        : Kind<DoseEquivalent, Dose::dimension> {};
+    //struct DoseEquivalent
+    //    : Kind<DoseEquivalent, Dose::dimension> {};
 
     // Lumen lm = cd sr
-    using LuminousFlux
-        = MulKinds<LuminousIntensity, SolidAngle>;
+    //using LuminousFlux
+    //    = MulKinds<LuminousIntensity, SolidAngle>;
 
     // Talbot lm s = cd sr s
-    using LuminousEnergy
-        = MulKinds<LuminousFlux, Time>;
+    //using LuminousEnergy
+    //    = MulKinds<LuminousFlux, Time>;
 
     // Nit = cd/m^2 = lm/(m^2 sr)
-    using Luminance
-        = DivKinds<LuminousIntensity, Area>;
+    //using Luminance
+    //    = DivKinds<LuminousIntensity, Area>;
 
     // Lux lx = lm/m^2
-    using Illuminance
-        = DivKinds<LuminousFlux, Area>;
+    //using Illuminance
+    //    = DivKinds<LuminousFlux, Area>;
 
 } // namespace kinds
 
@@ -506,28 +506,6 @@ using DivConversions = Conversion<std::ratio_divide<typename C1::ratio, typename
 
 namespace impl
 {
-    template <typename C, int64_t E>
-    struct PowConversion;
-
-    template <typename C>
-    struct PowConversion<C, 0>
-    {
-        using type = Conversion<Ratio<1>>;
-    };
-
-    template <typename C>
-    struct PowConversion<C, 1>
-    {
-        using type = C;
-    };
-
-    template <typename C, int64_t E>
-    struct PowConversion
-    {
-        static_assert(E >= 2);
-        using type = MulConversions<C, typename PowConversion<C, E - 1>::type>;
-    };
-
     template <typename C1>
     using IsIntegralConversion = std::bool_constant<(C1::den == 1 && C1::exp == 0)>;
 
@@ -735,13 +713,13 @@ public:
 
     template <typename C2, EnableImplicitConversion<conversion, C2, int> = 0>
     constexpr Quantity(Quantity<Unit<C2, kind>> q) noexcept
-        : _count(DivConversions<C2, conversion>{}(q.count_unsafe()))
+        : _count(DivConversions<C2, conversion>{}(q.count_internal()))
     {
     }
 
     template <typename C2, typename K2, EnableExplicitConversion<kind, K2, int> = 0>
     constexpr explicit Quantity(Quantity<Unit<C2, K2>> q) noexcept
-        : _count(DivConversions<C2, conversion>{}(q.count_unsafe()))
+        : _count(DivConversions<C2, conversion>{}(q.count_internal()))
     {
     }
 
@@ -755,18 +733,7 @@ public:
         return simplified_type(_count);
     }
 
-    // count_unsafe   ??
-    // count_whatever ??
-    // count_any      ??
-    // count_this     ??
-    // count_current  ??
-    // explicit operator double() ??
-    [[nodiscard]] constexpr double count_unsafe() const noexcept
-    {
-        return _count;
-    }
-
-    [[nodiscard]] constexpr explicit operator double() const noexcept
+    [[nodiscard]] constexpr double count_internal() const noexcept
     {
         return _count;
     }
@@ -775,9 +742,9 @@ public:
     [[nodiscard]] constexpr double count() const noexcept
     {
         if constexpr (std::is_same_v<Q, Quantity>)
-            return count_unsafe();
+            return count_internal();
         else
-            return Q(*this).count_unsafe();
+            return Q(*this).count_internal();
     }
 
     //--------------------------------------------------------------------------
@@ -790,60 +757,60 @@ public:
 
     [[nodiscard]] constexpr friend Quantity operator-(Quantity q) noexcept
     {
-        return Quantity(-q.count_unsafe());
+        return Quantity(-q.count_internal());
     }
 
     [[nodiscard]] constexpr friend Quantity operator+(Quantity lhs, Quantity rhs) noexcept
     {
-        return Quantity(lhs.count_unsafe() + rhs.count_unsafe());
+        return Quantity(lhs.count_internal() + rhs.count_internal());
     }
 
     [[nodiscard]] constexpr friend Quantity operator-(Quantity lhs, Quantity rhs) noexcept
     {
-        return Quantity(lhs.count_unsafe() - rhs.count_unsafe());
+        return Quantity(lhs.count_internal() - rhs.count_internal());
     }
 
     template <typename U2>
     [[nodiscard]] constexpr friend auto operator*(Quantity lhs, Quantity<U2> rhs) noexcept
     {
-        return Quantity<MulUnits<unit, U2>>(lhs.count_unsafe() * rhs.count_unsafe());
+        return Quantity<MulUnits<unit, U2>>(lhs.count_internal() * rhs.count_internal());
     }
 
     template <typename U2>
     [[nodiscard]] constexpr friend auto operator/(Quantity lhs, Quantity<U2> rhs) noexcept
     {
-        return Quantity<DivUnits<unit, U2>>(lhs.count_unsafe() / rhs.count_unsafe());
+        return Quantity<DivUnits<unit, U2>>(lhs.count_internal() / rhs.count_internal());
     }
 
     [[nodiscard]] constexpr friend Quantity operator*(Quantity lhs, scalar_type rhs) noexcept
     {
-        return Quantity(lhs.count_unsafe() * rhs);
+        return Quantity(lhs.count_internal() * rhs);
     }
 
     [[nodiscard]] constexpr friend Quantity operator/(Quantity lhs, scalar_type rhs) noexcept
     {
-        return Quantity(lhs.count_unsafe() / rhs);
+        return Quantity(lhs.count_internal() / rhs);
     }
 
     [[nodiscard]] constexpr friend Quantity operator*(scalar_type lhs, Quantity rhs) noexcept
     {
-        return Quantity(lhs * rhs.count_unsafe());
+        return Quantity(lhs * rhs.count_internal());
     }
 
     [[nodiscard]] constexpr friend auto operator/(scalar_type lhs, Quantity rhs) noexcept
     {
-        return Quantity<DivUnits<units::One, unit>>(lhs / rhs.count_unsafe());
+        return Quantity<DivUnits<units::One, unit>>(lhs / rhs.count_internal());
     }
 
     constexpr friend Quantity& operator+=(Quantity& lhs, Quantity rhs) noexcept
     {
-        lhs._count += rhs.count_unsafe();
+        lhs._count += rhs.count_internal();
         return lhs;
     }
 
     constexpr friend Quantity& operator-=(Quantity& lhs, Quantity rhs) noexcept
     {
-        lhs._count -= rhs.count_unsafe();
+        lhs._count -= rhs.count_internal();
         return lhs;
     }
 
@@ -865,8 +832,8 @@ public:
     template <typename C2, typename Q = CommonQuantity<C2>>
     [[nodiscard]] constexpr friend int compare(Quantity lhs, Quantity<Unit<C2, kind>> rhs) noexcept
     {
-        const auto x = Q(lhs).count_unsafe();
-        const auto y = Q(rhs).count_unsafe();
+        const auto x = Q(lhs).count_internal();
+        const auto y = Q(rhs).count_internal();
         if (x < y)
             return -1;
         if (x > y)
@@ -877,37 +844,37 @@ public:
     template <typename C2, typename Q = CommonQuantity<C2>>
     [[nodiscard]] constexpr friend bool operator==(Quantity lhs, Quantity<Unit<C2, kind>> rhs) noexcept
     {
-        return Q(lhs).count_unsafe() == Q(rhs).count_unsafe();
+        return Q(lhs).count_internal() == Q(rhs).count_internal();
     }
 
     template <typename C2, typename Q = CommonQuantity<C2>>
     [[nodiscard]] constexpr friend bool operator!=(Quantity lhs, Quantity<Unit<C2, kind>> rhs) noexcept
     {
-        return Q(lhs).count_unsafe() != Q(rhs).count_unsafe();
+        return Q(lhs).count_internal() != Q(rhs).count_internal();
     }
 
     template <typename C2, typename Q = CommonQuantity<C2>>
     [[nodiscard]] constexpr friend bool operator<(Quantity lhs, Quantity<Unit<C2, kind>> rhs) noexcept
     {
-        return Q(lhs).count_unsafe() < Q(rhs).count_unsafe();
+        return Q(lhs).count_internal() < Q(rhs).count_internal();
     }
 
     template <typename C2, typename Q = CommonQuantity<C2>>
     [[nodiscard]] constexpr friend bool operator>(Quantity lhs, Quantity<Unit<C2, kind>> rhs) noexcept
     {
-        return Q(lhs).count_unsafe() > Q(rhs).count_unsafe();
+        return Q(lhs).count_internal() > Q(rhs).count_internal();
     }
 
     template <typename C2, typename Q = CommonQuantity<C2>>
     [[nodiscard]] constexpr friend bool operator<=(Quantity lhs, Quantity<Unit<C2, kind>> rhs) noexcept
     {
-        return Q(lhs).count_unsafe() <= Q(rhs).count_unsafe();
+        return Q(lhs).count_internal() <= Q(rhs).count_internal();
     }
 
     template <typename C2, typename Q = CommonQuantity<C2>>
     [[nodiscard]] constexpr friend bool operator>=(Quantity lhs, Quantity<Unit<C2, kind>> rhs) noexcept
     {
-        return Q(lhs).count_unsafe() >= Q(rhs).count_unsafe();
+        return Q(lhs).count_internal() >= Q(rhs).count_internal();
     }
 };
 
@@ -974,12 +941,12 @@ using CubicMeters       = decltype(SquareMeters{} * Meters{});
 
 using Seconds           = Quantity<units::Second>;
 using Milliseconds      = ScaledQuantity<Conversion<Ratio<1, 1000>>, Seconds>;
-using Minutes           = ScaledQuantity<Conversion<Ratio<60>>, Seconds>;
-using Hours             = ScaledQuantity<Conversion<Ratio<60>>, Minutes>;
-using Days              = ScaledQuantity<Conversion<Ratio<24>>, Hours>;
-using Weeks             = ScaledQuantity<Conversion<Ratio<7>>, Days>;
-using Years             = ScaledQuantity<Conversion<Ratio<146097, 400>>, Days>;
-using Months            = ScaledQuantity<Conversion<Ratio<1, 12>>, Years>;
+//using Minutes           = ScaledQuantity<Conversion<Ratio<60>>, Seconds>;
+//using Hours             = ScaledQuantity<Conversion<Ratio<60>>, Minutes>;
+//using Days              = ScaledQuantity<Conversion<Ratio<24>>, Hours>;
+//using Weeks             = ScaledQuantity<Conversion<Ratio<7>>, Days>;
+//using Years             = ScaledQuantity<Conversion<Ratio<146097, 400>>, Days>;
+//using Months            = ScaledQuantity<Conversion<Ratio<1, 12>>, Years>;
 
 //------------------------------------------------------------------------------
 // Frequency
@@ -1002,7 +969,7 @@ using Tons              = ScaledQuantity<Conversion<Ratio<1000>>, Kilograms>;
 
 using MetersPerSecond   = decltype(Meters{} / Seconds{});
 
-using KilometersPerHour = decltype(Kilometers{} / Hours{});
+//using KilometersPerHour = decltype(Kilometers{} / Hours{});
 
 //------------------------------------------------------------------------------
 // Temperature
@@ -1051,18 +1018,18 @@ using NewtonMeters      = decltype(Newtons{} * Meters{} / Radians{});
 using Watts             = decltype(Joules{} / Seconds{});
 using Kilowatts         = ScaledQuantity<Conversion<Ratio<1000>>, Watts>;
 
-using Vars              = Tagged<Watts, kinds::ElectricPower>;
-using Kilovars          = ScaledQuantity<Conversion<Ratio<1000>>, Vars>;
+//using Vars              = Tagged<Watts, kinds::ElectricPower>;
+//using Kilovars          = ScaledQuantity<Conversion<Ratio<1000>>, Vars>;
 
 //--------------------------------------------------------------------------
 // Data
 
 using Bits              = Quantity<units::Bit>;
-using Nibbles           = ScaledQuantity<Conversion<Ratio<4>>, Bits>;
-using Bytes             = ScaledQuantity<Conversion<Ratio<8>>, Bits>;
-using Kilobytes         = ScaledQuantity<Conversion<Ratio<1000>>, Bytes>;
-using Megabytes         = ScaledQuantity<Conversion<Ratio<1000>>, Kilobytes>;
-using Gigabytes         = ScaledQuantity<Conversion<Ratio<1000>>, Megabytes>;
+//using Nibbles           = ScaledQuantity<Conversion<Ratio<4>>, Bits>;
+//using Bytes             = ScaledQuantity<Conversion<Ratio<8>>, Bits>;
+//using Kilobytes         = ScaledQuantity<Conversion<Ratio<1000>>, Bytes>;
+//using Megabytes         = ScaledQuantity<Conversion<Ratio<1000>>, Kilobytes>;
+//using Gigabytes         = ScaledQuantity<Conversion<Ratio<1000>>, Megabytes>;
 
 //--------------------------------------------------------------------------
 // Area per Length
@@ -1080,22 +1047,22 @@ using SquareMetersPerMeter
 #if 0
 [[nodiscard]] constexpr Dimensionless operator+(Dimensionless lhs, double rhs) noexcept
 {
-    return Dimensionless(lhs.count_unsafe() + rhs);
+    return Dimensionless(lhs.count_internal() + rhs);
 }
 
 [[nodiscard]] constexpr Dimensionless operator-(Dimensionless lhs, double rhs) noexcept
 {
-    return Dimensionless(lhs.count_unsafe() - rhs);
+    return Dimensionless(lhs.count_internal() - rhs);
 }
 
 [[nodiscard]] constexpr Dimensionless operator+(double lhs, Dimensionless rhs) noexcept
 {
-    return Dimensionless(lhs + rhs.count_unsafe());
+    return Dimensionless(lhs + rhs.count_internal());
 }
 
 [[nodiscard]] constexpr Dimensionless operator-(double lhs, Dimensionless rhs) noexcept
 {
-    return Dimensionless(lhs - rhs.count_unsafe());
+    return Dimensionless(lhs - rhs.count_internal());
 }
 #endif
 
@@ -1135,20 +1102,9 @@ public:
         return _value;
     }
 
-    // count_unsafe   ??
-    // count_whatever ??
-    // count_any      ??
-    // count_this     ??
-    // count_current  ??
-    // explicit operator double() ??
-    [[nodiscard]] constexpr double count_unsafe() const noexcept
+    [[nodiscard]] constexpr double count_internal() const noexcept
     {
-        return _value.count_unsafe();
-    }
-
-    [[nodiscard]] constexpr explicit operator double() const noexcept
-    {
-        return static_cast<double>(_value);
+        return _value.count_internal();
     }
 
     template <typename Q>
