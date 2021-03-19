@@ -7,14 +7,14 @@
 using namespace uom;
 using namespace uom::literals;
 
-using MetersPerSecond
-    = decltype(1_m / 1_s);
+//using MetersPerSecond
+//    = decltype(1_m / 1_s);
 using SquareSeconds
     = decltype(pow<2>(1_s));
 using SquareMetersPerSquareSecond
     = decltype(pow<2>(1_m) / pow<2>(1_s));
-using CubicMeters
-    = decltype(pow<3>(1_m));
+//using CubicMeters
+//    = decltype(pow<3>(1_m));
 using CubicMetersPerSquareSecond
     = decltype(pow<3>(1_m) / pow<2>(1_s));
 

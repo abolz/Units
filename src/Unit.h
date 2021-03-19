@@ -277,18 +277,6 @@ namespace kinds
 
     using Bit               = Kind< Simple, dim::Bit >;
 
-    //----------------------------------------------------------------------
-    // Derived kinds
-
-    // m^2/m
-    struct AreaPerLength {};
-
-    // m^3/m^2
-    struct VolumePerArea {};
-
-    // Steradian sr = rad^2
-    struct SolidAngle {};
-
 } // namespace kinds
 
 //==================================================================================================
@@ -836,12 +824,8 @@ using SquareKilometers  = decltype(Kilometers{} * Kilometers{});
 //--------------------------------------------------------------------------
 // Area per Length
 
-using SquareCentimetersPerMeter
-    = Tagged<decltype(SquareCentimeters{} / Meters{}), kinds::AreaPerLength>;
-
-using SquareMetersPerMeter
-    = Tagged<decltype(SquareMeters{}      / Meters{}), kinds::AreaPerLength>;
-
+using SquareCentimetersPerMeter = Tagged<decltype(SquareCentimeters{} / Meters{}), class _area_per_length>;
+using SquareMetersPerMeter      = Tagged<decltype(SquareMeters{}      / Meters{}), class _area_per_length>;
 
 //------------------------------------------------------------------------------
 // Volume
@@ -863,14 +847,33 @@ using Gigahertz         = ScaledQuantity<Conversion<Ratio<1000>>, Megahertz>;
 // Velocity
 
 using MetersPerSecond   = decltype(Meters{} / Seconds{});
-
 using KilometersPerHour = decltype(Kilometers{} / Hours{});
 
 //------------------------------------------------------------------------------
 // Solid angle
 
-using Steradians        = Tagged<decltype(Radians{} * Radians{}), kinds::SolidAngle>;
-using SquareDegrees     = Tagged<decltype(Degrees{} * Degrees{}), kinds::SolidAngle>;
+using Steradians        = Tagged<decltype(Radians{} * Radians{}), class _solid_angle>;
+using SquareDegrees     = Tagged<decltype(Degrees{} * Degrees{}), class _solid_angle>;
+
+//------------------------------------------------------------------------------
+// Photometric
+
+// Lumen lm = cd sr
+// Luminous flux/power is the change of luminous energy with time.
+using Lumens            = decltype(Candelas{} * Steradians{});
+
+// lm s = cd sr s = talbot
+// Luminous energy is the perceived energy of light.
+using Talbots           = decltype(Lumens{} * Seconds{});
+
+// nit = cd/m^2 = lm/(m^2 sr)
+// Luminance is the density of luminous intensity with respect to projected area in a specified direction at a
+// specified point on a real or imaginary surface.
+using Nits              = decltype(Candelas{} / SquareMeters{});
+
+// Lux lx = lm/m^2
+// Illuminance is the density of incident luminous flux with respect to area at a point on a real or imaginary surface.
+using Luxs              = decltype(Lumens{} / SquareMeters{});
 
 //--------------------------------------------------------------------------
 // Force
@@ -895,7 +898,7 @@ using NewtonMeters      = decltype(Newtons{} * Meters{} / Radians{});
 using Watts             = decltype(Joules{} / Seconds{});
 using Kilowatts         = ScaledQuantity<Conversion<Ratio<1000>>, Watts>;
 
-//using Vars              = Tagged<Watts, kinds::ElectricPower>;
+//using Vars              = Tagged<Watts, struct _reactive_power>;
 //using Kilovars          = ScaledQuantity<Conversion<Ratio<1000>>, Vars>;
 
 //--------------------------------------------------------------------------
@@ -907,6 +910,35 @@ using Bytes             = ScaledQuantity<Conversion<Ratio<8>>, Bits>;
 using Kilobytes         = ScaledQuantity<Conversion<Ratio<1000>>, Bytes>;
 using Megabytes         = ScaledQuantity<Conversion<Ratio<1000>>, Kilobytes>;
 using Gigabytes         = ScaledQuantity<Conversion<Ratio<1000>>, Megabytes>;
+
+//==================================================================================================
+//
+//==================================================================================================
+
+#if 1
+using AmountOfSubstance = Moles;
+using Area              = SquareMeters;
+using AreaPerLength     = SquareCentimetersPerMeter;
+using Energy            = Joules;
+using Force             = Newtons;
+using Frequency         = Hertz;
+using Illuminance       = Luxs;
+using Length            = Meters;
+using Luminance         = Nits;
+using LuminousEnergy    = Talbots;
+using LuminousFlux      = Lumens;
+using LuminousIntensity = Candelas;
+using Mass              = Kilograms;
+using Momentum          = decltype(Kilograms{} * MetersPerSecond{});
+using PlaneAngle        = Radians;
+using Power             = Watts;
+using SolidAngle        = Steradians;
+using Temperature       = Kelvin;
+using Time              = Seconds;
+using Torque            = NewtonMeters;
+using Velocity          = MetersPerSecond;
+using Volume            = CubicMeters;
+#endif
 
 //==================================================================================================
 //
