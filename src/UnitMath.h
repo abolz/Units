@@ -180,16 +180,16 @@ template <typename U>
 //
 //--------------------------------------------------------------------------------------------------
 
-template <typename Q>
-[[nodiscard]] inline QuantityPoint<Q> abs(QuantityPoint<Q> q) noexcept
+template <typename Q, typename Z>
+[[nodiscard]] inline QuantityPoint<Q, Z> abs(QuantityPoint<Q, Z> q) noexcept
 {
-    return QuantityPoint<Q>(std::abs(q.count_internal()));
+    return QuantityPoint<Q, Z>(std::abs(q.count_internal()));
 }
 
-template <typename Q>
-[[nodiscard]] inline QuantityPoint<Q> fabs(QuantityPoint<Q> q) noexcept
+template <typename Q, typename Z>
+[[nodiscard]] inline QuantityPoint<Q, Z> fabs(QuantityPoint<Q, Z> q) noexcept
 {
-    return QuantityPoint<Q>(std::fabs(q.count_internal()));
+    return QuantityPoint<Q, Z>(std::fabs(q.count_internal()));
 }
 
 //==================================================================================================
@@ -226,30 +226,30 @@ template <typename U>
 //
 //--------------------------------------------------------------------------------------------------
 
-template <typename Q>
-[[nodiscard]] inline constexpr QuantityPoint<Q> min(QuantityPoint<Q> x, QuantityPoint<Q> y) noexcept
+template <typename Q, typename Z>
+[[nodiscard]] inline constexpr QuantityPoint<Q> min(QuantityPoint<Q, Z> x, QuantityPoint<Q, Z> y) noexcept
 {
     // std::min
     return y.count_internal() < x.count_internal() ? y : x;
 }
 
-template <typename Q>
-[[nodiscard]] inline constexpr QuantityPoint<Q> max(QuantityPoint<Q> x, QuantityPoint<Q> y) noexcept
+template <typename Q, typename Z>
+[[nodiscard]] inline constexpr QuantityPoint<Q> max(QuantityPoint<Q, Z> x, QuantityPoint<Q, Z> y) noexcept
 {
     // std::max
     return y.count_internal() < x.count_internal() ? x : y;
 }
 
-template <typename Q>
-[[nodiscard]] inline QuantityPoint<Q> fmin(QuantityPoint<Q> x, QuantityPoint<Q> y) noexcept
+template <typename Q, typename Z>
+[[nodiscard]] inline QuantityPoint<Q> fmin(QuantityPoint<Q, Z> x, QuantityPoint<Q, Z> y) noexcept
 {
-    return QuantityPoint<Q>(std::fmin(x.count_internal(), y.count_internal()));
+    return QuantityPoint<Q, Z>(std::fmin(x.count_internal(), y.count_internal()));
 }
 
-template <typename Q>
-[[nodiscard]] inline QuantityPoint<Q> fmax(QuantityPoint<Q> x, QuantityPoint<Q> y) noexcept
+template <typename Q, typename Z>
+[[nodiscard]] inline QuantityPoint<Q> fmax(QuantityPoint<Q, Z> x, QuantityPoint<Q, Z> y) noexcept
 {
-    return QuantityPoint<Q>(std::fmax(x.count_internal(), y.count_internal()));
+    return QuantityPoint<Q, Z>(std::fmax(x.count_internal(), y.count_internal()));
 }
 
 //==================================================================================================
@@ -546,10 +546,10 @@ template <typename U>
 //
 //--------------------------------------------------------------------------------------------------
 
-template <typename Q>
-[[nodiscard]] inline QuantityPoint<Q> midpoint(QuantityPoint<Q> x, QuantityPoint<Q> y) noexcept
+template <typename Q, typename Z>
+[[nodiscard]] inline QuantityPoint<Q, Z> midpoint(QuantityPoint<Q, Z> x, QuantityPoint<Q, Z> y) noexcept
 {
-    return QuantityPoint<Q>(x.count_internal() / 2 + y.count_internal() / 2);
+    return QuantityPoint<Q, Z>(x.count_internal() / 2 + y.count_internal() / 2);
 }
 
 //==================================================================================================
@@ -566,10 +566,10 @@ template <typename U>
 //
 //--------------------------------------------------------------------------------------------------
 
-template <typename Q>
-[[nodiscard]] inline QuantityPoint<Q> lerp(QuantityPoint<Q> x, QuantityPoint<Q> y, double t) noexcept
+template <typename Q, typename Z>
+[[nodiscard]] inline QuantityPoint<Q, Z> lerp(QuantityPoint<Q, Z> x, QuantityPoint<Q, Z> y, double t) noexcept
 {
-    return QuantityPoint<Q>((1 - t) * x.count_internal() + t * y.count_internal());
+    return QuantityPoint<Q, Z>((1 - t) * x.count_internal() + t * y.count_internal());
 }
 
 //==================================================================================================

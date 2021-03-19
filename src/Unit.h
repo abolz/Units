@@ -41,6 +41,40 @@ namespace impl
         return (x / Gcd(x, y)) * y;
     }
 
+    // Returns x * num / den
+    template <typename R>
+    constexpr double applyStdRatio(double x) noexcept
+    {
+        constexpr int64_t num = R::num;
+        constexpr int64_t den = R::den;
+
+        if constexpr (den == 1)
+        {
+            if constexpr (num == 1)
+                return x;
+            else if constexpr (num == -1)
+                return -x;
+            else
+                return x * num;
+        }
+        else
+        {
+            if constexpr (num == 1)
+                return x / den;
+            else if constexpr (num == -1)
+                return -x / den;
+            else
+                return x * (static_cast<double>(num) / static_cast<double>(den));
+        }
+    }
+
+    // Returns num / den
+    template <typename R>
+    constexpr double evalStdRatio() noexcept
+    {
+        return applyStdRatio<R>(1.0);
+    }
+
 } // namespace impl
 
 //==================================================================================================
@@ -314,30 +348,7 @@ struct Conversion final
     // Returns: (x * num / den) * pi^exp
     [[nodiscard]] constexpr double operator()(double x) const noexcept
     {
-        return applyPi(applyRatio(x));
-    }
-
-    // Returns x * num / den
-    [[nodiscard]] static constexpr double applyRatio(double x) noexcept
-    {
-        if constexpr (den == 1)
-        {
-            if constexpr (num == 1)
-                return x;
-            else if constexpr (num == -1)
-                return -x;
-            else
-                return x * num;
-        }
-        else
-        {
-            if constexpr (num == 1)
-                return x / den;
-            else if constexpr (num == -1)
-                return -x / den;
-            else
-                return x * (static_cast<double>(num) / static_cast<double>(den));
-        }
+        return applyPi(impl::applyStdRatio<ratio>(x));
     }
 
     // Returns x * pi^exp
@@ -794,6 +805,7 @@ using Amperes           = Quantity<units::Ampere>;
 // Temperature
 
 using Kelvin            = Quantity<units::Kelvin>;
+using Celsius           = ScaledQuantity<Conversion<Ratio<1>>, Kelvin>;
 using Rankine           = ScaledQuantity<Conversion<Ratio<5, 9>>, Kelvin>;
 
 //------------------------------------------------------------------------------
@@ -959,9 +971,14 @@ using Siemens           = decltype(Amperes{} / Volts{});
 // QuantityPoint
 //==================================================================================================
 
-template <typename DifferenceType>
+template <typename DifferenceType, typename Zero = Ratio<0>>
 class QuantityPoint final
 {
+    // Z1 - Z2 * (C2 / C1)
+    template <typename C1, typename Z1, typename C2, typename Z2>
+    using CommonZero
+        = std::ratio_subtract<Z1, std::ratio_multiply<Z2, std::ratio_divide<typename C2::ratio, typename C1::ratio>>>;
+
 public:
     using difference_type = DifferenceType;
     using scalar_type     = typename DifferenceType::scalar_type;
@@ -969,6 +986,9 @@ public:
     using conversion      = typename DifferenceType::conversion;
     using kind            = typename DifferenceType::kind;
     using dimension       = typename DifferenceType::dimension;
+    using zero            = Zero;
+
+    static_assert(conversion::exp == 0, "sorry, not supported");
 
 private:
     difference_type _value;
@@ -976,14 +996,33 @@ private:
 public:
     constexpr QuantityPoint() noexcept = default;
 
-    constexpr explicit QuantityPoint(difference_type value) noexcept
+    constexpr explicit QuantityPoint(scalar_type value) noexcept
         : _value(value)
     {
     }
 
-    constexpr explicit QuantityPoint(scalar_type value) noexcept
-        : _value(value)
+    template <typename C2, std::enable_if_t<C2::exp == 0, int> = 0>
+    constexpr explicit QuantityPoint(Quantity<Unit<C2, kind>> other) noexcept
+        : _value( impl::applyStdRatio<std::ratio_divide<typename C2::ratio, typename conversion::ratio>>(other.count_internal()) - impl::evalStdRatio<zero>() )
     {
+        // value = (C2 / C1)( other + Z2 ) - Z1
+        //       = (C2 / C1)( other + Z2 - Z1 * (C1 / C2) )
+        //       = (C2 / C1)( other ) + (Z2 * (C2 / C1) - Z1)
+    }
+
+    template <typename C2, typename Z2, std::enable_if_t<C2::exp == 0, int> = 0>
+    constexpr explicit QuantityPoint(QuantityPoint<Quantity<Unit<C2, kind>>, Z2> other) noexcept
+        : _value( impl::applyStdRatio<std::ratio_divide<typename C2::ratio, typename conversion::ratio>>(other.count_internal()) - impl::evalStdRatio<CommonZero<conversion, zero, C2, Z2>>() )
+    {
+        // value = (C2 / C1)( other + Z2 ) - Z1
+        //       = (C2 / C1)( other + Z2 - Z1 * (C1 / C2) )
+        //       = (C2 / C1)( other ) + (Z2 * (C2 / C1) - Z1)
+    }
+
+    template <typename C2>
+    [[nodiscard]] constexpr explicit operator Quantity<Unit<C2, kind>>() const noexcept
+    {
+        return Quantity<Unit<C2, kind>>( impl::applyStdRatio<std::ratio_divide<typename conversion::ratio, typename C2::ratio>>( count_internal() + impl::evalStdRatio<zero>() ) );
     }
 
     [[nodiscard]] constexpr difference_type value() const noexcept
@@ -994,12 +1033,6 @@ public:
     [[nodiscard]] constexpr double count_internal() const noexcept
     {
         return _value.count_internal();
-    }
-
-    template <typename Q>
-    [[nodiscard]] constexpr auto count() const noexcept -> decltype(_value.template count<Q>())
-    {
-        return _value.template count<Q>();
     }
 
     [[nodiscard]] constexpr friend QuantityPoint operator+(QuantityPoint lhs, difference_type rhs) noexcept
@@ -1112,6 +1145,15 @@ using Velocity                      = MetersPerSecond;
 using Volume                        = CubicMeters;
 
 using Stiffness                     = decltype(Stress{} / Strain{});
+
+#if 1
+using DegKelvin                     = Kelvin;
+#else
+using DegKelvin                     = QuantityPoint<Kelvin>;
+#endif
+using DegCelsius                    = QuantityPoint<Kelvin, Ratio<27315, 100>>; // 0_degK = -273.15_degC
+using DegRankine                    = QuantityPoint<Rankine>;
+using DegFahrenheit                 = QuantityPoint<Rankine, Ratio<45967, 100>>; // 0_degR = -459.67_degF
 #endif
 
 } // namespace uom
