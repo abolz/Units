@@ -901,21 +901,12 @@ using Yards             = ScaledQuantity<Conversion<Ratio<3>>, Feet>;           
 using Miles             = ScaledQuantity<Conversion<Ratio<1760>>, Yards>;           // (international)
 
 //------------------------------------------------------------------------------
-// Area
+// Mass
 
-using SquareMillimeters = decltype(Millimeters{} * Millimeters{});
-using SquareCentimeters = decltype(Centimeters{} * Centimeters{});
-using SquareDecimeters  = decltype(Decimeters{} * Decimeters{});
-using SquareMeters      = decltype(Meters{} * Meters{});
-using SquareKilometers  = decltype(Kilometers{} * Kilometers{});
-
-//------------------------------------------------------------------------------
-// Volume
-
-using CubicMillimeters  = decltype(SquareMillimeters{} * Millimeters{});
-using CubicCentimeters  = decltype(SquareCentimeters{} * Centimeters{});
-using CubicDecimeters   = decltype(SquareDecimeters{} * Decimeters{});
-using CubicMeters       = decltype(SquareMeters{} * Meters{});
+using Kilograms         = Quantity<units::Kilogram>;
+using Grams             = ScaledQuantity<Conversion<Ratio<1, 1000>>, Kilograms>;
+using Milligrams        = ScaledQuantity<Conversion<Ratio<1, 1000>>, Grams>;
+using Tons              = ScaledQuantity<Conversion<Ratio<1000>>, Kilograms>;
 
 //------------------------------------------------------------------------------
 // Time
@@ -930,32 +921,19 @@ using Years             = ScaledQuantity<Conversion<Ratio<146097, 400>>, Days>;
 using Months            = ScaledQuantity<Conversion<Ratio<1, 12>>, Years>;
 
 //------------------------------------------------------------------------------
-// Frequency
-
-using Hertz             = decltype(Dimensionless{} / Seconds{});
-using Kilohertz         = ScaledQuantity<Conversion<Ratio<1000>>, Hertz>;
-using Megahertz         = ScaledQuantity<Conversion<Ratio<1000>>, Kilohertz>;
-using Gigahertz         = ScaledQuantity<Conversion<Ratio<1000>>, Megahertz>;
-
-//------------------------------------------------------------------------------
-// Mass
-
-using Kilograms         = Quantity<units::Kilogram>;
-using Grams             = ScaledQuantity<Conversion<Ratio<1, 1000>>, Kilograms>;
-using Milligrams        = ScaledQuantity<Conversion<Ratio<1, 1000>>, Grams>;
-using Tons              = ScaledQuantity<Conversion<Ratio<1000>>, Kilograms>;
-
-//------------------------------------------------------------------------------
-// Velocity
-
-using MetersPerSecond   = decltype(Meters{} / Seconds{});
-
-using KilometersPerHour = decltype(Kilometers{} / Hours{});
-
-//------------------------------------------------------------------------------
 // Temperature
 
 using Kelvin            = Quantity<units::Kelvin>;
+
+//------------------------------------------------------------------------------
+// Amount of substance
+
+using Moles             = Quantity<units::Mole>;
+
+//------------------------------------------------------------------------------
+// Luminous intensity
+
+using Candelas          = Quantity<units::Candela>;
 
 //------------------------------------------------------------------------------
 // Plane angle
@@ -969,6 +947,48 @@ using ArcMinutes        = ScaledQuantity<Conversion<Ratio<1, 60>>, Degrees>;
 using ArcSeconds        = ScaledQuantity<Conversion<Ratio<1, 60>>, ArcMinutes>;
 
 using ReciprocalRadians = decltype(Dimensionless{} / Radians{});
+
+//------------------------------------------------------------------------------
+// Area
+
+using SquareMillimeters = decltype(Millimeters{} * Millimeters{});
+using SquareCentimeters = decltype(Centimeters{} * Centimeters{});
+using SquareDecimeters  = decltype(Decimeters{} * Decimeters{});
+using SquareMeters      = decltype(Meters{} * Meters{});
+using SquareKilometers  = decltype(Kilometers{} * Kilometers{});
+
+//--------------------------------------------------------------------------
+// Area per Length
+
+using SquareCentimetersPerMeter
+    = Tagged<decltype(SquareCentimeters{} / Meters{}), kinds::AreaPerLength>;
+
+using SquareMetersPerMeter
+    = Tagged<decltype(SquareMeters{}      / Meters{}), kinds::AreaPerLength>;
+
+
+//------------------------------------------------------------------------------
+// Volume
+
+using CubicMillimeters  = decltype(SquareMillimeters{} * Millimeters{});
+using CubicCentimeters  = decltype(SquareCentimeters{} * Centimeters{});
+using CubicDecimeters   = decltype(SquareDecimeters{} * Decimeters{});
+using CubicMeters       = decltype(SquareMeters{} * Meters{});
+
+//------------------------------------------------------------------------------
+// Frequency
+
+using Hertz             = decltype(Dimensionless{} / Seconds{});
+using Kilohertz         = ScaledQuantity<Conversion<Ratio<1000>>, Hertz>;
+using Megahertz         = ScaledQuantity<Conversion<Ratio<1000>>, Kilohertz>;
+using Gigahertz         = ScaledQuantity<Conversion<Ratio<1000>>, Megahertz>;
+
+//------------------------------------------------------------------------------
+// Velocity
+
+using MetersPerSecond   = decltype(Meters{} / Seconds{});
+
+using KilometersPerHour = decltype(Kilometers{} / Hours{});
 
 //------------------------------------------------------------------------------
 // Solid angle
@@ -1011,15 +1031,6 @@ using Bytes             = ScaledQuantity<Conversion<Ratio<8>>, Bits>;
 using Kilobytes         = ScaledQuantity<Conversion<Ratio<1000>>, Bytes>;
 using Megabytes         = ScaledQuantity<Conversion<Ratio<1000>>, Kilobytes>;
 using Gigabytes         = ScaledQuantity<Conversion<Ratio<1000>>, Megabytes>;
-
-//--------------------------------------------------------------------------
-// Area per Length
-
-using SquareCentimetersPerMeter
-    = Tagged<decltype(SquareCentimeters{} / Meters{}), kinds::AreaPerLength>;
-
-using SquareMetersPerMeter
-    = Tagged<decltype(SquareMeters{}      / Meters{}), kinds::AreaPerLength>;
 
 //==================================================================================================
 //
