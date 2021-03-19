@@ -176,6 +176,22 @@ template <typename U>
     return Quantity<U>(std::fabs(q.count_internal()));
 }
 
+//--------------------------------------------------------------------------------------------------
+//
+//--------------------------------------------------------------------------------------------------
+
+template <typename Q>
+[[nodiscard]] inline QuantityPoint<Q> abs(QuantityPoint<Q> q) noexcept
+{
+    return QuantityPoint<Q>(std::abs(q.count_internal()));
+}
+
+template <typename Q>
+[[nodiscard]] inline QuantityPoint<Q> fabs(QuantityPoint<Q> q) noexcept
+{
+    return QuantityPoint<Q>(std::fabs(q.count_internal()));
+}
+
 //==================================================================================================
 // min/max
 //==================================================================================================
@@ -204,6 +220,36 @@ template <typename U>
 [[nodiscard]] inline Quantity<U> fmax(Quantity<U> x, Quantity<U> y) noexcept
 {
     return Quantity<U>(std::fmax(x.count_internal(), y.count_internal()));
+}
+
+//--------------------------------------------------------------------------------------------------
+//
+//--------------------------------------------------------------------------------------------------
+
+template <typename Q>
+[[nodiscard]] inline constexpr QuantityPoint<Q> min(QuantityPoint<Q> x, QuantityPoint<Q> y) noexcept
+{
+    // std::min
+    return y.count_internal() < x.count_internal() ? y : x;
+}
+
+template <typename Q>
+[[nodiscard]] inline constexpr QuantityPoint<Q> max(QuantityPoint<Q> x, QuantityPoint<Q> y) noexcept
+{
+    // std::max
+    return y.count_internal() < x.count_internal() ? x : y;
+}
+
+template <typename Q>
+[[nodiscard]] inline QuantityPoint<Q> fmin(QuantityPoint<Q> x, QuantityPoint<Q> y) noexcept
+{
+    return QuantityPoint<Q>(std::fmin(x.count_internal(), y.count_internal()));
+}
+
+template <typename Q>
+[[nodiscard]] inline QuantityPoint<Q> fmax(QuantityPoint<Q> x, QuantityPoint<Q> y) noexcept
+{
+    return QuantityPoint<Q>(std::fmax(x.count_internal(), y.count_internal()));
 }
 
 //==================================================================================================
@@ -496,6 +542,16 @@ template <typename U>
     return Quantity<U>(x.count_internal() / 2 + y.count_internal() / 2);
 }
 
+//--------------------------------------------------------------------------------------------------
+//
+//--------------------------------------------------------------------------------------------------
+
+template <typename Q>
+[[nodiscard]] inline QuantityPoint<Q> midpoint(QuantityPoint<Q> x, QuantityPoint<Q> y) noexcept
+{
+    return QuantityPoint<Q>(x.count_internal() / 2 + y.count_internal() / 2);
+}
+
 //==================================================================================================
 // lerp
 //==================================================================================================
@@ -504,6 +560,16 @@ template <typename U>
 [[nodiscard]] inline Quantity<U> lerp(Quantity<U> x, Quantity<U> y, double t) noexcept
 {
     return Quantity<U>((1 - t) * x.count_internal() + t * y.count_internal());
+}
+
+//--------------------------------------------------------------------------------------------------
+//
+//--------------------------------------------------------------------------------------------------
+
+template <typename Q>
+[[nodiscard]] inline QuantityPoint<Q> lerp(QuantityPoint<Q> x, QuantityPoint<Q> y, double t) noexcept
+{
+    return QuantityPoint<Q>((1 - t) * x.count_internal() + t * y.count_internal());
 }
 
 //==================================================================================================
