@@ -536,9 +536,6 @@ namespace impl
 
 } // namespace impl
 
-template <typename C, int64_t E>
-using PowConversion = typename impl::PowConversion<C, E>::type;
-
 //==================================================================================================
 // Unit
 //==================================================================================================
@@ -582,38 +579,22 @@ namespace impl
 namespace units
 {
     //--------------------------------------------------------------------------
-    // One
 
     using One               = Unit<Conversion<Ratio<1>>, kinds::One>;
     using Dimensionless     = Unit<Conversion<Ratio<1>>, kinds::One>;
 
     //--------------------------------------------------------------------------
-    // Length
+    // SI base units
 
     using Meter             = Unit<Conversion<Ratio<1>>, kinds::Length>;
-
-    //--------------------------------------------------------------------------
-    // Time
-
     using Second            = Unit<Conversion<Ratio<1>>, kinds::Time>;
-
-    //--------------------------------------------------------------------------
-    // Mass
-
     using Kilogram          = Unit<Conversion<Ratio<1>>, kinds::Mass>;
-
-    //--------------------------------------------------------------------------
-    // Temperature
-
     using Kelvin            = Unit<Conversion<Ratio<1>>, kinds::Temperature>;
-
-    //--------------------------------------------------------------------------
-    // Plane angle
-
+    using Mole              = Unit<Conversion<Ratio<1>>, kinds::AmountOfSubstance>;
+    using Candela           = Unit<Conversion<Ratio<1>>, kinds::LuminousIntensity>;
     using Radian            = Unit<Conversion<Ratio<1>>, kinds::PlaneAngle>;
 
     //--------------------------------------------------------------------------
-    // Data
 
     using Bit               = Unit<Conversion<Ratio<1>>, kinds::Bit>;
 
@@ -941,12 +922,12 @@ using CubicMeters       = decltype(SquareMeters{} * Meters{});
 
 using Seconds           = Quantity<units::Second>;
 using Milliseconds      = ScaledQuantity<Conversion<Ratio<1, 1000>>, Seconds>;
-//using Minutes           = ScaledQuantity<Conversion<Ratio<60>>, Seconds>;
-//using Hours             = ScaledQuantity<Conversion<Ratio<60>>, Minutes>;
-//using Days              = ScaledQuantity<Conversion<Ratio<24>>, Hours>;
-//using Weeks             = ScaledQuantity<Conversion<Ratio<7>>, Days>;
-//using Years             = ScaledQuantity<Conversion<Ratio<146097, 400>>, Days>;
-//using Months            = ScaledQuantity<Conversion<Ratio<1, 12>>, Years>;
+using Minutes           = ScaledQuantity<Conversion<Ratio<60>>, Seconds>;
+using Hours             = ScaledQuantity<Conversion<Ratio<60>>, Minutes>;
+using Days              = ScaledQuantity<Conversion<Ratio<24>>, Hours>;
+using Weeks             = ScaledQuantity<Conversion<Ratio<7>>, Days>;
+using Years             = ScaledQuantity<Conversion<Ratio<146097, 400>>, Days>;
+using Months            = ScaledQuantity<Conversion<Ratio<1, 12>>, Years>;
 
 //------------------------------------------------------------------------------
 // Frequency
@@ -969,7 +950,7 @@ using Tons              = ScaledQuantity<Conversion<Ratio<1000>>, Kilograms>;
 
 using MetersPerSecond   = decltype(Meters{} / Seconds{});
 
-//using KilometersPerHour = decltype(Kilometers{} / Hours{});
+using KilometersPerHour = decltype(Kilometers{} / Hours{});
 
 //------------------------------------------------------------------------------
 // Temperature
@@ -1026,10 +1007,10 @@ using Kilowatts         = ScaledQuantity<Conversion<Ratio<1000>>, Watts>;
 
 using Bits              = Quantity<units::Bit>;
 //using Nibbles           = ScaledQuantity<Conversion<Ratio<4>>, Bits>;
-//using Bytes             = ScaledQuantity<Conversion<Ratio<8>>, Bits>;
-//using Kilobytes         = ScaledQuantity<Conversion<Ratio<1000>>, Bytes>;
-//using Megabytes         = ScaledQuantity<Conversion<Ratio<1000>>, Kilobytes>;
-//using Gigabytes         = ScaledQuantity<Conversion<Ratio<1000>>, Megabytes>;
+using Bytes             = ScaledQuantity<Conversion<Ratio<8>>, Bits>;
+using Kilobytes         = ScaledQuantity<Conversion<Ratio<1000>>, Bytes>;
+using Megabytes         = ScaledQuantity<Conversion<Ratio<1000>>, Kilobytes>;
+using Gigabytes         = ScaledQuantity<Conversion<Ratio<1000>>, Megabytes>;
 
 //--------------------------------------------------------------------------
 // Area per Length

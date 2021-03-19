@@ -206,22 +206,22 @@ namespace uom::literals {
 {
     return Seconds(static_cast<double>(x));
 }
-//[[nodiscard]] constexpr auto operator""_min(long double x) noexcept
-//{
-//    return Minutes(static_cast<double>(x));
-//}
-//[[nodiscard]] constexpr auto operator""_min(unsigned long long x) noexcept
-//{
-//    return Minutes(static_cast<double>(x));
-//}
-//[[nodiscard]] constexpr auto operator""_h(long double x) noexcept
-//{
-//    return Hours(static_cast<double>(x));
-//}
-//[[nodiscard]] constexpr auto operator""_h(unsigned long long x) noexcept
-//{
-//    return Hours(static_cast<double>(x));
-//}
+[[nodiscard]] constexpr auto operator""_min(long double x) noexcept
+{
+    return Minutes(static_cast<double>(x));
+}
+[[nodiscard]] constexpr auto operator""_min(unsigned long long x) noexcept
+{
+    return Minutes(static_cast<double>(x));
+}
+[[nodiscard]] constexpr auto operator""_h(long double x) noexcept
+{
+    return Hours(static_cast<double>(x));
+}
+[[nodiscard]] constexpr auto operator""_h(unsigned long long x) noexcept
+{
+    return Hours(static_cast<double>(x));
+}
 
 //--------------------------------------------------------------------------------------------------
 // Frequency
@@ -449,38 +449,38 @@ namespace uom::literals {
 {
     return Bits(static_cast<double>(x));
 }
-//[[nodiscard]] constexpr auto operator""_B(long double x) noexcept
-//{
-//    return Bytes(static_cast<double>(x));
-//}
-//[[nodiscard]] constexpr auto operator""_B(unsigned long long x) noexcept
-//{
-//    return Bytes(static_cast<double>(x));
-//}
-//[[nodiscard]] constexpr auto operator""_kB(long double x) noexcept
-//{
-//    return Kilobytes(static_cast<double>(x));
-//}
-//[[nodiscard]] constexpr auto operator""_kB(unsigned long long x) noexcept
-//{
-//    return Kilobytes(static_cast<double>(x));
-//}
-//[[nodiscard]] constexpr auto operator""_MB(long double x) noexcept
-//{
-//    return Megabytes(static_cast<double>(x));
-//}
-//[[nodiscard]] constexpr auto operator""_MB(unsigned long long x) noexcept
-//{
-//    return Megabytes(static_cast<double>(x));
-//}
-//[[nodiscard]] constexpr auto operator""_GB(long double x) noexcept
-//{
-//    return Gigabytes(static_cast<double>(x));
-//}
-//[[nodiscard]] constexpr auto operator""_GB(unsigned long long x) noexcept
-//{
-//    return Gigabytes(static_cast<double>(x));
-//}
+[[nodiscard]] constexpr auto operator""_B(long double x) noexcept
+{
+    return Bytes(static_cast<double>(x));
+}
+[[nodiscard]] constexpr auto operator""_B(unsigned long long x) noexcept
+{
+    return Bytes(static_cast<double>(x));
+}
+[[nodiscard]] constexpr auto operator""_kB(long double x) noexcept
+{
+    return Kilobytes(static_cast<double>(x));
+}
+[[nodiscard]] constexpr auto operator""_kB(unsigned long long x) noexcept
+{
+    return Kilobytes(static_cast<double>(x));
+}
+[[nodiscard]] constexpr auto operator""_MB(long double x) noexcept
+{
+    return Megabytes(static_cast<double>(x));
+}
+[[nodiscard]] constexpr auto operator""_MB(unsigned long long x) noexcept
+{
+    return Megabytes(static_cast<double>(x));
+}
+[[nodiscard]] constexpr auto operator""_GB(long double x) noexcept
+{
+    return Gigabytes(static_cast<double>(x));
+}
+[[nodiscard]] constexpr auto operator""_GB(unsigned long long x) noexcept
+{
+    return Gigabytes(static_cast<double>(x));
+}
 
 //--------------------------------------------------------------------------------------------------
 // Area per Length
