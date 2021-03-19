@@ -452,6 +452,7 @@ namespace units
 
     using Meter             = Unit<Conversion<Ratio<1>>, kinds::Length>;
     using Second            = Unit<Conversion<Ratio<1>>, kinds::Time>;
+    using Ampere            = Unit<Conversion<Ratio<1>>, kinds::ElectricCurrent>;
     using Kilogram          = Unit<Conversion<Ratio<1>>, kinds::Mass>;
     using Kelvin            = Unit<Conversion<Ratio<1>>, kinds::Temperature>;
     using Mole              = Unit<Conversion<Ratio<1>>, kinds::AmountOfSubstance>;
@@ -785,6 +786,11 @@ using Years             = ScaledQuantity<Conversion<Ratio<146097, 400>>, Days>;
 using Months            = ScaledQuantity<Conversion<Ratio<1, 12>>, Years>;
 
 //------------------------------------------------------------------------------
+// Electric current
+
+using Amperes           = Quantity<units::Ampere>;
+
+//------------------------------------------------------------------------------
 // Temperature
 
 using Kelvin            = Quantity<units::Kelvin>;
@@ -898,8 +904,10 @@ using NewtonMeters      = decltype(Newtons{} * Meters{} / Radians{});
 using Watts             = decltype(Joules{} / Seconds{});
 using Kilowatts         = ScaledQuantity<Conversion<Ratio<1000>>, Watts>;
 
-//using Vars              = Tagged<Watts, struct _reactive_power>;
-//using Kilovars          = ScaledQuantity<Conversion<Ratio<1000>>, Vars>;
+using Vars              = Tagged<Watts, class _reactive_power>;
+using Kilovars          = ScaledQuantity<Conversion<Ratio<1000>>, Vars>;
+
+using VoltAmperes       = Tagged<Watts, class _apparent_power>;
 
 //--------------------------------------------------------------------------
 // Data
@@ -911,33 +919,52 @@ using Kilobytes         = ScaledQuantity<Conversion<Ratio<1000>>, Bytes>;
 using Megabytes         = ScaledQuantity<Conversion<Ratio<1000>>, Kilobytes>;
 using Gigabytes         = ScaledQuantity<Conversion<Ratio<1000>>, Megabytes>;
 
+//--------------------------------------------------------------------------
+// Electric
+
+using Coulombs          = decltype(Seconds{} * Amperes{});
+using Volts             = decltype(Watts{} / Amperes{});
+using Farads            = decltype(Coulombs{} / Volts{});
+using Ohms              = decltype(Volts{} / Amperes{});
+using Siemens           = decltype(Amperes{} / Volts{});
+
 //==================================================================================================
 //
 //==================================================================================================
 
 #if 1
-using AmountOfSubstance = Moles;
-using Area              = SquareMeters;
-using AreaPerLength     = SquareCentimetersPerMeter;
-using Energy            = Joules;
-using Force             = Newtons;
-using Frequency         = Hertz;
-using Illuminance       = Luxs;
-using Length            = Meters;
-using Luminance         = Nits;
-using LuminousEnergy    = Talbots;
-using LuminousFlux      = Lumens;
-using LuminousIntensity = Candelas;
-using Mass              = Kilograms;
-using Momentum          = decltype(Kilograms{} * MetersPerSecond{});
-using PlaneAngle        = Radians;
-using Power             = Watts;
-using SolidAngle        = Steradians;
-using Temperature       = Kelvin;
-using Time              = Seconds;
-using Torque            = NewtonMeters;
-using Velocity          = MetersPerSecond;
-using Volume            = CubicMeters;
+using AmountOfSubstance             = Moles;
+using ApparentPower                 = VoltAmperes;
+using Area                          = SquareMeters;
+using AreaPerLength                 = SquareCentimetersPerMeter;
+using Capacitance                   = Farads;
+using ElectricCharge                = Coulombs;
+using ElectricConductance           = Siemens;
+using ElectricCurrent               = Amperes;
+using ElectricPotentialDifference   = Volts;
+using ElectricResistance            = Ohms;
+using Energy                        = Joules;
+using Force                         = Newtons;
+using Frequency                     = Hertz;
+using Illuminance                   = Luxs;
+using Latitude                      = Tagged<Degrees, class _latitude>;
+using Length                        = Meters;
+using Longitude                     = Tagged<Degrees, class _longitude>;
+using Luminance                     = Nits;
+using LuminousEnergy                = Talbots;
+using LuminousFlux                  = Lumens;
+using LuminousIntensity             = Candelas;
+using Mass                          = Kilograms;
+using Momentum                      = decltype(Kilograms{} * MetersPerSecond{});
+using PlaneAngle                    = Radians;
+using Power                         = Watts;
+using ReactivePower                 = Vars;
+using SolidAngle                    = Steradians;
+using Temperature                   = Kelvin;
+using Time                          = Seconds;
+using Torque                        = NewtonMeters;
+using Velocity                      = MetersPerSecond;
+using Volume                        = CubicMeters;
 #endif
 
 //==================================================================================================

@@ -7,10 +7,10 @@ using namespace uom::literals;
 
 inline constexpr Kilometers EarthRadius = 6371_km;
 
-using Latitude
-    = Tagged<Degrees, class _latitude>;
-using Longitude
-    = Tagged<Degrees, class _longitude>;
+//using Latitude
+//    = Tagged<Degrees, class _latitude>;
+//using Longitude
+//    = Tagged<Degrees, class _longitude>;
 using SphericalDistance
     = decltype(1_km * 1_rad);
 
