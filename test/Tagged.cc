@@ -26,6 +26,16 @@ static void test()
     const auto a = SquareMillimeters(area); // explicit cast works
 }
 
+static void test2()
+{
+    Watts w;
+    Vars v;
+    //Watts w0 = v;
+    //Vars v0 = w;
+    Watts w1(v);
+    Vars v1(w);
+}
+
 //int main()
 //{
 //    test();
