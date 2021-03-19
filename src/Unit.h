@@ -794,6 +794,7 @@ using Amperes           = Quantity<units::Ampere>;
 // Temperature
 
 using Kelvin            = Quantity<units::Kelvin>;
+using Rankine           = ScaledQuantity<Conversion<Ratio<5, 9>>, Kelvin>;
 
 //------------------------------------------------------------------------------
 // Amount of substance
@@ -932,50 +933,6 @@ using Siemens           = decltype(Amperes{} / Volts{});
 //
 //==================================================================================================
 
-#if 1
-using AmountOfSubstance             = Moles;
-using ApparentPower                 = VoltAmperes;
-using Area                          = SquareMeters;
-using AreaPerLength                 = SquareCentimetersPerMeter;
-using Capacitance                   = Farads;
-using ElectricCharge                = Coulombs;
-using ElectricConductance           = Siemens;
-using ElectricCurrent               = Amperes;
-using ElectricPotentialDifference   = Volts;
-using ElectricResistance            = Ohms;
-using Energy                        = Joules;
-using Force                         = Newtons;
-using Frequency                     = Hertz;
-using Illuminance                   = Luxs;
-using Latitude                      = Tagged<Degrees, class _latitude>;
-using Length                        = Meters;
-using Longitude                     = Tagged<Degrees, class _longitude>;
-using Luminance                     = Nits;
-using LuminousEnergy                = Talbots;
-using LuminousFlux                  = Lumens;
-using LuminousIntensity             = Candelas;
-using Mass                          = Kilograms;
-using Momentum                      = decltype(Kilograms{} * MetersPerSecond{});
-using PlaneAngle                    = Radians;
-using Power                         = Watts;
-using Pressure                      = decltype(Newtons{} / SquareMeters{});
-using ReactivePower                 = Vars;
-using SolidAngle                    = Steradians;
-using Strain                        = Tagged<decltype(Meters{} / Meters{}), class _strain>;
-using Stress                        = Tagged<decltype(Newtons{} / SquareMeters{}), class _stress>;
-using Temperature                   = Kelvin;
-using Time                          = Seconds;
-using Torque                        = NewtonMeters;
-using Velocity                      = MetersPerSecond;
-using Volume                        = CubicMeters;
-
-using Stiffness                     = decltype(Stress{} / Strain{});
-#endif
-
-//==================================================================================================
-//
-//==================================================================================================
-
 #if 0
 [[nodiscard]] constexpr Dimensionless operator+(Dimensionless lhs, double rhs) noexcept
 {
@@ -1107,5 +1064,54 @@ public:
         return lhs._value >= rhs._value;
     }
 };
+
+//==================================================================================================
+//
+//==================================================================================================
+
+#if 1
+using AmountOfSubstance             = Moles;
+using ApparentPower                 = VoltAmperes;
+using Area                          = SquareMeters;
+using AreaPerLength                 = SquareCentimetersPerMeter;
+using Capacitance                   = Farads;
+using Distance                      = Meters;
+using ElectricCharge                = Coulombs;
+using ElectricConductance           = Siemens;
+using ElectricCurrent               = Amperes;
+using ElectricPotentialDifference   = Volts;
+using ElectricResistance            = Ohms;
+using Energy                        = Joules;
+using Force                         = Newtons;
+using Frequency                     = Hertz;
+using Illuminance                   = Luxs;
+using Latitude                      = Tagged<Degrees, class _latitude>;
+using Length                        = Meters;
+using Longitude                     = Tagged<Degrees, class _longitude>;
+using Luminance                     = Nits;
+using LuminousEnergy                = Talbots;
+using LuminousFlux                  = Lumens;
+using LuminousIntensity             = Candelas;
+using Mass                          = Kilograms;
+using Momentum                      = decltype(Kilograms{} * MetersPerSecond{});
+using PlaneAngle                    = Radians;
+#if 0
+using Position                      = QuantityPoint<Distance>;
+#endif
+using Power                         = Watts;
+using Pressure                      = decltype(Newtons{} / SquareMeters{});
+using ReactivePower                 = Vars;
+using SolidAngle                    = Steradians;
+using Strain                        = Tagged<decltype(Meters{} / Meters{}), class _strain>;
+using Stress                        = Tagged<decltype(Newtons{} / SquareMeters{}), class _stress>;
+using Temperature                   = QuantityPoint<Kelvin>;
+using TemperatureDifference         = Kelvin;
+using Time                          = Seconds;
+using Torque                        = NewtonMeters;
+using Velocity                      = MetersPerSecond;
+using Volume                        = CubicMeters;
+
+using Stiffness                     = decltype(Stress{} / Strain{});
+#endif
 
 } // namespace uom
