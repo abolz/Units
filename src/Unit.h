@@ -280,138 +280,14 @@ namespace kinds
     //----------------------------------------------------------------------
     // Derived kinds
 
-    // m^2
-    using Area
-        = MulKinds<Length, Length>;
-
     // m^2/m
-    struct AreaPerLength
-        : Kind<AreaPerLength, DivKinds<Area, Length>::dimension> {};
-
-    // m^3
-    using Volume
-        = MulKinds<Area, Length>;
-
-    // Steradian sr = rad^2
-    struct SolidAngle
-        : Kind<SolidAngle, MulKinds<PlaneAngle, PlaneAngle>::dimension> {};
-
-    // m/s
-    //using Velocity
-    //    = DivKinds<Length, Time>;
-
-    // (m/s)/s = m/s^2
-    //using Acceleration
-    //    = DivKinds<Velocity, Time>;
-
-    // kg (m/s)
-    //using Momentum
-    //    = MulKinds<Mass, Velocity>;
-
-    // Newton N = kg m/s^2
-    //using Force
-    //    = MulKinds<Mass, Acceleration>;
-
-    // Joule J = N m = kg m^2/s^2
-    //using Energy
-    //    = MulKinds<Force, Length>;
-
-    // Torque = N m/rad = J/rad = kg m^2/(s^2 rad)
-    //using Torque
-    //    = DivKinds<Energy, PlaneAngle>;
-
-    // J s = kg m^2/s
-    //using Action
-    //    = MulKinds<Energy, Time>;
-
-    // Watt W = J/s = kg m^2/s^3
-    //using Power
-    //    = DivKinds<Energy, Time>;
-
-    // Watt W = J/s = kg m^2/s^3
-    //struct ElectricPower
-    //    : Kind<ElectricPower, Power::dimension> {};
-
-    // Pascal Pa = N/m^2 = kg/(m s^2)
-    //using Pressure
-    //    = DivKinds<Force, Area>;
-
-    // kg/m^2
-    //using MassPerArea
-    //    = DivKinds<Mass, Area>;
-
-    // kg/m^3
-    //using MassPerVolume
-    //    = DivKinds<Mass, Volume>;
+    struct AreaPerLength {};
 
     // m^3/m^2
-    struct VolumePerArea
-        : Kind<VolumePerArea, DivKinds<Volume, Area>::dimension> {};
+    struct VolumePerArea {};
 
-    // Hertz Hz = 1/s
-    //using Frequency
-    //    = DivKinds<One, Time>;
-
-    // rad/s
-    //using AngularVelocity
-    //    = DivKinds<PlaneAngle, Time>;
-
-    // rad/s^2
-    //using AngularAcceleration
-    //    = DivKinds<AngularVelocity, Time>;
-
-    // Coulomb C = A s
-    //using ElectricCharge
-    //    = MulKinds<ElectricCurrent, Time>;
-
-    // Volt V = W/A = kg m^2/(s^3 A)
-    //#if 1
-    //    using ElectricPotentialDifference
-    //        = DivKinds<ElectricPower, ElectricCurrent>;
-    //#else
-    //    using ElectricPotentialDifference
-    //        = DivKinds<Power, ElectricCurrent>;
-    //#endif
-
-    // Farad F = C/V = s^4 A/(kg m^2)
-    //using Capacitance
-    //    = DivKinds<ElectricCharge, ElectricPotentialDifference>;
-
-    // Ohm = V/A = kg m^2/(s^3 A^2)
-    //using ElectricResistance
-    //    = DivKinds<ElectricPotentialDifference, ElectricCurrent>;
-
-    // Siemens = A/V = s^3 A^2/(kg m^2)
-    //using ElectricConductance
-    //    = DivKinds<ElectricCurrent, ElectricPotentialDifference>;
-
-    // Dose J/kg = m^2/s^2
-    //using Dose
-    //    = DivKinds<Power, Mass>;
-
-    // Gray Gy = J/kg = m^2/s^2
-    //struct AbsorbedDose
-    //    : Kind<AbsorbedDose, Dose::dimension> {};
-
-    // Sievert Sv = J/kg = m^2/s^2
-    //struct DoseEquivalent
-    //    : Kind<DoseEquivalent, Dose::dimension> {};
-
-    // Lumen lm = cd sr
-    //using LuminousFlux
-    //    = MulKinds<LuminousIntensity, SolidAngle>;
-
-    // Talbot lm s = cd sr s
-    //using LuminousEnergy
-    //    = MulKinds<LuminousFlux, Time>;
-
-    // Nit = cd/m^2 = lm/(m^2 sr)
-    //using Luminance
-    //    = DivKinds<LuminousIntensity, Area>;
-
-    // Lux lx = lm/m^2
-    //using Illuminance
-    //    = DivKinds<LuminousFlux, Area>;
+    // Steradian sr = rad^2
+    struct SolidAngle {};
 
 } // namespace kinds
 
