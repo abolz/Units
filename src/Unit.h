@@ -807,6 +807,7 @@ using Amperes           = Quantity<units::Ampere>;
 using Kelvin            = Quantity<units::Kelvin>;
 using Celsius           = ScaledQuantity<Conversion<Ratio<1>>, Kelvin>;
 using Rankine           = ScaledQuantity<Conversion<Ratio<5, 9>>, Kelvin>;
+using Fahrenheit        = ScaledQuantity<Conversion<Ratio<5, 9>>, Kelvin>;
 
 //------------------------------------------------------------------------------
 // Amount of substance
