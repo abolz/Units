@@ -1006,7 +1006,7 @@ using Kilowatts         = ScaledQuantity<Conversion<Ratio<1000>>, Watts>;
 // Data
 
 using Bits              = Quantity<units::Bit>;
-//using Nibbles           = ScaledQuantity<Conversion<Ratio<4>>, Bits>;
+using Nibbles           = ScaledQuantity<Conversion<Ratio<4>>, Bits>;
 using Bytes             = ScaledQuantity<Conversion<Ratio<8>>, Bits>;
 using Kilobytes         = ScaledQuantity<Conversion<Ratio<1000>>, Bytes>;
 using Megabytes         = ScaledQuantity<Conversion<Ratio<1000>>, Kilobytes>;
