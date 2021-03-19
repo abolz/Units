@@ -958,13 +958,18 @@ using Mass                          = Kilograms;
 using Momentum                      = decltype(Kilograms{} * MetersPerSecond{});
 using PlaneAngle                    = Radians;
 using Power                         = Watts;
+using Pressure                      = decltype(Newtons{} / SquareMeters{});
 using ReactivePower                 = Vars;
 using SolidAngle                    = Steradians;
+using Strain                        = Tagged<decltype(Meters{} / Meters{}), class _strain>;
+using Stress                        = Tagged<decltype(Newtons{} / SquareMeters{}), class _stress>;
 using Temperature                   = Kelvin;
 using Time                          = Seconds;
 using Torque                        = NewtonMeters;
 using Velocity                      = MetersPerSecond;
 using Volume                        = CubicMeters;
+
+using Stiffness                     = decltype(Stress{} / Strain{});
 #endif
 
 //==================================================================================================
