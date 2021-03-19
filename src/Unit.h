@@ -1004,6 +1004,7 @@ public:
 
     template <typename C2, std::enable_if_t<C2::exp == 0, int> = 0>
     constexpr explicit QuantityPoint(Quantity<Unit<C2, kind>> other) noexcept
+//      : _value( difference_type( other ) - zero_point() )
         : _value( impl::applyStdRatio<std::ratio_divide<typename C2::ratio, typename conversion::ratio>>(other.count_internal()) - impl::evalStdRatio<zero>() )
     {
         // value = (C2 / C1)( other + Z2 ) - Z1
@@ -1013,6 +1014,7 @@ public:
 
     template <typename C2, typename Z2, std::enable_if_t<C2::exp == 0, int> = 0>
     constexpr explicit QuantityPoint(QuantityPoint<Quantity<Unit<C2, kind>>, Z2> other) noexcept
+//      : _value( difference_type( other + other.zero_point() ) - zero_point() )
         : _value( impl::applyStdRatio<std::ratio_divide<typename C2::ratio, typename conversion::ratio>>(other.count_internal()) - impl::evalStdRatio<CommonZero<conversion, zero, C2, Z2>>() )
     {
         // value = (C2 / C1)( other + Z2 ) - Z1
@@ -1029,6 +1031,11 @@ public:
     [[nodiscard]] constexpr difference_type value() const noexcept
     {
         return _value;
+    }
+
+    [[nodiscard]] constexpr difference_type zero_point() const noexcept
+    {
+        return difference_type( impl::evalStdRatio<zero>() );
     }
 
     [[nodiscard]] constexpr double count_internal() const noexcept
