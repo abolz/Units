@@ -1153,7 +1153,7 @@ using DegKelvin                     = QuantityPoint<Kelvin>;
 #endif
 using DegCelsius                    = QuantityPoint<Kelvin, Ratio<27315, 100>>; // 0_degK = -273.15_degC
 using DegRankine                    = QuantityPoint<Rankine>;
-using DegFahrenheit                 = QuantityPoint<Rankine, Ratio<45967, 100>>; // 0_degR = -459.67_degF
+using DegFahrenheit                 = QuantityPoint<Rankine, Ratio<45967, 100>>; // 0_degRa = -459.67_degF
 #endif
 
 } // namespace uom
