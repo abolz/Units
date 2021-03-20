@@ -1018,8 +1018,6 @@ public:
     constexpr explicit QuantityPoint(QuantityPoint<Quantity<Unit<C2, kind>>, Z2> other) noexcept
         : _value( DivConversions<C2, conversion>{}(other.count_internal()) - impl::evalStdRatio<CommonZero<conversion, zero, C2, Z2>>() )
     {
-//      : _value( difference_type( other + other.zero_point() ) - zero_point() )
-
         // value = (C2 / C1)( other + Z2 ) - Z1
         //       = (C2 / C1)( other + Z2 - Z1 * (C1 / C2) )
         //       = (C2 / C1)( other ) + (Z2 * (C2 / C1) - Z1)
@@ -1031,30 +1029,12 @@ public:
     constexpr explicit QuantityPoint(Quantity<Unit<C2, kind>> other) noexcept
         : _value( DivConversions<C2, conversion>{}(other.count_internal()) - impl::evalStdRatio<zero>() )
     {
-//      : _value( difference_type( other ) - zero_point() )
-
-        // value = (C2 / C1)( other + Z2 ) - Z1
-        //       = (C2 / C1)( other + Z2 - Z1 * (C1 / C2) )
-        //       = (C2 / C1)( other ) + (Z2 * (C2 / C1) - Z1)
-
-        // Use FMA?
     }
 
     template <typename C2, std::enable_if_t<C2::exp == 0, int> = 0>
     [[nodiscard]] constexpr explicit operator Quantity<Unit<C2, kind>>() const noexcept
     {
-#if 0
-        // (C1 / C2)( this + Z1 )
-        //  = (C1 / C2)( this ) + Z1 * (C1 / C2)
-
-        using Q = Quantity<Unit<C2, kind>>;
-        using R = DivConversionRatios<conversion, C2>;
-
-        return Q( impl::applyStdRatio<R>( count_internal() + impl::evalStdRatio<zero>() ) );
-#else
-        using QP = QuantityPoint<Quantity<Unit<C2, kind>>>;
-        return QP(*this).value();
-#endif
+        return QuantityPoint<Quantity<Unit<C2, kind>>>(*this).value();
     }
 
     [[nodiscard]] constexpr difference_type value() const noexcept
