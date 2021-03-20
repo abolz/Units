@@ -39,6 +39,11 @@ using namespace uom::literals;
 static void test()
 {
     {
+        constexpr auto t00 = DegCelsius(10_K);
+        constexpr auto t01 = Kelvin(t00);
+        static_assert(t01.count_internal() == 10.0);
+    }
+    {
         constexpr auto t00 = DegCelsius(0_degK);
         constexpr auto x00 = t00.count_internal();
         constexpr auto v00 = -273.15;

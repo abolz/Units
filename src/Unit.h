@@ -41,39 +41,24 @@ namespace impl
         return (x / Gcd(x, y)) * y;
     }
 
-    // Returns x * num / den
-    template <typename R>
-    constexpr double applyStdRatio(double x) noexcept
+    // Returns x * R1 - R2
+    template <typename R1, typename R2>
+    constexpr double Fmsub(double x) noexcept
     {
-        constexpr int64_t num = R::num;
-        constexpr int64_t den = R::den;
+        static_assert(R1::num != 0);
+        static_assert(R1::den != 0);
+        static_assert(R2::den != 0);
 
-        if constexpr (den == 1)
-        {
-            if constexpr (num == 1)
-                return x;
-            else if constexpr (num == -1)
-                return -x;
-            else
-                return x * num;
-        }
-        else
-        {
-            if constexpr (num == 1)
-                return x / den;
-            else if constexpr (num == -1)
-                return -x / den;
-            else
-                return x * (static_cast<double>(num) / static_cast<double>(den));
-                //return (x * static_cast<double>(num)) / static_cast<double>(den);
-        }
-    }
+#if 1
+        return (static_cast<double>(R1::num) / static_cast<double>(R1::den)) * x
+             - (static_cast<double>(R2::num) / static_cast<double>(R2::den));
+#else
+        constexpr int64_t a = R1::num * R2::den;
+        constexpr int64_t b = R1::den * R2::num;
+        constexpr int64_t c = R1::den * R2::den;
 
-    // Returns num / den
-    template <typename R>
-    constexpr double evalStdRatio() noexcept
-    {
-        return applyStdRatio<R>(1.0);
+        return (a * x - b) / c;
+#endif
     }
 
 } // namespace impl
@@ -349,16 +334,34 @@ struct Conversion final
     // Returns: (x * num / den) * pi^exp
     [[nodiscard]] constexpr double operator()(double x) const noexcept
     {
-        return applyPi(impl::applyStdRatio<ratio>(x));
+        return applyPi(applyRatio(x));
     }
 
-    // Returns: (num / den) * pi^exp
-    [[nodiscard]] constexpr double operator()() const noexcept
+    // Returns: (x * num / den)
+    [[nodiscard]] static constexpr double applyRatio(double x) noexcept
     {
-        return applyPi(impl::evalStdRatio<ratio>());
+        if constexpr (den == 1)
+        {
+            if constexpr (num == 1)
+                return x;
+            else if constexpr (num == -1)
+                return -x;
+            else
+                return x * num;
+        }
+        else
+        {
+            if constexpr (num == 1)
+                return x / den;
+            else if constexpr (num == -1)
+                return -x / den;
+            else
+                return x * (static_cast<double>(num) / static_cast<double>(den));
+                //return (x * static_cast<double>(num)) / static_cast<double>(den);
+        }
     }
 
-    // Returns x * pi^exp
+    // Returns (x * pi^exp)
     [[nodiscard]] static constexpr double applyPi(double x) noexcept
     {
         constexpr double Powers[] = {
@@ -986,8 +989,8 @@ class Absolute final
 {
     static_assert(impl::IsQuantity<RelativeType>,
         "Absolute can only be used with 'Quantity's");
-    static_assert(std::_Is_ratio_v<Zero>,
-        "Zero must be a std::ratio");
+    //static_assert(std::_Is_ratio_v<Zero>,
+    //    "Zero must be a std::ratio");
 
     template <typename C1, typename C2>
     using DivConversionRatios = std::ratio_divide<typename C1::ratio, typename C2::ratio>;
@@ -1006,7 +1009,7 @@ public:
     using dimension     = typename RelativeType::dimension;
     using zero          = Zero;
 
-    static constexpr scalar_type zero_value = impl::evalStdRatio<zero>();
+    //static constexpr scalar_type zero_value = impl::evalStdRatio<zero>();
 
     static_assert(conversion::exp == 0,
         "sorry, not supported (yet)");
@@ -1017,14 +1020,19 @@ private:
 public:
     constexpr Absolute() noexcept = default;
 
-    constexpr explicit Absolute(scalar_type value) noexcept
-        : _relative(value)
+    constexpr explicit Absolute(scalar_type count) noexcept
+        : _relative(count)
     {
     }
 
-    template <typename C2, typename Z2, std::enable_if_t<C2::exp == 0, int> = 0>
+    [[nodiscard]] constexpr scalar_type count_internal() const noexcept
+    {
+        return _relative.count_internal();
+    }
+
+    template <typename C2, typename Z2>
     constexpr explicit Absolute(Absolute<Quantity<Unit<C2, kind>>, Z2> a) noexcept
-        : _relative( DivConversions<C2, conversion>{}(a.count_internal()) - impl::evalStdRatio<CommonZero<conversion, zero, C2, Z2>>() )
+        : _relative( impl::Fmsub< DivConversionRatios<C2, conversion>, CommonZero<conversion, zero, C2, Z2> >(a.count_internal()) )
     {
         // value = (C2 / C1)( a + Z2 ) - Z1
         //       = (C2 / C1)( a + Z2 - Z1 * (C1 / C2) )
@@ -1033,31 +1041,24 @@ public:
         // Use FMA?
     }
 
-    template <typename C2, std::enable_if_t<C2::exp == 0, int> = 0>
+    template <typename C2>
     constexpr explicit Absolute(Quantity<Unit<C2, kind>> a) noexcept
-        : _relative( DivConversions<C2, conversion>{}(a.count_internal()) - zero_value )
+        : _relative( impl::Fmsub< DivConversionRatios<C2, conversion>, zero >(a.count_internal()) )
     {
+        static_assert(C2::exp == 0,
+            "sorry, not supported (yet)");
     }
 
-    template <typename C2, std::enable_if_t<C2::exp == 0, int> = 0>
+    // NB:
+    // Inverse of the constructor above!
+    template <typename C2>
     [[nodiscard]] constexpr explicit operator Quantity<Unit<C2, kind>>() const noexcept
     {
-        return Absolute<Quantity<Unit<C2, kind>>>(*this).relative();
-    }
+        static_assert(C2::exp == 0,
+            "sorry, not supported (yet)");
 
-    [[nodiscard]] constexpr double count_internal() const noexcept
-    {
-        return _relative.count_internal();
-    }
-
-    [[nodiscard]] constexpr relative_type relative() const noexcept
-    {
-        return _relative;
-    }
-
-    [[nodiscard]] constexpr relative_type zero_point() const noexcept
-    {
-        return relative_type( zero_value );
+        using Q2 = Quantity<Unit<C2, kind>>;
+        return Q2( Absolute<Q2 /*, Zero = 0*/>(*this).count_internal() );
     }
 
     [[nodiscard]] constexpr friend Absolute operator+(Absolute lhs, relative_type rhs) noexcept
