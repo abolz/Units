@@ -357,7 +357,7 @@ static void test2()
         using Length   = Tagged<Millimeters, class _length>;
         using Height   = Tagged<Millimeters, class _height>;
         using Width    = Tagged<Millimeters, class _width>;
-        using Position = QuantityPoint<Length>;
+        using Position = Absolute<Length>;
 
         const Height h(0);
 
@@ -393,7 +393,7 @@ static void test2()
     }
     {
         using Duration = Seconds; // QuantityT<Seconds, class _duration>;
-        using TimePoint = QuantityPoint<Duration>;
+        using TimePoint = Absolute<Duration>;
     }
 #if 1
     {

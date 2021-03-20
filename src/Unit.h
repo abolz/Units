@@ -978,12 +978,17 @@ using Siemens           = decltype(Amperes{} / Volts{});
 #endif
 
 //==================================================================================================
-// QuantityPoint
+// Absolute
 //==================================================================================================
 
-template <typename DifferenceType, typename Zero = Ratio<0>>
-class QuantityPoint final
+template <typename RelativeType, typename Zero = Ratio<0>>
+class Absolute final
 {
+    static_assert(impl::IsQuantity<RelativeType>,
+        "Absolute can only be used with 'Quantity's");
+    static_assert(std::_Is_ratio_v<Zero>,
+        "Zero must be a std::ratio");
+
     template <typename C1, typename C2>
     using DivConversionRatios = std::ratio_divide<typename C1::ratio, typename C2::ratio>;
 
@@ -993,130 +998,128 @@ class QuantityPoint final
         = std::ratio_subtract<Z1, std::ratio_multiply<Z2, DivConversionRatios<C2, C1>>>;
 
 public:
-    using difference_type = DifferenceType;
-    using scalar_type     = typename DifferenceType::scalar_type;
-    using unit            = typename DifferenceType::unit;
-    using conversion      = typename DifferenceType::conversion;
-    using kind            = typename DifferenceType::kind;
-    using dimension       = typename DifferenceType::dimension;
-    using zero            = Zero;
+    using relative_type = RelativeType;
+    using scalar_type   = typename RelativeType::scalar_type;
+    using unit          = typename RelativeType::unit;
+    using conversion    = typename RelativeType::conversion;
+    using kind          = typename RelativeType::kind;
+    using dimension     = typename RelativeType::dimension;
+    using zero          = Zero;
 
-    static_assert(conversion::exp == 0, "sorry, not supported (yet)");
+    static constexpr scalar_type zero_value = impl::evalStdRatio<zero>();
+
+    static_assert(conversion::exp == 0,
+        "sorry, not supported (yet)");
 
 private:
-    difference_type _value;
+    relative_type _relative;
 
 public:
-    constexpr QuantityPoint() noexcept = default;
+    constexpr Absolute() noexcept = default;
 
-    constexpr explicit QuantityPoint(scalar_type value) noexcept
-        : _value(value)
+    constexpr explicit Absolute(scalar_type value) noexcept
+        : _relative(value)
     {
     }
 
     template <typename C2, typename Z2, std::enable_if_t<C2::exp == 0, int> = 0>
-    constexpr explicit QuantityPoint(QuantityPoint<Quantity<Unit<C2, kind>>, Z2> other) noexcept
-        : _value( DivConversions<C2, conversion>{}(other.count_internal()) - impl::evalStdRatio<CommonZero<conversion, zero, C2, Z2>>() )
+    constexpr explicit Absolute(Absolute<Quantity<Unit<C2, kind>>, Z2> a) noexcept
+        : _relative( DivConversions<C2, conversion>{}(a.count_internal()) - impl::evalStdRatio<CommonZero<conversion, zero, C2, Z2>>() )
     {
-        // value = (C2 / C1)( other + Z2 ) - Z1
-        //       = (C2 / C1)( other + Z2 - Z1 * (C1 / C2) )
-        //       = (C2 / C1)( other ) + (Z2 * (C2 / C1) - Z1)
+        // value = (C2 / C1)( a + Z2 ) - Z1
+        //       = (C2 / C1)( a + Z2 - Z1 * (C1 / C2) )
+        //       = (C2 / C1)( a ) + (Z2 * (C2 / C1) - Z1)
 
         // Use FMA?
     }
 
     template <typename C2, std::enable_if_t<C2::exp == 0, int> = 0>
-    constexpr explicit QuantityPoint(Quantity<Unit<C2, kind>> other) noexcept
-        : _value( DivConversions<C2, conversion>{}(other.count_internal()) - impl::evalStdRatio<zero>() )
+    constexpr explicit Absolute(Quantity<Unit<C2, kind>> a) noexcept
+        : _relative( DivConversions<C2, conversion>{}(a.count_internal()) - zero_value )
     {
     }
 
     template <typename C2, std::enable_if_t<C2::exp == 0, int> = 0>
     [[nodiscard]] constexpr explicit operator Quantity<Unit<C2, kind>>() const noexcept
     {
-        return QuantityPoint<Quantity<Unit<C2, kind>>>(*this).value();
+        return Absolute<Quantity<Unit<C2, kind>>>(*this).relative();
     }
-
-    [[nodiscard]] constexpr difference_type value() const noexcept
-    {
-        return _value;
-    }
-
-    // [[nodiscard]] constexpr difference_type relative() const noexcept
-    // {
-    //     return _value;
-    // }
-
-    // [[nodiscard]] constexpr difference_type zero_point() const noexcept
-    // {
-    //     return difference_type( impl::evalStdRatio<zero>() );
-    // }
 
     [[nodiscard]] constexpr double count_internal() const noexcept
     {
-        return _value.count_internal();
+        return _relative.count_internal();
     }
 
-    [[nodiscard]] constexpr friend QuantityPoint operator+(QuantityPoint lhs, difference_type rhs) noexcept
+    [[nodiscard]] constexpr relative_type relative() const noexcept
     {
-        return QuantityPoint(lhs._value + rhs);
+        return _relative;
     }
 
-    [[nodiscard]] constexpr friend QuantityPoint operator+(difference_type lhs, QuantityPoint rhs) noexcept
+    [[nodiscard]] constexpr relative_type zero_point() const noexcept
     {
-        return QuantityPoint(lhs + rhs._value);
+        return relative_type( zero_value );
     }
 
-    [[nodiscard]] constexpr friend difference_type operator-(QuantityPoint lhs, QuantityPoint rhs) noexcept
+    [[nodiscard]] constexpr friend Absolute operator+(Absolute lhs, relative_type rhs) noexcept
     {
-        return lhs._value - rhs._value;
+        return Absolute(lhs._relative + rhs);
     }
 
-    [[nodiscard]] constexpr friend QuantityPoint operator-(QuantityPoint lhs, difference_type rhs) noexcept
+    [[nodiscard]] constexpr friend Absolute operator+(relative_type lhs, Absolute rhs) noexcept
     {
-        return QuantityPoint(lhs._value - rhs);
+        return Absolute(lhs + rhs._relative);
     }
 
-    friend QuantityPoint& operator+=(QuantityPoint& lhs, difference_type rhs) noexcept
+    [[nodiscard]] constexpr friend relative_type operator-(Absolute lhs, Absolute rhs) noexcept
     {
-        lhs._value += rhs;
+        return lhs._relative - rhs._relative;
+    }
+
+    [[nodiscard]] constexpr friend Absolute operator-(Absolute lhs, relative_type rhs) noexcept
+    {
+        return Absolute(lhs._relative - rhs);
+    }
+
+    friend Absolute& operator+=(Absolute& lhs, relative_type rhs) noexcept
+    {
+        lhs._relative += rhs;
         return lhs;
     }
 
-    friend QuantityPoint& operator-=(QuantityPoint& lhs, difference_type rhs) noexcept
+    friend Absolute& operator-=(Absolute& lhs, relative_type rhs) noexcept
     {
-        lhs._value -= rhs;
+        lhs._relative -= rhs;
         return lhs;
     }
 
-    [[nodiscard]] constexpr friend bool operator==(QuantityPoint lhs, QuantityPoint rhs) noexcept
+    [[nodiscard]] constexpr friend bool operator==(Absolute lhs, Absolute rhs) noexcept
     {
-        return lhs._value == rhs._value;
+        return lhs._relative == rhs._relative;
     }
 
-    [[nodiscard]] constexpr friend bool operator!=(QuantityPoint lhs, QuantityPoint rhs) noexcept
+    [[nodiscard]] constexpr friend bool operator!=(Absolute lhs, Absolute rhs) noexcept
     {
-        return lhs._value != rhs._value;
+        return lhs._relative != rhs._relative;
     }
 
-    [[nodiscard]] constexpr friend bool operator<(QuantityPoint lhs, QuantityPoint rhs) noexcept
+    [[nodiscard]] constexpr friend bool operator<(Absolute lhs, Absolute rhs) noexcept
     {
-        return lhs._value < rhs._value;
+        return lhs._relative < rhs._relative;
     }
 
-    [[nodiscard]] constexpr friend bool operator>(QuantityPoint lhs, QuantityPoint rhs) noexcept
+    [[nodiscard]] constexpr friend bool operator>(Absolute lhs, Absolute rhs) noexcept
     {
-        return lhs._value > rhs._value;
+        return lhs._relative > rhs._relative;
     }
 
-    [[nodiscard]] constexpr friend bool operator<=(QuantityPoint lhs, QuantityPoint rhs) noexcept
+    [[nodiscard]] constexpr friend bool operator<=(Absolute lhs, Absolute rhs) noexcept
     {
-        return lhs._value <= rhs._value;
+        return lhs._relative <= rhs._relative;
     }
 
-    [[nodiscard]] constexpr friend bool operator>=(QuantityPoint lhs, QuantityPoint rhs) noexcept
+    [[nodiscard]] constexpr friend bool operator>=(Absolute lhs, Absolute rhs) noexcept
     {
-        return lhs._value >= rhs._value;
+        return lhs._relative >= rhs._relative;
     }
 };
 
@@ -1127,24 +1130,24 @@ public:
 #if 1
 using DegKelvin = Kelvin;
 #else
-using DegKelvin = QuantityPoint<Kelvin>;
+using DegKelvin = Absolute<Kelvin>;
 #endif
 
 // t_C = t_K - 273.15
 using DegCelsius
-    = QuantityPoint<Kelvin, Ratio<27315, 100>>;
+    = Absolute<Kelvin, Ratio<27315, 100>>;
 
 // t_Ra = 9/5 * t_K
 using DegRankine
-    = QuantityPoint<Rankine>;
+    = Absolute<Rankine>;
 
 // t_F = 9/5 * t_K - 459.76
 using DegFahrenheit
-    = QuantityPoint<Rankine, Ratio<45967, 100>>;
+    = Absolute<Rankine, Ratio<45967, 100>>;
 
 // t_Re = 4/5 * t_C = 4/5 * (t_K - 273.15)
 using DegReaumur
-    = QuantityPoint<Reaumurs, Ratio<21852, 100>>;
+    = Absolute<Reaumurs, Ratio<21852, 100>>;
 
 //==================================================================================================
 //
@@ -1177,7 +1180,7 @@ using Mass                          = Kilograms;
 using Momentum                      = decltype(Kilograms{} * MetersPerSecond{});
 using PlaneAngle                    = Radians;
 #if 0
-using Position                      = QuantityPoint<Distance>;
+using Position                      = Absolute<Distance>;
 #endif
 using Power                         = Watts;
 using Pressure                      = decltype(Newtons{} / SquareMeters{});
@@ -1185,7 +1188,7 @@ using ReactivePower                 = Vars;
 using SolidAngle                    = Steradians;
 using Strain                        = Tagged<decltype(Meters{} / Meters{}), class _strain>;
 using Stress                        = Tagged<decltype(Newtons{} / SquareMeters{}), class _stress>;
-using Temperature                   = QuantityPoint<Kelvin>;
+using Temperature                   = Absolute<Kelvin>;
 using TemperatureDifference         = Kelvin;
 using Time                          = Seconds;
 using Torque                        = NewtonMeters;

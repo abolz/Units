@@ -181,15 +181,15 @@ template <typename U>
 //--------------------------------------------------------------------------------------------------
 
 template <typename Q, typename Z>
-[[nodiscard]] inline QuantityPoint<Q, Z> abs(QuantityPoint<Q, Z> q) noexcept
+[[nodiscard]] inline Absolute<Q, Z> abs(Absolute<Q, Z> q) noexcept
 {
-    return QuantityPoint<Q, Z>(std::abs(q.count_internal()));
+    return Absolute<Q, Z>(std::abs(q.count_internal()));
 }
 
 template <typename Q, typename Z>
-[[nodiscard]] inline QuantityPoint<Q, Z> fabs(QuantityPoint<Q, Z> q) noexcept
+[[nodiscard]] inline Absolute<Q, Z> fabs(Absolute<Q, Z> q) noexcept
 {
-    return QuantityPoint<Q, Z>(std::fabs(q.count_internal()));
+    return Absolute<Q, Z>(std::fabs(q.count_internal()));
 }
 
 //==================================================================================================
@@ -227,29 +227,29 @@ template <typename U>
 //--------------------------------------------------------------------------------------------------
 
 template <typename Q, typename Z>
-[[nodiscard]] inline constexpr QuantityPoint<Q> min(QuantityPoint<Q, Z> x, QuantityPoint<Q, Z> y) noexcept
+[[nodiscard]] inline constexpr Absolute<Q> min(Absolute<Q, Z> x, Absolute<Q, Z> y) noexcept
 {
     // std::min
     return y.count_internal() < x.count_internal() ? y : x;
 }
 
 template <typename Q, typename Z>
-[[nodiscard]] inline constexpr QuantityPoint<Q> max(QuantityPoint<Q, Z> x, QuantityPoint<Q, Z> y) noexcept
+[[nodiscard]] inline constexpr Absolute<Q> max(Absolute<Q, Z> x, Absolute<Q, Z> y) noexcept
 {
     // std::max
     return y.count_internal() < x.count_internal() ? x : y;
 }
 
 template <typename Q, typename Z>
-[[nodiscard]] inline QuantityPoint<Q> fmin(QuantityPoint<Q, Z> x, QuantityPoint<Q, Z> y) noexcept
+[[nodiscard]] inline Absolute<Q> fmin(Absolute<Q, Z> x, Absolute<Q, Z> y) noexcept
 {
-    return QuantityPoint<Q, Z>(std::fmin(x.count_internal(), y.count_internal()));
+    return Absolute<Q, Z>(std::fmin(x.count_internal(), y.count_internal()));
 }
 
 template <typename Q, typename Z>
-[[nodiscard]] inline QuantityPoint<Q> fmax(QuantityPoint<Q, Z> x, QuantityPoint<Q, Z> y) noexcept
+[[nodiscard]] inline Absolute<Q> fmax(Absolute<Q, Z> x, Absolute<Q, Z> y) noexcept
 {
-    return QuantityPoint<Q, Z>(std::fmax(x.count_internal(), y.count_internal()));
+    return Absolute<Q, Z>(std::fmax(x.count_internal(), y.count_internal()));
 }
 
 //==================================================================================================
@@ -547,9 +547,9 @@ template <typename U>
 //--------------------------------------------------------------------------------------------------
 
 template <typename Q, typename Z>
-[[nodiscard]] inline QuantityPoint<Q, Z> midpoint(QuantityPoint<Q, Z> x, QuantityPoint<Q, Z> y) noexcept
+[[nodiscard]] inline Absolute<Q, Z> midpoint(Absolute<Q, Z> x, Absolute<Q, Z> y) noexcept
 {
-    return QuantityPoint<Q, Z>(x.count_internal() / 2 + y.count_internal() / 2);
+    return Absolute<Q, Z>(x.count_internal() / 2 + y.count_internal() / 2);
 }
 
 //==================================================================================================
@@ -567,9 +567,9 @@ template <typename U>
 //--------------------------------------------------------------------------------------------------
 
 template <typename Q, typename Z>
-[[nodiscard]] inline QuantityPoint<Q, Z> lerp(QuantityPoint<Q, Z> x, QuantityPoint<Q, Z> y, double t) noexcept
+[[nodiscard]] inline Absolute<Q, Z> lerp(Absolute<Q, Z> x, Absolute<Q, Z> y, double t) noexcept
 {
-    return QuantityPoint<Q, Z>((1 - t) * x.count_internal() + t * y.count_internal());
+    return Absolute<Q, Z>((1 - t) * x.count_internal() + t * y.count_internal());
 }
 
 //==================================================================================================
