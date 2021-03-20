@@ -1128,11 +1128,11 @@ public:
 // Typedefs
 //--------------------------------------------------------------------------------------------------
 
-#if 1
-using DegKelvin = Kelvin;
-#else
-using DegKelvin = Absolute<Kelvin>;
-#endif
+//#if 1
+//using DegKelvin = Kelvin;
+//#else
+//using DegKelvin = Absolute<Kelvin>;
+//#endif
 
 // t_C = t_K - 273.15
 using DegCelsius
@@ -1146,7 +1146,7 @@ using DegRankine
 using DegFahrenheit
     = Absolute<Rankine, Ratio<45967, 100>>;
 
-// t_Re = 4/5 * t_C = 4/5 * (t_K - 273.15)
+// t_Re = 4/5 * t_C = 4/5 * (t_K - 273.15) = 4/5 t_K - 218.52
 using DegReaumur
     = Absolute<Reaumurs, Ratio<21852, 100>>;
 

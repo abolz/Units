@@ -5,12 +5,6 @@
 using namespace uom;
 using namespace uom::literals;
 
-[[nodiscard]] constexpr auto operator""_degK(long double x) noexcept {
-    return DegKelvin(static_cast<double>(x));
-}
-[[nodiscard]] constexpr auto operator""_degK(unsigned long long x) noexcept {
-    return DegKelvin(static_cast<double>(x));
-}
 [[nodiscard]] constexpr auto operator""_degC(long double x) noexcept {
     return DegCelsius(static_cast<double>(x));
 }
@@ -43,27 +37,6 @@ static void test()
         constexpr auto t01 = Kelvin(t00);
         static_assert(t01.count_internal() == 10.0);
     }
-    {
-        constexpr auto t00 = DegCelsius(0_degK);
-        constexpr auto x00 = t00.count_internal();
-        constexpr auto v00 = -273.15;
-        static_assert(x00 == v00);
-
-        constexpr auto t01 = DegFahrenheit(0_degK);
-        constexpr auto x01 = t01.count_internal();
-        constexpr auto v01 = -459.67;
-        static_assert(x01 == v01);
-
-        constexpr auto t02 = DegRankine(0_degK);
-        constexpr auto x02 = t02.count_internal();
-        constexpr auto v02 = 0.0;
-        static_assert(x02 == v02);
-
-        constexpr auto t03 = DegReaumur(0_degK);
-        constexpr auto x03 = t03.count_internal();
-        constexpr auto v03 = -218.52;
-        static_assert(x03 == v03);
-    }
 
     {
         constexpr auto t00 = DegCelsius(0_K);
@@ -88,7 +61,7 @@ static void test()
     }
 
     {
-        constexpr auto t00 = DegKelvin(0_degC);
+        constexpr auto t00 = Kelvin(0_degC);
         constexpr auto x00 = t00.count_internal();
         constexpr auto v00 = 273.15;
         static_assert(x00 == v00);
@@ -110,7 +83,7 @@ static void test()
     }
 
     {
-        constexpr auto t00 = DegKelvin(100_degC);
+        constexpr auto t00 = Kelvin(100_degC);
         constexpr auto x00 = t00.count_internal();
         constexpr auto v00 = 100.00 + 273.15;
         static_assert(x00 == v00);
@@ -132,7 +105,7 @@ static void test()
     }
 
     {
-        constexpr auto t00 = DegKelvin(0_degF);
+        constexpr auto t00 = Kelvin(0_degF);
         constexpr auto x00 = t00.count_internal();
         constexpr auto v00 = 255.37222222222222222222222222222222222222222222222222222222222222222222222222222;
         static_assert(x00 == v00);
@@ -154,7 +127,7 @@ static void test()
     }
 
     {
-        constexpr auto t00 = DegKelvin(32_degF);
+        constexpr auto t00 = Kelvin(32_degF);
         constexpr auto x00 = t00.count_internal();
         constexpr auto v00 = 32.0 * (5.0 / 9.0) + (45967.0 * 5.0) / (100.0 * 9.0);
         static_assert(x00 == v00);
@@ -176,7 +149,7 @@ static void test()
     }
 
     {
-        constexpr auto t00 = DegKelvin(0_degRe);
+        constexpr auto t00 = Kelvin(0_degRe);
         constexpr auto x00 = t00.count_internal();
         constexpr auto v00 = 0.0 * 1.25 + 273.15;
         static_assert(x00 == v00);
@@ -198,7 +171,7 @@ static void test()
     }
 
     {
-        constexpr auto t00 = DegKelvin(80_degRe);
+        constexpr auto t00 = Kelvin(80_degRe);
         constexpr auto x00 = t00.count_internal();
         constexpr auto v00 = 80.0 * 1.25 + 273.15;
         static_assert(x00 == v00);
