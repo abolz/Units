@@ -65,6 +65,7 @@ namespace impl
                 return -x / den;
             else
                 return x * (static_cast<double>(num) / static_cast<double>(den));
+                //return (x * static_cast<double>(num)) / static_cast<double>(den);
         }
     }
 
@@ -349,6 +350,12 @@ struct Conversion final
     [[nodiscard]] constexpr double operator()(double x) const noexcept
     {
         return applyPi(impl::applyStdRatio<ratio>(x));
+    }
+
+    // Returns: (num / den) * pi^exp
+    [[nodiscard]] constexpr double operator()() const noexcept
+    {
+        return applyPi(impl::evalStdRatio<ratio>());
     }
 
     // Returns x * pi^exp
@@ -805,9 +812,11 @@ using Amperes           = Quantity<units::Ampere>;
 // Temperature
 
 using Kelvin            = Quantity<units::Kelvin>;
-using Celsius           = ScaledQuantity<Conversion<Ratio<1>>, Kelvin>;
 using Rankine           = ScaledQuantity<Conversion<Ratio<5, 9>>, Kelvin>;
-using Fahrenheit        = ScaledQuantity<Conversion<Ratio<5, 9>>, Kelvin>;
+using Reaumurs          = ScaledQuantity<Conversion<Ratio<5, 4>>, Kelvin>;
+
+//using Celsius           = ScaledQuantity<Conversion<Ratio<1>>, Kelvin>;
+//using Fahrenheit        = ScaledQuantity<Conversion<Ratio<5, 9>>, Kelvin>;
 
 //------------------------------------------------------------------------------
 // Amount of substance
@@ -1005,45 +1014,53 @@ public:
     {
     }
 
-    template <typename C2, std::enable_if_t<C2::exp == 0, int> = 0>
-    constexpr explicit QuantityPoint(Quantity<Unit<C2, kind>> other) noexcept
-        : _value( impl::applyStdRatio<DivConversionRatios<C2, conversion>>(other.count_internal())
-                    - impl::evalStdRatio<zero>() )
-    {
-//      : _value( difference_type( other ) - zero_point() )
-
-        // value = (C2 / C1)( other + Z2 ) - Z1
-        //       = (C2 / C1)( other + Z2 - Z1 * (C1 / C2) )
-        //       = (C2 / C1)( other ) + (Z2 * (C2 / C1) - Z1)
-    }
-
     template <typename C2, typename Z2, std::enable_if_t<C2::exp == 0, int> = 0>
     constexpr explicit QuantityPoint(QuantityPoint<Quantity<Unit<C2, kind>>, Z2> other) noexcept
-        : _value( impl::applyStdRatio<DivConversionRatios<C2, conversion>>(other.count_internal())
-                    - impl::evalStdRatio<CommonZero<conversion, zero, C2, Z2>>() )
+        : _value( DivConversions<C2, conversion>{}(other.count_internal()) - impl::evalStdRatio<CommonZero<conversion, zero, C2, Z2>>() )
     {
 //      : _value( difference_type( other + other.zero_point() ) - zero_point() )
 
         // value = (C2 / C1)( other + Z2 ) - Z1
         //       = (C2 / C1)( other + Z2 - Z1 * (C1 / C2) )
         //       = (C2 / C1)( other ) + (Z2 * (C2 / C1) - Z1)
+
+        // Use FMA?
     }
 
-    template <typename C2>
+    template <typename C2, std::enable_if_t<C2::exp == 0, int> = 0>
+    constexpr explicit QuantityPoint(Quantity<Unit<C2, kind>> other) noexcept
+        : _value( DivConversions<C2, conversion>{}(other.count_internal()) - impl::evalStdRatio<zero>() )
+    {
+//      : _value( difference_type( other ) - zero_point() )
+
+        // value = (C2 / C1)( other + Z2 ) - Z1
+        //       = (C2 / C1)( other + Z2 - Z1 * (C1 / C2) )
+        //       = (C2 / C1)( other ) + (Z2 * (C2 / C1) - Z1)
+
+        // Use FMA?
+    }
+
+    template <typename C2, std::enable_if_t<C2::exp == 0, int> = 0>
     [[nodiscard]] constexpr explicit operator Quantity<Unit<C2, kind>>() const noexcept
     {
+#if 0
         // (C1 / C2)( this + Z1 )
+        //  = (C1 / C2)( this ) + Z1 * (C1 / C2)
 
         using Q = Quantity<Unit<C2, kind>>;
         using R = DivConversionRatios<conversion, C2>;
 
         return Q( impl::applyStdRatio<R>( count_internal() + impl::evalStdRatio<zero>() ) );
+#else
+        using QP = QuantityPoint<Quantity<Unit<C2, kind>>>;
+        return QP(*this).value();
+#endif
     }
 
-    // [[nodiscard]] constexpr difference_type value() const noexcept
-    // {
-    //     return _value;
-    // }
+    [[nodiscard]] constexpr difference_type value() const noexcept
+    {
+        return _value;
+    }
 
     // [[nodiscard]] constexpr difference_type relative() const noexcept
     // {
@@ -1128,13 +1145,26 @@ public:
 //--------------------------------------------------------------------------------------------------
 
 #if 1
-using DegKelvin         = Kelvin;
+using DegKelvin = Kelvin;
 #else
-using DegKelvin         = QuantityPoint<Kelvin>;
+using DegKelvin = QuantityPoint<Kelvin>;
 #endif
-using DegCelsius        = QuantityPoint<Kelvin, Ratio<27315, 100>>; // 0_degC = 273.15_degK
-using DegRankine        = QuantityPoint<Rankine>;
-using DegFahrenheit     = QuantityPoint<Rankine, Ratio<45967, 100>>; // 0_degF = 459.67_degRa
+
+// t_C = t_K - 273.15
+using DegCelsius
+    = QuantityPoint<Kelvin, Ratio<27315, 100>>;
+
+// t_Ra = 9/5 * t_K
+using DegRankine
+    = QuantityPoint<Rankine>;
+
+// t_F = 9/5 * t_K - 459.76
+using DegFahrenheit
+    = QuantityPoint<Rankine, Ratio<45967, 100>>;
+
+// t_Re = 4/5 * t_C = 4/5 * (t_K - 273.15)
+using DegReaumur
+    = QuantityPoint<Reaumurs, Ratio<21852, 100>>;
 
 //==================================================================================================
 //
