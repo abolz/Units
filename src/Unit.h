@@ -725,241 +725,6 @@ public:
     }
 };
 
-template <typename U>
-[[nodiscard]] constexpr auto simplify(Quantity<U> q) noexcept -> decltype(q.simplify())
-{
-    return q.simplify();
-}
-
-template <typename Q, typename U>
-[[nodiscard]] constexpr auto count(Quantity<U> q) noexcept -> decltype(q.template count<Q>())
-{
-    return q.template count<Q>();
-}
-
-//--------------------------------------------------------------------------------------------------
-// Typedefs
-//--------------------------------------------------------------------------------------------------
-
-template <typename Conv, typename Q>
-using ScaledQuantity
-    = Quantity<Unit<MulConversions<Conv, typename Q::conversion>, typename Q::kind>>;
-
-//------------------------------------------------------------------------------
-// One
-
-using Dimensionless     = Quantity<units::Dimensionless>;
-using Percent           = ScaledQuantity<Conversion<Ratio<1, 100>>, Dimensionless>;
-using Permill           = ScaledQuantity<Conversion<Ratio<1, 1000>>, Dimensionless>;
-
-//------------------------------------------------------------------------------
-// Length
-
-using Meters            = Quantity<units::Meter>;
-using Millimeters       = ScaledQuantity<Conversion<Ratio<1, 1000>>, Meters>;
-using Centimeters       = ScaledQuantity<Conversion<Ratio<1, 100>>, Meters>;
-using Decimeters        = ScaledQuantity<Conversion<Ratio<1, 10>>, Meters>;
-using Kilometers        = ScaledQuantity<Conversion<Ratio<1000>>, Meters>;
-
-using Inches            = ScaledQuantity<Conversion<Ratio<254, 100>>, Centimeters>; // (international)
-using Feet              = ScaledQuantity<Conversion<Ratio<12>>, Inches>;            // (international)
-using Yards             = ScaledQuantity<Conversion<Ratio<3>>, Feet>;               // (international)
-using Miles             = ScaledQuantity<Conversion<Ratio<1760>>, Yards>;           // (international)
-
-//------------------------------------------------------------------------------
-// Mass
-
-using Kilograms         = Quantity<units::Kilogram>;
-using Grams             = ScaledQuantity<Conversion<Ratio<1, 1000>>, Kilograms>;
-using Milligrams        = ScaledQuantity<Conversion<Ratio<1, 1000>>, Grams>;
-using Tons              = ScaledQuantity<Conversion<Ratio<1000>>, Kilograms>;
-
-//------------------------------------------------------------------------------
-// Time
-
-using Seconds           = Quantity<units::Second>;
-using Milliseconds      = ScaledQuantity<Conversion<Ratio<1, 1000>>, Seconds>;
-using Minutes           = ScaledQuantity<Conversion<Ratio<60>>, Seconds>;
-using Hours             = ScaledQuantity<Conversion<Ratio<60>>, Minutes>;
-using Days              = ScaledQuantity<Conversion<Ratio<24>>, Hours>;
-using Weeks             = ScaledQuantity<Conversion<Ratio<7>>, Days>;
-using Years             = ScaledQuantity<Conversion<Ratio<146097, 400>>, Days>;
-using Months            = ScaledQuantity<Conversion<Ratio<1, 12>>, Years>;
-
-//------------------------------------------------------------------------------
-// Electric current
-
-using Amperes           = Quantity<units::Ampere>;
-
-//------------------------------------------------------------------------------
-// Temperature
-
-using Kelvin            = Quantity<units::Kelvin>;
-using Rankine           = ScaledQuantity<Conversion<Ratio<5, 9>>, Kelvin>;
-using Reaumurs          = ScaledQuantity<Conversion<Ratio<5, 4>>, Kelvin>;
-
-//using Celsius           = ScaledQuantity<Conversion<Ratio<1>>, Kelvin>;
-//using Fahrenheit        = ScaledQuantity<Conversion<Ratio<5, 9>>, Kelvin>;
-
-//------------------------------------------------------------------------------
-// Amount of substance
-
-using Moles             = Quantity<units::Mole>;
-
-//------------------------------------------------------------------------------
-// Luminous intensity
-
-using Candelas          = Quantity<units::Candela>;
-
-//------------------------------------------------------------------------------
-// Plane angle
-
-using Radians           = Quantity<units::Radian>;
-using Degrees           = ScaledQuantity<Conversion<Ratio<1, 180>, /* pi^ */ 1>, Radians>;
-using Gons              = ScaledQuantity<Conversion<Ratio<1, 200>, /* pi^ */ 1>, Radians>;
-using Revolutions       = ScaledQuantity<Conversion<Ratio<2,   1>, /* pi^ */ 1>, Radians>;
-
-using ArcMinutes        = ScaledQuantity<Conversion<Ratio<1, 60>>, Degrees>;
-using ArcSeconds        = ScaledQuantity<Conversion<Ratio<1, 60>>, ArcMinutes>;
-
-using ReciprocalRadians = decltype(Dimensionless{} / Radians{});
-
-//------------------------------------------------------------------------------
-// Area
-
-using SquareMillimeters = decltype(Millimeters{} * Millimeters{});
-using SquareCentimeters = decltype(Centimeters{} * Centimeters{});
-using SquareDecimeters  = decltype(Decimeters{} * Decimeters{});
-using SquareMeters      = decltype(Meters{} * Meters{});
-using SquareKilometers  = decltype(Kilometers{} * Kilometers{});
-
-//--------------------------------------------------------------------------
-// Area per Length
-
-using SquareCentimetersPerMeter = Tagged<decltype(SquareCentimeters{} / Meters{}), class _area_per_length>;
-using SquareMetersPerMeter      = Tagged<decltype(SquareMeters{}      / Meters{}), class _area_per_length>;
-
-//------------------------------------------------------------------------------
-// Volume
-
-using CubicMillimeters  = decltype(SquareMillimeters{} * Millimeters{});
-using CubicCentimeters  = decltype(SquareCentimeters{} * Centimeters{});
-using CubicDecimeters   = decltype(SquareDecimeters{} * Decimeters{});
-using CubicMeters       = decltype(SquareMeters{} * Meters{});
-
-//------------------------------------------------------------------------------
-// Frequency
-
-using Hertz             = decltype(Dimensionless{} / Seconds{});
-using Kilohertz         = ScaledQuantity<Conversion<Ratio<1000>>, Hertz>;
-using Megahertz         = ScaledQuantity<Conversion<Ratio<1000>>, Kilohertz>;
-using Gigahertz         = ScaledQuantity<Conversion<Ratio<1000>>, Megahertz>;
-
-//------------------------------------------------------------------------------
-// Velocity
-
-using MetersPerSecond   = decltype(Meters{} / Seconds{});
-using KilometersPerHour = decltype(Kilometers{} / Hours{});
-
-//------------------------------------------------------------------------------
-// Solid angle
-
-using Steradians        = Tagged<decltype(Radians{} * Radians{}), class _solid_angle>;
-using SquareDegrees     = Tagged<decltype(Degrees{} * Degrees{}), class _solid_angle>;
-
-//------------------------------------------------------------------------------
-// Photometric
-
-// Lumen lm = cd sr
-// Luminous flux/power is the change of luminous energy with time.
-using Lumens            = decltype(Candelas{} * Steradians{});
-
-// lm s = cd sr s = talbot
-// Luminous energy is the perceived energy of light.
-using Talbots           = decltype(Lumens{} * Seconds{});
-
-// nit = cd/m^2 = lm/(m^2 sr)
-// Luminance is the density of luminous intensity with respect to projected area in a specified direction at a
-// specified point on a real or imaginary surface.
-using Nits              = decltype(Candelas{} / SquareMeters{});
-
-// Lux lx = lm/m^2
-// Illuminance is the density of incident luminous flux with respect to area at a point on a real or imaginary surface.
-using Luxs              = decltype(Lumens{} / SquareMeters{});
-
-//--------------------------------------------------------------------------
-// Force
-
-using Newtons           = decltype(Kilograms{} * Meters{} / (Seconds{} * Seconds{}));
-using Kilonewtons       = ScaledQuantity<Conversion<Ratio<1000>>, Newtons>;
-
-//--------------------------------------------------------------------------
-// Energy
-
-using Joules            = decltype(Newtons{} * Meters{});
-using Kilojoules        = ScaledQuantity<Conversion<Ratio<1000>>, Joules>;
-
-//--------------------------------------------------------------------------
-// Torque
-
-using NewtonMeters      = decltype(Newtons{} * Meters{} / Radians{});
-
-//--------------------------------------------------------------------------
-// Power
-
-using Watts             = decltype(Joules{} / Seconds{});
-using Kilowatts         = ScaledQuantity<Conversion<Ratio<1000>>, Watts>;
-
-using Vars              = Tagged<Watts, class _reactive_power>;
-using Kilovars          = ScaledQuantity<Conversion<Ratio<1000>>, Vars>;
-
-using VoltAmperes       = Tagged<Watts, class _apparent_power>;
-
-//--------------------------------------------------------------------------
-// Data
-
-using Bits              = Quantity<units::Bit>;
-using Nibbles           = ScaledQuantity<Conversion<Ratio<4>>, Bits>;
-using Bytes             = ScaledQuantity<Conversion<Ratio<8>>, Bits>;
-using Kilobytes         = ScaledQuantity<Conversion<Ratio<1000>>, Bytes>;
-using Megabytes         = ScaledQuantity<Conversion<Ratio<1000>>, Kilobytes>;
-using Gigabytes         = ScaledQuantity<Conversion<Ratio<1000>>, Megabytes>;
-
-//--------------------------------------------------------------------------
-// Electric
-
-using Coulombs          = decltype(Seconds{} * Amperes{});
-using Volts             = decltype(Watts{} / Amperes{});
-using Farads            = decltype(Coulombs{} / Volts{});
-using Ohms              = decltype(Volts{} / Amperes{});
-using Siemens           = decltype(Amperes{} / Volts{});
-
-//==================================================================================================
-//
-//==================================================================================================
-
-#if 0
-[[nodiscard]] constexpr Dimensionless operator+(Dimensionless lhs, double rhs) noexcept
-{
-    return Dimensionless(lhs.count_internal() + rhs);
-}
-
-[[nodiscard]] constexpr Dimensionless operator-(Dimensionless lhs, double rhs) noexcept
-{
-    return Dimensionless(lhs.count_internal() - rhs);
-}
-
-[[nodiscard]] constexpr Dimensionless operator+(double lhs, Dimensionless rhs) noexcept
-{
-    return Dimensionless(lhs + rhs.count_internal());
-}
-
-[[nodiscard]] constexpr Dimensionless operator-(double lhs, Dimensionless rhs) noexcept
-{
-    return Dimensionless(lhs - rhs.count_internal());
-}
-#endif
-
 //==================================================================================================
 // Absolute
 //==================================================================================================
@@ -1122,31 +887,216 @@ public:
     }
 };
 
-//--------------------------------------------------------------------------------------------------
+//==================================================================================================
 // Typedefs
-//--------------------------------------------------------------------------------------------------
+//==================================================================================================
 
-//#if 1
-//using DegKelvin = Kelvin;
-//#else
-//using DegKelvin = Absolute<Kelvin>;
-//#endif
+template <typename Conv, typename Q>
+using ScaledQuantity
+    = Quantity<Unit<MulConversions<Conv, typename Q::conversion>, typename Q::kind>>;
+
+//------------------------------------------------------------------------------
+// One
+
+using Dimensionless     = Quantity<units::Dimensionless>;
+using Percent           = ScaledQuantity<Conversion<Ratio<1, 100>>, Dimensionless>;
+using Permill           = ScaledQuantity<Conversion<Ratio<1, 1000>>, Dimensionless>;
+
+//------------------------------------------------------------------------------
+// Length
+
+using Meters            = Quantity<units::Meter>;
+using Millimeters       = ScaledQuantity<Conversion<Ratio<1, 1000>>, Meters>;
+using Centimeters       = ScaledQuantity<Conversion<Ratio<1, 100>>, Meters>;
+using Decimeters        = ScaledQuantity<Conversion<Ratio<1, 10>>, Meters>;
+using Kilometers        = ScaledQuantity<Conversion<Ratio<1000>>, Meters>;
+
+using Inches            = ScaledQuantity<Conversion<Ratio<254, 100>>, Centimeters>; // (international)
+using Feet              = ScaledQuantity<Conversion<Ratio<12>>, Inches>;            // (international)
+using Yards             = ScaledQuantity<Conversion<Ratio<3>>, Feet>;               // (international)
+using Miles             = ScaledQuantity<Conversion<Ratio<1760>>, Yards>;           // (international)
+
+//------------------------------------------------------------------------------
+// Mass
+
+using Kilograms         = Quantity<units::Kilogram>;
+using Grams             = ScaledQuantity<Conversion<Ratio<1, 1000>>, Kilograms>;
+using Milligrams        = ScaledQuantity<Conversion<Ratio<1, 1000>>, Grams>;
+using Tons              = ScaledQuantity<Conversion<Ratio<1000>>, Kilograms>;
+
+//------------------------------------------------------------------------------
+// Time
+
+using Seconds           = Quantity<units::Second>;
+using Milliseconds      = ScaledQuantity<Conversion<Ratio<1, 1000>>, Seconds>;
+using Minutes           = ScaledQuantity<Conversion<Ratio<60>>, Seconds>;
+using Hours             = ScaledQuantity<Conversion<Ratio<60>>, Minutes>;
+using Days              = ScaledQuantity<Conversion<Ratio<24>>, Hours>;
+using Weeks             = ScaledQuantity<Conversion<Ratio<7>>, Days>;
+using Years             = ScaledQuantity<Conversion<Ratio<146097, 400>>, Days>;
+using Months            = ScaledQuantity<Conversion<Ratio<1, 12>>, Years>;
+
+//------------------------------------------------------------------------------
+// Electric current
+
+using Amperes           = Quantity<units::Ampere>;
+
+//------------------------------------------------------------------------------
+// Temperature
+
+using Kelvin            = Quantity<units::Kelvin>;
+using Rankine           = ScaledQuantity<Conversion<Ratio<5, 9>>, Kelvin>;
+using Reaumurs          = ScaledQuantity<Conversion<Ratio<5, 4>>, Kelvin>;
+
+//using Celsius           = ScaledQuantity<Conversion<Ratio<1>>, Kelvin>;
+//using Fahrenheit        = ScaledQuantity<Conversion<Ratio<5, 9>>, Kelvin>;
 
 // t_C = t_K - 273.15
-using DegCelsius
-    = Absolute<Kelvin, Ratio<27315, 100>>;
+using DegCelsius        = Absolute<Kelvin, Ratio<27315, 100>>;
 
 // t_Ra = 9/5 * t_K
-using DegRankine
-    = Absolute<Rankine>;
+using DegRankine        = Absolute<Rankine>;
 
 // t_F = 9/5 * t_K - 459.76
-using DegFahrenheit
-    = Absolute<Rankine, Ratio<45967, 100>>;
+using DegFahrenheit     = Absolute<Rankine, Ratio<45967, 100>>;
 
-// t_Re = 4/5 * t_C = 4/5 * (t_K - 273.15) = 4/5 t_K - 218.52
-using DegReaumur
-    = Absolute<Reaumurs, Ratio<21852, 100>>;
+// t_Re = 4/5 * t_C
+//      = 4/5 * (t_K - 273.15)
+//      = 4/5 t_K - 218.52
+using DegReaumur        = Absolute<Reaumurs, Ratio<21852, 100>>;
+
+//------------------------------------------------------------------------------
+// Amount of substance
+
+using Moles             = Quantity<units::Mole>;
+
+//------------------------------------------------------------------------------
+// Luminous intensity
+
+using Candelas          = Quantity<units::Candela>;
+
+//------------------------------------------------------------------------------
+// Plane angle
+
+using Radians           = Quantity<units::Radian>;
+using Degrees           = ScaledQuantity<Conversion<Ratio<1, 180>, /* pi^ */ 1>, Radians>;
+using Gons              = ScaledQuantity<Conversion<Ratio<1, 200>, /* pi^ */ 1>, Radians>;
+using Revolutions       = ScaledQuantity<Conversion<Ratio<2,   1>, /* pi^ */ 1>, Radians>;
+
+using ArcMinutes        = ScaledQuantity<Conversion<Ratio<1, 60>>, Degrees>;
+using ArcSeconds        = ScaledQuantity<Conversion<Ratio<1, 60>>, ArcMinutes>;
+
+using ReciprocalRadians = decltype(Dimensionless{} / Radians{});
+
+//------------------------------------------------------------------------------
+// Area
+
+using SquareMillimeters = decltype(Millimeters{} * Millimeters{});
+using SquareCentimeters = decltype(Centimeters{} * Centimeters{});
+using SquareDecimeters  = decltype(Decimeters{} * Decimeters{});
+using SquareMeters      = decltype(Meters{} * Meters{});
+using SquareKilometers  = decltype(Kilometers{} * Kilometers{});
+
+//--------------------------------------------------------------------------
+// Area per Length
+
+using SquareCentimetersPerMeter = Tagged<decltype(SquareCentimeters{} / Meters{}), class _area_per_length>;
+using SquareMetersPerMeter      = Tagged<decltype(SquareMeters{}      / Meters{}), class _area_per_length>;
+
+//------------------------------------------------------------------------------
+// Volume
+
+using CubicMillimeters  = decltype(SquareMillimeters{} * Millimeters{});
+using CubicCentimeters  = decltype(SquareCentimeters{} * Centimeters{});
+using CubicDecimeters   = decltype(SquareDecimeters{} * Decimeters{});
+using CubicMeters       = decltype(SquareMeters{} * Meters{});
+
+//------------------------------------------------------------------------------
+// Frequency
+
+using Hertz             = decltype(Dimensionless{} / Seconds{});
+using Kilohertz         = ScaledQuantity<Conversion<Ratio<1000>>, Hertz>;
+using Megahertz         = ScaledQuantity<Conversion<Ratio<1000>>, Kilohertz>;
+using Gigahertz         = ScaledQuantity<Conversion<Ratio<1000>>, Megahertz>;
+
+//------------------------------------------------------------------------------
+// Velocity
+
+using MetersPerSecond   = decltype(Meters{} / Seconds{});
+using KilometersPerHour = decltype(Kilometers{} / Hours{});
+
+//------------------------------------------------------------------------------
+// Solid angle
+
+using Steradians        = Tagged<decltype(Radians{} * Radians{}), class _solid_angle>;
+using SquareDegrees     = Tagged<decltype(Degrees{} * Degrees{}), class _solid_angle>;
+
+//------------------------------------------------------------------------------
+// Photometric
+
+// Lumen lm = cd sr
+// Luminous flux/power is the change of luminous energy with time.
+using Lumens            = decltype(Candelas{} * Steradians{});
+
+// lm s = cd sr s = talbot
+// Luminous energy is the perceived energy of light.
+using Talbots           = decltype(Lumens{} * Seconds{});
+
+// nit = cd/m^2 = lm/(m^2 sr)
+// Luminance is the density of luminous intensity with respect to projected area in a specified direction at a
+// specified point on a real or imaginary surface.
+using Nits              = decltype(Candelas{} / SquareMeters{});
+
+// Lux lx = lm/m^2
+// Illuminance is the density of incident luminous flux with respect to area at a point on a real or imaginary surface.
+using Luxs              = decltype(Lumens{} / SquareMeters{});
+
+//--------------------------------------------------------------------------
+// Force
+
+using Newtons           = decltype(Kilograms{} * Meters{} / (Seconds{} * Seconds{}));
+using Kilonewtons       = ScaledQuantity<Conversion<Ratio<1000>>, Newtons>;
+
+//--------------------------------------------------------------------------
+// Energy
+
+using Joules            = decltype(Newtons{} * Meters{});
+using Kilojoules        = ScaledQuantity<Conversion<Ratio<1000>>, Joules>;
+
+//--------------------------------------------------------------------------
+// Torque
+
+using NewtonMeters      = decltype(Newtons{} * Meters{} / Radians{});
+
+//--------------------------------------------------------------------------
+// Power
+
+using Watts             = decltype(Joules{} / Seconds{});
+using Kilowatts         = ScaledQuantity<Conversion<Ratio<1000>>, Watts>;
+
+using Vars              = Tagged<Watts, class _reactive_power>;
+using Kilovars          = ScaledQuantity<Conversion<Ratio<1000>>, Vars>;
+
+using VoltAmperes       = Tagged<Watts, class _apparent_power>;
+
+//--------------------------------------------------------------------------
+// Data
+
+using Bits              = Quantity<units::Bit>;
+using Nibbles           = ScaledQuantity<Conversion<Ratio<4>>, Bits>;
+using Bytes             = ScaledQuantity<Conversion<Ratio<8>>, Bits>;
+using Kilobytes         = ScaledQuantity<Conversion<Ratio<1000>>, Bytes>;
+using Megabytes         = ScaledQuantity<Conversion<Ratio<1000>>, Kilobytes>;
+using Gigabytes         = ScaledQuantity<Conversion<Ratio<1000>>, Megabytes>;
+
+//--------------------------------------------------------------------------
+// Electric
+
+using Coulombs          = decltype(Seconds{} * Amperes{});
+using Volts             = decltype(Watts{} / Amperes{});
+using Farads            = decltype(Coulombs{} / Volts{});
+using Ohms              = decltype(Volts{} / Amperes{});
+using Siemens           = decltype(Amperes{} / Volts{});
 
 //==================================================================================================
 //
