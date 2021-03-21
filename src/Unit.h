@@ -651,7 +651,7 @@ public:
 // Absolute
 //==================================================================================================
 
-template <typename RelativeType, typename Zero = Ratio<0>>
+template <typename RelativeType, typename RelativeOffset = Ratio<0>>
 class Absolute final
 {
 public:
@@ -663,7 +663,7 @@ public:
     using kind          = typename relative_type::kind;
     using dimension     = typename relative_type::dimension;
     using tag           = typename relative_type::tag;
-    using zero          = Zero;
+    using zero          = RelativeOffset;
 
 private:
     // To    = [C1, Z1]
