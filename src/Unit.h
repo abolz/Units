@@ -573,13 +573,13 @@ public:
         return simplified_type(_count);
     }
 
-    [[nodiscard]] constexpr double count_internal() const noexcept
+    [[nodiscard]] constexpr scalar_type count_internal() const noexcept
     {
         return _count;
     }
 
     template <typename Q, EnableExplicitConversion<typename Q::kind, kind, int> = 0>
-    [[nodiscard]] constexpr double count() const noexcept
+    [[nodiscard]] constexpr scalar_type count() const noexcept
     {
         if constexpr (std::is_same_v<Q, Quantity>)
             return count_internal();
