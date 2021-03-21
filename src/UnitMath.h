@@ -429,6 +429,7 @@ template <typename U>
 // Trigonometric
 //==================================================================================================
 
+#if 1
 [[nodiscard]] inline Dimensionless sin(Radians x) noexcept
 {
     return Dimensionless(std::sin(x.count_internal()));
@@ -443,6 +444,34 @@ template <typename U>
 {
     return Dimensionless(std::tan(x.count_internal()));
 }
+#else
+template <typename U>
+[[nodiscard]] inline Dimensionless sin(Quantity<U> x) noexcept
+{
+    static_assert(typename U::dimension == dims::PlaneAngle,
+        "operation not supported");
+
+    return Dimensionless(std::sin(x.template count<Radians>()));
+}
+
+template <typename U>
+[[nodiscard]] inline Dimensionless cos(Quantity<U> x) noexcept
+{
+    static_assert(typename U::dimension == dims::PlaneAngle,
+        "operation not supported");
+
+    return Dimensionless(std::cos(x.template count<Radians>()));
+}
+
+template <typename U>
+[[nodiscard]] inline Dimensionless tan(Quantity<U> x) noexcept
+{
+    static_assert(typename U::dimension == dims::PlaneAngle,
+        "operation not supported");
+
+    return Dimensionless(std::tan(x.template count<Radians>()));
+}
+#endif
 
 [[nodiscard]] inline Radians asin(Dimensionless x) noexcept
 {

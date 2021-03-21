@@ -32,7 +32,7 @@ namespace dims
 {
     // Some prime numbers:
     // 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, ...
-    //                             ^^  ^^  ^^
+    //                             ^^  ^^  ^^  ^^
 
     using One               = Dimension< 1>; // 1
     using Length            = Dimension< 2>; // Meter m
@@ -47,6 +47,7 @@ namespace dims
 //  using Entity            = Dimension<23>;
 //  using Event             = Dimension<29>;
     using Bit               = Dimension<31>;
+//  using Cycle             = Dimension<37>;
 
 } // namespace dim
 
@@ -80,15 +81,16 @@ namespace kinds
     //--------------------------------------------------------------------------
     // Base kinds
 
-    using One               = Kind< Simple, dims::One               >; // 1
-    using Length            = Kind< Simple, dims::Length            >; // Meter m
-    using Mass              = Kind< Simple, dims::Mass              >; // Kilogram kg
-    using Time              = Kind< Simple, dims::Time              >; // Second s
-    using ElectricCurrent   = Kind< Simple, dims::ElectricCurrent   >; // Ampere A
-    using Temperature       = Kind< Simple, dims::Temperature       >; // Kelvin K
-    using AmountOfSubstance = Kind< Simple, dims::AmountOfSubstance >; // Mole mol
-    using LuminousIntensity = Kind< Simple, dims::LuminousIntensity >; // Candela cd
-    using PlaneAngle        = Kind< Simple, dims::PlaneAngle        >; // Radian rad
+    using One               = Kind< Simple, dims::One               >;
+
+    using Length            = Kind< Simple, dims::Length            >;
+    using Mass              = Kind< Simple, dims::Mass              >;
+    using Time              = Kind< Simple, dims::Time              >;
+    using ElectricCurrent   = Kind< Simple, dims::ElectricCurrent   >;
+    using Temperature       = Kind< Simple, dims::Temperature       >;
+    using AmountOfSubstance = Kind< Simple, dims::AmountOfSubstance >;
+    using LuminousIntensity = Kind< Simple, dims::LuminousIntensity >;
+    using PlaneAngle        = Kind< Simple, dims::PlaneAngle        >;
 
     using Bit               = Kind< Simple, dims::Bit >;
 }
@@ -99,9 +101,7 @@ namespace kinds::impl
     {
         uint64_t hash = 14695981039346656037u;
         for ( ; *str != '\0'; ++str)
-        {
             hash = (hash ^ *str) * 1099511628211u;
-        }
 
         return hash;
     }
