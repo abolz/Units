@@ -423,13 +423,13 @@ using DivUnits = typename Unit< DivConversions<typename U1::conversion, typename
 template <typename U>
 class Quantity;
 
-template <typename OldTag, typename NewTag>
-struct Retag
-{
-};
-
 namespace impl
 {
+    template <typename OldTag, typename NewTag>
+    struct Retag
+    {
+    };
+
     template <typename T>
     struct Untag1
     {
@@ -449,7 +449,7 @@ namespace impl
 
 template <typename Q, typename Tag>
 using Tagged // a.k.a. Change-Kind
-    = Quantity<Unit<typename Q::conversion, Kind<Retag<typename Q::tag, Tag>, typename Q::dimension>>>;
+    = Quantity<Unit<typename Q::conversion, Kind<impl::Retag<typename Q::tag, Tag>, typename Q::dimension>>>;
 
 template <typename Q>
 using Untagged // a.k.a. Change-Kind
@@ -824,7 +824,7 @@ public:
 };
 
 //==================================================================================================
-// Typedefs
+// Typedefs (SI)
 //==================================================================================================
 
 namespace units
