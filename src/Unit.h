@@ -16,34 +16,6 @@
 namespace uom {
 
 //==================================================================================================
-// Gcd/Lcm
-//==================================================================================================
-
-namespace impl
-{
-    // <numeric> std::gcd ?
-    constexpr int64_t Gcd(int64_t x, int64_t y) noexcept
-    {
-        UNITS_ASSERT(x >= 0);
-        UNITS_ASSERT(y >= 1);
-
-        while (y > 0) {
-            const auto r = x % y;
-            x = y;
-            y = r;
-        }
-        return x;
-    }
-
-    // <numeric> std::lcm ?
-    constexpr int64_t Lcm(int64_t x, int64_t y) noexcept
-    {
-        return (x / Gcd(x, y)) * y;
-    }
-
-} // namespace impl
-
-//==================================================================================================
 // Kind
 //==================================================================================================
 
@@ -376,6 +348,26 @@ namespace impl
 
     template <typename C1, typename C2> // (C1 | C2)?
     using ConversionDivides = IsIntegralConversion<DivConversions<C2, C1>>;
+
+    // <numeric> std::gcd ?
+    constexpr int64_t Gcd(int64_t x, int64_t y) noexcept
+    {
+        UNITS_ASSERT(x >= 0);
+        UNITS_ASSERT(y >= 1);
+
+        while (y > 0) {
+            const auto r = x % y;
+            x = y;
+            y = r;
+        }
+        return x;
+    }
+
+    // <numeric> std::lcm ?
+    constexpr int64_t Lcm(int64_t x, int64_t y) noexcept
+    {
+        return (x / Gcd(x, y)) * y;
+    }
 
     template <typename C1, typename C2>
     struct CommonConversionImpl
