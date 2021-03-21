@@ -676,6 +676,7 @@ public:
     using unit          = typename relative_type::unit;
     using conversion    = typename relative_type::conversion;
     using kind          = typename relative_type::kind;
+    using tag           = typename relative_type::tag;
     using dimension     = typename relative_type::dimension;
     using zero          = Zero;
 
