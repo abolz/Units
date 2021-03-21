@@ -1067,10 +1067,10 @@ using NewtonMeters      = decltype(Newtons{} * Meters{} / Radians{});
 using Watts             = decltype(Joules{} / Seconds{});
 using Kilowatts         = ScaledQuantity<Conversion<Ratio<1000>>, Watts>;
 
-using Vars              = Tagged<Watts, class _reactive_power>;
-using Kilovars          = ScaledQuantity<Conversion<Ratio<1000>>, Vars>;
+// using Vars              = Tagged<Watts, class _reactive_power>;
+// using Kilovars          = ScaledQuantity<Conversion<Ratio<1000>>, Vars>;
 
-using VoltAmperes       = Tagged<Watts, class _apparent_power>;
+// using VoltAmperes       = Tagged<Watts, class _apparent_power>;
 
 //--------------------------------------------------------------------------
 // Data
