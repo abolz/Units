@@ -41,26 +41,6 @@ namespace impl
         return (x / Gcd(x, y)) * y;
     }
 
-    // Returns x * R1 - R2
-    template <typename R1, typename R2>
-    constexpr double Fmsub(double x) noexcept
-    {
-        static_assert(R1::num != 0);
-        static_assert(R1::den != 0);
-        static_assert(R2::den != 0);
-
-#if 1
-        return (static_cast<double>(R1::num) / static_cast<double>(R1::den)) * x
-             - (static_cast<double>(R2::num) / static_cast<double>(R2::den));
-#else
-        constexpr int64_t a = R1::num * R2::den;
-        constexpr int64_t b = R1::den * R2::num;
-        constexpr int64_t c = R1::den * R2::den;
-
-        return (a * x - b) / c;
-#endif
-    }
-
 } // namespace impl
 
 //==================================================================================================
@@ -984,35 +964,59 @@ using Siemens           = decltype(Amperes{} / Volts{});
 // Absolute
 //==================================================================================================
 
-template <typename RelativeType, typename Zero = Ratio<0>>
+template <typename Relative, typename Zero = Ratio<0>>
 class Absolute final
 {
-    static_assert(impl::IsQuantity<RelativeType>,
+    static_assert(impl::IsQuantity<Relative>,
         "Absolute can only be used with 'Quantity's");
-    //static_assert(std::_Is_ratio_v<Zero>,
-    //    "Zero must be a std::ratio");
-
-    template <typename C1, typename C2>
-    using DivConversionRatios = std::ratio_divide<typename C1::ratio, typename C2::ratio>;
-
-    // Z1 - Z2 * (C2 / C1)
-    template <typename C1, typename Z1, typename C2, typename Z2>
-    using CommonZero
-        = std::ratio_subtract<Z1, std::ratio_multiply<Z2, DivConversionRatios<C2, C1>>>;
 
 public:
-    using relative_type = RelativeType;
-    using scalar_type   = typename RelativeType::scalar_type;
-    using unit          = typename RelativeType::unit;
-    using conversion    = typename RelativeType::conversion;
-    using kind          = typename RelativeType::kind;
-    using dimension     = typename RelativeType::dimension;
+    using relative_type = Relative;
+    using scalar_type   = typename relative_type::scalar_type;
+    using unit          = typename relative_type::unit;
+    using conversion    = typename relative_type::conversion;
+    using kind          = typename relative_type::kind;
+    using dimension     = typename relative_type::dimension;
     using zero          = Zero;
 
-    //static constexpr scalar_type zero_value = impl::evalStdRatio<zero>();
+private:
+    // To    = [C1, Z1]
+    // From  = [C2, Z2]
+    //
+    // Value = (C2 / C1)( a + Z2 ) - Z1
+    //       = (C2 / C1)( a + Z2 - Z1 * (C1 / C2) )
+    //       = (C2 / C1)( a ) + (Z2 * (C2 / C1) - Z1)
+    template <typename C1, typename Z1, typename C2, typename Z2>
+    static constexpr double convert(double x) noexcept
+    {
+        // static_assert(impl::IsConversion<C1>::value);
+        // static_assert(impl::IsConversion<C2>::value);
 
-    static_assert(conversion::exp == 0,
-        "sorry, not supported (yet)");
+        static_assert(C1::exp == 0,
+            "sorry, not supported (yet)");
+        static_assert(C2::exp == 0,
+            "sorry, not supported (yet)");
+
+        using R1 = std::ratio_divide<typename C2::ratio, typename C1::ratio>;
+        using R2 = std::ratio_subtract<std::ratio_multiply<Z2, R1>, Z1>;
+
+//      static_assert(R1::num != 0);
+        static_assert(R1::den != 0);
+        static_assert(R2::den != 0);
+
+#if 1
+        constexpr double a = (static_cast<double>(R1::num) / static_cast<double>(R1::den));
+        constexpr double b = (static_cast<double>(R2::num) / static_cast<double>(R2::den));
+
+        return a * x + b;
+#else
+        constexpr int64_t a = R1::num * R2::den;
+        constexpr int64_t b = R1::den * R2::num;
+        constexpr int64_t c = R1::den * R2::den;
+
+        return (a * x + b) / c;
+#endif
+    }
 
 private:
     relative_type _relative;
@@ -1030,23 +1034,21 @@ public:
         return _relative.count_internal();
     }
 
+    // [[nodiscard]] constexpr relative_type relative() const noexcept
+    // {
+    //     return _relative;
+    // }
+
     template <typename C2, typename Z2>
     constexpr explicit Absolute(Absolute<Quantity<Unit<C2, kind>>, Z2> a) noexcept
-        : _relative( impl::Fmsub< DivConversionRatios<C2, conversion>, CommonZero<conversion, zero, C2, Z2> >(a.count_internal()) )
+        : _relative( convert<conversion, zero, C2, Z2>( a.count_internal() ) )
     {
-        // value = (C2 / C1)( a + Z2 ) - Z1
-        //       = (C2 / C1)( a + Z2 - Z1 * (C1 / C2) )
-        //       = (C2 / C1)( a ) + (Z2 * (C2 / C1) - Z1)
-
-        // Use FMA?
     }
 
     template <typename C2>
     constexpr explicit Absolute(Quantity<Unit<C2, kind>> a) noexcept
-        : _relative( impl::Fmsub< DivConversionRatios<C2, conversion>, zero >(a.count_internal()) )
+        : _relative( convert<conversion, zero, C2, std::ratio<0>>( a.count_internal() ) )
     {
-        static_assert(C2::exp == 0,
-            "sorry, not supported (yet)");
     }
 
     // NB:
@@ -1054,11 +1056,7 @@ public:
     template <typename C2>
     [[nodiscard]] constexpr explicit operator Quantity<Unit<C2, kind>>() const noexcept
     {
-        static_assert(C2::exp == 0,
-            "sorry, not supported (yet)");
-
-        using Q2 = Quantity<Unit<C2, kind>>;
-        return Q2( Absolute<Q2 /*, Zero = 0*/>(*this).count_internal() );
+        return Quantity<Unit<C2, kind>>( convert<C2, std::ratio<0>, conversion, zero>( count_internal() ) );
     }
 
     [[nodiscard]] constexpr friend Absolute operator+(Absolute lhs, relative_type rhs) noexcept
@@ -1170,9 +1168,9 @@ using Energy                        = Joules;
 using Force                         = Newtons;
 using Frequency                     = Hertz;
 using Illuminance                   = Luxs;
-using Latitude                      = Tagged<Degrees, class _latitude>;
+//using Latitude                      = Tagged<Degrees, class _latitude>;
 using Length                        = Meters;
-using Longitude                     = Tagged<Degrees, class _longitude>;
+//using Longitude                     = Tagged<Degrees, class _longitude>;
 using Luminance                     = Nits;
 using LuminousEnergy                = Talbots;
 using LuminousFlux                  = Lumens;
