@@ -546,7 +546,8 @@ private:
 
     // symmetric
     template <typename K1, typename K2, typename T = void>
-    using EnableExplicitConversion = std::enable_if_t<std::is_same_v<typename K1::dimension, typename K2::dimension>, T>; // (ratio_equal?)
+    using EnableExplicitConversion
+        = std::enable_if_t<std::is_same_v<typename K1::dimension, typename K2::dimension>, T>; // (ratio_equal?)
 
 public:
     constexpr Quantity() noexcept = default;
@@ -1097,54 +1098,5 @@ using Volts             = decltype(Watts{} / Amperes{});
 using Farads            = decltype(Coulombs{} / Volts{});
 using Ohms              = decltype(Volts{} / Amperes{});
 using Siemens           = decltype(Amperes{} / Volts{});
-
-//==================================================================================================
-//
-//==================================================================================================
-
-#if 1
-using AmountOfSubstance             = Moles;
-using ApparentPower                 = VoltAmperes;
-using Area                          = SquareMeters;
-using AreaPerLength                 = SquareCentimetersPerMeter;
-using Capacitance                   = Farads;
-using Distance                      = Meters;
-using ElectricCharge                = Coulombs;
-using ElectricConductance           = Siemens;
-using ElectricCurrent               = Amperes;
-using ElectricPotentialDifference   = Volts;
-using ElectricResistance            = Ohms;
-using Energy                        = Joules;
-using Force                         = Newtons;
-using Frequency                     = Hertz;
-using Illuminance                   = Luxs;
-//using Latitude                      = Tagged<Degrees, class _latitude>;
-using Length                        = Meters;
-//using Longitude                     = Tagged<Degrees, class _longitude>;
-using Luminance                     = Nits;
-using LuminousEnergy                = Talbots;
-using LuminousFlux                  = Lumens;
-using LuminousIntensity             = Candelas;
-using Mass                          = Kilograms;
-using Momentum                      = decltype(Kilograms{} * MetersPerSecond{});
-using PlaneAngle                    = Radians;
-#if 0
-using Position                      = Absolute<Distance>;
-#endif
-using Power                         = Watts;
-using Pressure                      = decltype(Newtons{} / SquareMeters{});
-using ReactivePower                 = Vars;
-using SolidAngle                    = Steradians;
-using Strain                        = Tagged<decltype(Meters{} / Meters{}), class _strain>;
-using Stress                        = Tagged<decltype(Newtons{} / SquareMeters{}), class _stress>;
-using Temperature                   = Absolute<Kelvin>;
-using TemperatureDifference         = Kelvin;
-using Time                          = Seconds;
-using Torque                        = NewtonMeters;
-using Velocity                      = MetersPerSecond;
-using Volume                        = CubicMeters;
-
-using Stiffness                     = decltype(Stress{} / Strain{});
-#endif
 
 } // namespace uom
