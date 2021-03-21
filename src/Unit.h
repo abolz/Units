@@ -9,6 +9,8 @@
 #include <ratio>
 #include <type_traits>
 
+#define UNITS_STRICT() 0
+
 #ifndef UNITS_ASSERT
 #define UNITS_ASSERT(X) assert(X)
 #endif
@@ -30,24 +32,7 @@ using DivDimensions = typename std::ratio_divide<D1, D2>::type;
 
 namespace dims
 {
-    // Some prime numbers:
-    // 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, ...
-    //                             ^^  ^^  ^^  ^^
-
-    using One               = Dimension< 1>; // 1
-    using Length            = Dimension< 2>; // Meter m
-    using Mass              = Dimension< 3>; // Kilogram kg
-    using Time              = Dimension< 5>; // Second s
-    using ElectricCurrent   = Dimension< 7>; // Ampere A
-    using Temperature       = Dimension<11>; // Kelvin K
-    using AmountOfSubstance = Dimension<13>; // Mole mol
-    using LuminousIntensity = Dimension<17>; // Candela cd
-    using PlaneAngle        = Dimension<19>; // Radian rad
-
-//  using Entity            = Dimension<23>;
-//  using Event             = Dimension<29>;
-    using Bit               = Dimension<31>;
-//  using Cycle             = Dimension<37>;
+    using One = Dimension<1>;
 
 } // namespace dim
 
@@ -78,21 +63,8 @@ namespace kinds
         static constexpr int64_t exponent = Exponent;
     };
 
-    //--------------------------------------------------------------------------
-    // Base kinds
-
-    using One               = Kind< Simple, dims::One               >;
-
-    using Length            = Kind< Simple, dims::Length            >;
-    using Mass              = Kind< Simple, dims::Mass              >;
-    using Time              = Kind< Simple, dims::Time              >;
-    using ElectricCurrent   = Kind< Simple, dims::ElectricCurrent   >;
-    using Temperature       = Kind< Simple, dims::Temperature       >;
-    using AmountOfSubstance = Kind< Simple, dims::AmountOfSubstance >;
-    using LuminousIntensity = Kind< Simple, dims::LuminousIntensity >;
-    using PlaneAngle        = Kind< Simple, dims::PlaneAngle        >;
-
-    using Bit               = Kind< Simple, dims::Bit >;
+    // Dimensionless [1]
+    using One = Kind<Simple, dims::One>;
 }
 
 namespace kinds::impl
@@ -824,14 +796,57 @@ public:
 };
 
 //==================================================================================================
-// Typedefs (SI)
+// SI
 //==================================================================================================
+
+namespace dims
+{
+    // Some prime numbers:
+    // 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, ...
+    //                             ^^  ^^  ^^  ^^
+
+    using Length            = Dimension< 2>; // Meter m
+    using Mass              = Dimension< 3>; // Kilogram kg
+    using Time              = Dimension< 5>; // Second s
+    using ElectricCurrent   = Dimension< 7>; // Ampere A
+    using Temperature       = Dimension<11>; // Kelvin K
+    using AmountOfSubstance = Dimension<13>; // Mole mol
+    using LuminousIntensity = Dimension<17>; // Candela cd
+    using PlaneAngle        = Dimension<19>; // Radian rad
+    using Bit               = Dimension<23>;
+//  using Entity            = Dimension<29>;
+//  using Event             = Dimension<31>;
+//  using Cycle             = Dimension<37>;
+}
+
+namespace kinds
+{
+#if UNITS_STRICT()
+    using Length            = Kind< class _length,              dims::Length            >;
+    using Mass              = Kind< class _mass,                dims::Mass              >;
+    using Time              = Kind< class _time,                dims::Time              >;
+    using ElectricCurrent   = Kind< class _electric_current,    dims::ElectricCurrent   >;
+    using Temperature       = Kind< class _temperature,         dims::Temperature       >;
+    using AmountOfSubstance = Kind< class _amount_of_substance, dims::AmountOfSubstance >;
+    using LuminousIntensity = Kind< class _luminous_intensity,  dims::LuminousIntensity >;
+    using PlaneAngle        = Kind< class _plane_angle,         dims::PlaneAngle        >;
+    using Bit               = Kind< class _bit,                 dims::Bit               >;
+#else
+    using Length            = Kind< Simple, dims::Length            >;
+    using Mass              = Kind< Simple, dims::Mass              >;
+    using Time              = Kind< Simple, dims::Time              >;
+    using ElectricCurrent   = Kind< Simple, dims::ElectricCurrent   >;
+    using Temperature       = Kind< Simple, dims::Temperature       >;
+    using AmountOfSubstance = Kind< Simple, dims::AmountOfSubstance >;
+    using LuminousIntensity = Kind< Simple, dims::LuminousIntensity >;
+    using PlaneAngle        = Kind< Simple, dims::PlaneAngle        >;
+    using Bit               = Kind< Simple, dims::Bit               >;
+#endif
+}
 
 namespace units
 {
     using One               = Unit<Conversion<Ratio<1>>, kinds::One>;
-    using Dimensionless     = Unit<Conversion<Ratio<1>>, kinds::One>;
-
     using Meter             = Unit<Conversion<Ratio<1>>, kinds::Length>;
     using Second            = Unit<Conversion<Ratio<1>>, kinds::Time>;
     using Ampere            = Unit<Conversion<Ratio<1>>, kinds::ElectricCurrent>;
@@ -842,7 +857,10 @@ namespace units
     using Radian            = Unit<Conversion<Ratio<1>>, kinds::PlaneAngle>;
     using Bit               = Unit<Conversion<Ratio<1>>, kinds::Bit>;
 
-} // namespace units
+    using Dimensionless     = Unit<Conversion<Ratio<1>>, kinds::One>;
+}
+
+//------------------------------------------------------------------------------
 
 template <typename Conv, typename Q>
 using ScaledQuantity
@@ -905,19 +923,9 @@ using Reaumurs          = ScaledQuantity<Conversion<Ratio<5, 4>>, Kelvin>;
 //using Fahrenheit        = ScaledQuantity<Conversion<Ratio<5, 9>>, Kelvin>;
 
 using DegKelvin         = Absolute<Kelvin>;
-
-// t_C = t_K - 273.15
 using DegCelsius        = Absolute<Kelvin, Ratio<27315, 100>>;
-
-// t_Ra = 9/5 * t_K
 using DegRankine        = Absolute<Rankine>;
-
-// t_F = 9/5 * t_K - 459.76
 using DegFahrenheit     = Absolute<Rankine, Ratio<45967, 100>>;
-
-// t_Re = 4/5 * t_C
-//      = 4/5 * (t_K - 273.15)
-//      = 4/5 t_K - 218.52
 using DegReaumur        = Absolute<Reaumurs, Ratio<21852, 100>>;
 
 //------------------------------------------------------------------------------
