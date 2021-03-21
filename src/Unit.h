@@ -518,10 +518,7 @@ public:
     template <typename Q, EnableExplicitConversion<typename Q::kind, kind, int> = 0>
     [[nodiscard]] constexpr scalar_type count() const noexcept
     {
-        if constexpr (std::is_same_v<Q, Quantity>)
-            return count_internal();
-        else
-            return Q(*this).count_internal();
+        return Q(*this).count_internal();
     }
 
     [[nodiscard]] constexpr friend Quantity operator+(Quantity q) noexcept
