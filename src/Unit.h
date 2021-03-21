@@ -835,15 +835,15 @@ namespace dims
 namespace kinds
 {
 #if UNITS_STRICT()
-    using Length            = Kind< dims::Length,            class _length              >;
-    using Mass              = Kind< dims::Mass,              class _mass                >;
-    using Time              = Kind< dims::Time,              class _time                >;
-    using ElectricCurrent   = Kind< dims::ElectricCurrent,   class _electric_current    >;
-    using Temperature       = Kind< dims::Temperature,       class _temperature         >;
-    using AmountOfSubstance = Kind< dims::AmountOfSubstance, class _amount_of_substance >;
-    using LuminousIntensity = Kind< dims::LuminousIntensity, class _luminous_intensity  >;
-    using PlaneAngle        = Kind< dims::PlaneAngle,        class _plane_angle         >;
-    using Bit               = Kind< dims::Bit,               class _bit                 >;
+    struct Length            : Kind< dims::Length,            Length            >;
+    struct Mass              : Kind< dims::Mass,              Mass              >;
+    struct Time              : Kind< dims::Time,              Time              >;
+    struct ElectricCurrent   : Kind< dims::ElectricCurrent,   ElectricCurrent   >;
+    struct Temperature       : Kind< dims::Temperature,       Temperature       >;
+    struct AmountOfSubstance : Kind< dims::AmountOfSubstance, AmountOfSubstance >;
+    struct LuminousIntensity : Kind< dims::LuminousIntensity, LuminousIntensity >;
+    struct PlaneAngle        : Kind< dims::PlaneAngle,        PlaneAngle        >;
+    struct Bit               : Kind< dims::Bit,               Bit               >;
 #else
     using Length            = Kind< dims::Length,            Simple >;
     using Mass              = Kind< dims::Mass,              Simple >;
