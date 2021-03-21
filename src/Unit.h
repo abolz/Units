@@ -404,6 +404,7 @@ struct Unit final
     using type       = Unit;
     using conversion = C;
     using kind       = K;
+    using tag        = typename kind::tag;
     using dimension  = typename kind::dimension;
 };
 
@@ -467,8 +468,8 @@ public:
     using unit        = U;
     using conversion  = typename U::conversion;
     using kind        = typename U::kind;
+    using tag         = typename U::tag;
     using dimension   = typename U::dimension;
-    using tag         = typename kind::tag;
 
     using untagged_type = Untagged<Quantity>;
     using simplified_type = Tagged<Quantity, kinds::Simple>;
