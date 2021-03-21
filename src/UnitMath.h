@@ -261,7 +261,7 @@ template <int64_t N, typename U>
 [[nodiscard]] inline auto pow(Quantity<U> q)
 {
     using conversion    = typename U::conversion;   // Conversion<Ratio, exp>
-    using kind          = typename U::kind;         // Kind<K, dimension>
+    using kind          = typename U::kind;         // Kind<dimension, Tag>
     using dimension     = typename U::dimension;    // Ratio
 
     static_assert(N >= 1,
@@ -279,7 +279,7 @@ template <int64_t N, typename U>
     using C = Conversion<typename conversion_pow::ratio, conversion::exp * N>;
     using D = typename dimension_pow::ratio;
 
-    using K = Kind<kinds::Simple, D>;
+    using K = Kind<D, kinds::Simple>;
 
     if constexpr (N == 1)
     {
@@ -311,7 +311,7 @@ template <int64_t N, typename U>
 [[nodiscard]] inline auto nth_root(Quantity<U> q)
 {
     using conversion    = typename U::conversion;   // Conversion<Ratio, exp>
-    using kind          = typename U::kind;         // Kind<K, dimension>
+    using kind          = typename U::kind;         // Kind<dimension, Tag>
     using dimension     = typename U::dimension;    // Ratio
 
     static_assert(N >= 1,
@@ -336,7 +336,7 @@ template <int64_t N, typename U>
     using C = Conversion<typename conversion_root::ratio, conversion::exp / N>;
     using D = typename dimension_root::ratio;
 
-    using K = Kind<kinds::Simple, D>;
+    using K = Kind<D, kinds::Simple>;
 
     if constexpr (N == 1)
     {

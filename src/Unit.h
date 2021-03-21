@@ -18,6 +18,16 @@
 namespace uom {
 
 //==================================================================================================
+//
+//==================================================================================================
+
+template <typename T>
+inline constexpr bool IsRatio = false;
+
+template <int64_t Num, int64_t Den>
+inline constexpr bool IsRatio<std::ratio<Num, Den>> = true;
+
+//==================================================================================================
 // Dimension
 //==================================================================================================
 
@@ -40,12 +50,15 @@ namespace dims
 // Kind
 //==================================================================================================
 
-template <typename Tag, typename D>
+template <typename D, typename Tag>
 struct Kind
 {
+    static_assert(IsRatio<D>,
+        "dimension must be a std::ratio");
+
     using type      = Kind;
-    using tag       = Tag;
     using dimension = D;
+    using tag       = Tag;
 };
 
 namespace kinds
@@ -64,7 +77,7 @@ namespace kinds
     };
 
     // Dimensionless [1]
-    using One = Kind<Simple, dims::One>;
+    using One = Kind<dims::One, Simple>;
 }
 
 namespace kinds::impl
@@ -216,12 +229,12 @@ template <typename T1, typename T2>
 using DivTags = typename kinds::impl::DivTags<T1, T2>::type;
 
 template <typename K1, typename K2>
-using MulKinds = Kind< MulTags<typename K1::tag, typename K2::tag>,
-                       MulDimensions<typename K1::dimension, typename K2::dimension> >;
+using MulKinds = Kind< MulDimensions<typename K1::dimension, typename K2::dimension>,
+                       MulTags<typename K1::tag, typename K2::tag> >;
 
 template <typename K1, typename K2>
-using DivKinds = Kind< DivTags<typename K1::tag, typename K2::tag>,
-                       DivDimensions<typename K1::dimension, typename K2::dimension> >;
+using DivKinds = Kind< DivDimensions<typename K1::dimension, typename K2::dimension>,
+                       DivTags<typename K1::tag, typename K2::tag> >;
 
 //==================================================================================================
 // Conversion
@@ -234,6 +247,9 @@ using Ratio = typename std::ratio<Num, Den>::type;
 template <typename R, int64_t PiExp = 0>
 struct Conversion final
 {
+    static_assert(IsRatio<R>,
+        "R must be a std::ratio");
+
     using type = Conversion;
     using ratio = typename R::type;
     static constexpr int64_t num = ratio::num;
@@ -376,8 +392,8 @@ struct Unit final
     using type       = Unit;
     using conversion = C;
     using kind       = K;
-    using tag        = typename kind::tag;
     using dimension  = typename kind::dimension;
+    using tag        = typename kind::tag;
 };
 
 template <typename U1, typename U2>
@@ -421,11 +437,11 @@ namespace impl
 
 template <typename Q, typename Tag>
 using Tagged // a.k.a. Change-Kind
-    = Quantity<Unit<typename Q::conversion, Kind<impl::Retag<typename Q::tag, Tag>, typename Q::dimension>>>;
+    = Quantity<Unit<typename Q::conversion, Kind<typename Q::dimension, impl::Retag<typename Q::tag, Tag>>>>;
 
 template <typename Q>
 using Untagged // a.k.a. Change-Kind
-    = Quantity<Unit<typename Q::conversion, Kind<impl::Untag<typename Q::tag>, typename Q::dimension>>>;
+    = Quantity<Unit<typename Q::conversion, Kind<typename Q::dimension, impl::Untag<typename Q::tag>>>>;
 
 //--------------------------------------------------------------------------------------------------
 //
@@ -440,8 +456,8 @@ public:
     using unit        = U;
     using conversion  = typename U::conversion;
     using kind        = typename U::kind;
-    using tag         = typename U::tag;
     using dimension   = typename U::dimension;
+    using tag         = typename U::tag;
 
     using untagged_type = Untagged<Quantity>;
     using simplified_type = Tagged<Quantity, kinds::Simple>;
@@ -648,8 +664,8 @@ public:
     using unit          = typename relative_type::unit;
     using conversion    = typename relative_type::conversion;
     using kind          = typename relative_type::kind;
-    using tag           = typename relative_type::tag;
     using dimension     = typename relative_type::dimension;
+    using tag           = typename relative_type::tag;
     using zero          = Zero;
 
 private:
@@ -822,25 +838,25 @@ namespace dims
 namespace kinds
 {
 #if UNITS_STRICT()
-    using Length            = Kind< class _length,              dims::Length            >;
-    using Mass              = Kind< class _mass,                dims::Mass              >;
-    using Time              = Kind< class _time,                dims::Time              >;
-    using ElectricCurrent   = Kind< class _electric_current,    dims::ElectricCurrent   >;
-    using Temperature       = Kind< class _temperature,         dims::Temperature       >;
-    using AmountOfSubstance = Kind< class _amount_of_substance, dims::AmountOfSubstance >;
-    using LuminousIntensity = Kind< class _luminous_intensity,  dims::LuminousIntensity >;
-    using PlaneAngle        = Kind< class _plane_angle,         dims::PlaneAngle        >;
-    using Bit               = Kind< class _bit,                 dims::Bit               >;
+    using Length            = Kind< dims::Length,            class _length              >;
+    using Mass              = Kind< dims::Mass,              class _mass                >;
+    using Time              = Kind< dims::Time,              class _time                >;
+    using ElectricCurrent   = Kind< dims::ElectricCurrent,   class _electric_current    >;
+    using Temperature       = Kind< dims::Temperature,       class _temperature         >;
+    using AmountOfSubstance = Kind< dims::AmountOfSubstance, class _amount_of_substance >;
+    using LuminousIntensity = Kind< dims::LuminousIntensity, class _luminous_intensity  >;
+    using PlaneAngle        = Kind< dims::PlaneAngle,        class _plane_angle         >;
+    using Bit               = Kind< dims::Bit,               class _bit                 >;
 #else
-    using Length            = Kind< Simple, dims::Length            >;
-    using Mass              = Kind< Simple, dims::Mass              >;
-    using Time              = Kind< Simple, dims::Time              >;
-    using ElectricCurrent   = Kind< Simple, dims::ElectricCurrent   >;
-    using Temperature       = Kind< Simple, dims::Temperature       >;
-    using AmountOfSubstance = Kind< Simple, dims::AmountOfSubstance >;
-    using LuminousIntensity = Kind< Simple, dims::LuminousIntensity >;
-    using PlaneAngle        = Kind< Simple, dims::PlaneAngle        >;
-    using Bit               = Kind< Simple, dims::Bit               >;
+    using Length            = Kind< dims::Length,            Simple >;
+    using Mass              = Kind< dims::Mass,              Simple >;
+    using Time              = Kind< dims::Time,              Simple >;
+    using ElectricCurrent   = Kind< dims::ElectricCurrent,   Simple >;
+    using Temperature       = Kind< dims::Temperature,       Simple >;
+    using AmountOfSubstance = Kind< dims::AmountOfSubstance, Simple >;
+    using LuminousIntensity = Kind< dims::LuminousIntensity, Simple >;
+    using PlaneAngle        = Kind< dims::PlaneAngle,        Simple >;
+    using Bit               = Kind< dims::Bit,               Simple >;
 #endif
 }
 
