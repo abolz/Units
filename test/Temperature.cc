@@ -30,6 +30,15 @@ using namespace uom::literals;
     return DegReaumur(static_cast<double>(x));
 }
 
+//static void test0()
+//{
+//    {
+//        constexpr auto t00 = Fahrenheit(Celsius(5.0)) + Fahrenheit(9.0);
+//        constexpr auto t01 = Celsius(5.0) + Celsius(Fahrenheit(9.0));
+//        static_assert(t00 == t01);
+//    }
+//}
+
 static void test()
 {
     {
@@ -191,4 +200,13 @@ static void test()
         constexpr auto v03 = 80.0 * 2.25 + 32.0;
         static_assert(x03 == v03);
     }
+}
+
+static void test2()
+{
+    using HeightAboveSeaLevel = Absolute<Meters>;
+    using HeightAboveLocal = Absolute<Meters, Ratio<200>>;
+
+    constexpr HeightAboveLocal h1(123);
+    constexpr HeightAboveSeaLevel h2(h1);
 }
