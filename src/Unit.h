@@ -16,6 +16,41 @@
 namespace uom {
 
 //==================================================================================================
+// Dimension
+//==================================================================================================
+
+template <int64_t Num = 1, int64_t Den = 1>
+using Dimension = typename std::ratio<Num, Den>::type;
+
+template <typename D1, typename D2>
+using MulDimensions = typename std::ratio_multiply<D1, D2>::type;
+
+template <typename D1, typename D2>
+using DivDimensions = typename std::ratio_divide<D1, D2>::type;
+
+namespace dims
+{
+    // Some prime numbers:
+    // 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, ...
+    //                             ^^  ^^  ^^
+
+    using One               = Dimension< 1>; // 1
+    using Length            = Dimension< 2>; // Meter m
+    using Mass              = Dimension< 3>; // Kilogram kg
+    using Time              = Dimension< 5>; // Second s
+    using ElectricCurrent   = Dimension< 7>; // Ampere A
+    using Temperature       = Dimension<11>; // Kelvin K
+    using AmountOfSubstance = Dimension<13>; // Mole mol
+    using LuminousIntensity = Dimension<17>; // Candela cd
+    using PlaneAngle        = Dimension<19>; // Radian rad
+
+//  using Entity            = Dimension<23>;
+//  using Event             = Dimension<29>;
+    using Bit               = Dimension<31>;
+
+} // namespace dim
+
+//==================================================================================================
 // Kind
 //==================================================================================================
 
@@ -29,15 +64,6 @@ struct Kind
 
 namespace kinds
 {
-    template <int64_t Num = 1, int64_t Den = 1>
-    using Dimension = typename std::ratio<Num, Den>::type;
-
-    template <typename D1, typename D2>
-    using MulDimensions = typename std::ratio_multiply<D1, D2>::type;
-
-    template <typename D1, typename D2>
-    using DivDimensions = typename std::ratio_divide<D1, D2>::type;
-
     struct Simple {};
 
     template <typename ...Factors>
@@ -51,205 +77,179 @@ namespace kinds
         static constexpr int64_t exponent = Exponent;
     };
 
-    namespace impl
+    //--------------------------------------------------------------------------
+    // Base kinds
+
+    using One               = Kind< Simple, dims::One               >; // 1
+    using Length            = Kind< Simple, dims::Length            >; // Meter m
+    using Mass              = Kind< Simple, dims::Mass              >; // Kilogram kg
+    using Time              = Kind< Simple, dims::Time              >; // Second s
+    using ElectricCurrent   = Kind< Simple, dims::ElectricCurrent   >; // Ampere A
+    using Temperature       = Kind< Simple, dims::Temperature       >; // Kelvin K
+    using AmountOfSubstance = Kind< Simple, dims::AmountOfSubstance >; // Mole mol
+    using LuminousIntensity = Kind< Simple, dims::LuminousIntensity >; // Candela cd
+    using PlaneAngle        = Kind< Simple, dims::PlaneAngle        >; // Radian rad
+
+    using Bit               = Kind< Simple, dims::Bit >;
+}
+
+namespace kinds::impl
+{
+    constexpr uint64_t FNV1a(const char* str) noexcept
     {
-        constexpr uint64_t FNV1a(const char* str) noexcept
+        uint64_t hash = 14695981039346656037u;
+        for ( ; *str != '\0'; ++str)
         {
-            uint64_t hash = 14695981039346656037u;
-            for ( ; *str != '\0'; ++str)
-            {
-                hash = (hash ^ *str) * 1099511628211u;
-            }
-
-            return hash;
+            hash = (hash ^ *str) * 1099511628211u;
         }
 
-        template <typename T>
-        constexpr uint64_t TypeId() noexcept
-        {
+        return hash;
+    }
+
+    template <typename T>
+    constexpr uint64_t TypeId() noexcept
+    {
 #if defined(_MSC_VER) && !defined(__clang__)
-            return impl::FNV1a(__FUNCSIG__);
+        return impl::FNV1a(__FUNCSIG__);
 #else
-            return impl::FNV1a(__PRETTY_FUNCTION__);
+        return impl::FNV1a(__PRETTY_FUNCTION__);
 #endif
+    }
+
+    template <typename T, typename ...Ts>
+    constexpr T Head(Complex<T, Ts...>) noexcept
+    {
+        return {};
+    }
+
+    template <typename T, typename ...Ts>
+    constexpr Complex<Ts...> Tail(Complex<T, Ts...>) noexcept
+    {
+        return {};
+    }
+
+    template <typename ...Ts, typename ...Us>
+    constexpr Complex<Ts..., Us...> operator+(Complex<Ts...>, Complex<Us...>) noexcept
+    {
+        return {};
+    }
+
+    enum class MergeType {
+        mul,
+        div,
+    };
+
+    template <MergeType MT, typename ...Fs1, typename ...Fs2>
+    constexpr auto Merge([[maybe_unused]] Complex<Fs1...> lhs, [[maybe_unused]] Complex<Fs2...> rhs) noexcept
+    {
+        if constexpr (sizeof...(Fs1) == 0)
+        {
+            return rhs;
         }
-
-        template <typename T, typename ...Ts>
-        constexpr T Head(Complex<T, Ts...>) noexcept
+        else if constexpr (sizeof...(Fs2) == 0)
         {
-            return {};
+            return lhs;
         }
-
-        template <typename T, typename ...Ts>
-        constexpr Complex<Ts...> Tail(Complex<T, Ts...>) noexcept
+        else
         {
-            return {};
-        }
+            using H1 = decltype(impl::Head(lhs));
+            using H2 = decltype(impl::Head(rhs));
 
-        template <typename ...Ts, typename ...Us>
-        constexpr Complex<Ts..., Us...> operator+(Complex<Ts...>, Complex<Us...>) noexcept
-        {
-            return {};
-        }
+            using T1 = typename H1::tag;
+            using T2 = typename H2::tag;
 
-        enum class MergeType
-        {
-            mul,
-            div,
-        };
-
-        template <MergeType MT, typename ...Fs1, typename ...Fs2>
-        constexpr auto Merge([[maybe_unused]] Complex<Fs1...> lhs, [[maybe_unused]] Complex<Fs2...> rhs) noexcept
-        {
-            if constexpr (sizeof...(Fs1) == 0)
+            constexpr uint64_t h1 = impl::TypeId<T1>();
+            constexpr uint64_t h2 = impl::TypeId<T2>();
+            if constexpr (h1 < h2)
             {
-                return rhs;
+                return Complex<H1>{} + impl::Merge<MT>(impl::Tail(lhs), rhs);
             }
-            else if constexpr (sizeof...(Fs2) == 0)
+            else if constexpr (h1 > h2)
             {
-                return lhs;
+                return Complex<H2>{} + impl::Merge<MT>(lhs, impl::Tail(rhs));
             }
             else
             {
-                using H1 = decltype(impl::Head(lhs));
-                using H2 = decltype(impl::Head(rhs));
+                static_assert(std::is_same_v<T1, T2>,
+                    "collision detected - please try changing the tag name");
 
-                using T1 = typename H1::tag;
-                using T2 = typename H2::tag;
+                constexpr int64_t e1 = H1::exponent;
+                constexpr int64_t e2 = MT == MergeType::mul ? H2::exponent : -H2::exponent;
 
-                constexpr uint64_t h1 = impl::TypeId<T1>();
-                constexpr uint64_t h2 = impl::TypeId<T2>();
-                if constexpr (h1 < h2)
+                constexpr int64_t e = (e1 + e2 == 0) ? 0 : (std::is_same_v<Simple, T1> ? 1 : (e1 + e2));
+                if constexpr (e != 0)
                 {
-                    return Complex<H1>{} + impl::Merge<MT>(impl::Tail(lhs), rhs);
-                }
-                else if constexpr (h1 > h2)
-                {
-                    return Complex<H2>{} + impl::Merge<MT>(lhs, impl::Tail(rhs));
+                    using F = Factor<T1, e>;
+                    return Complex<F>{} + impl::Merge<MT>(impl::Tail(lhs), impl::Tail(rhs));
                 }
                 else
                 {
-                    static_assert(std::is_same_v<T1, T2>,
-                        "collision detected - please try changing the tag name");
-
-                    constexpr int64_t e1 = H1::exponent;
-                    constexpr int64_t e2 = MT == MergeType::mul ? H2::exponent : -H2::exponent;
-
-                    constexpr int64_t e = (e1 + e2 == 0) ? 0 : (std::is_same_v<Simple, T1> ? 1 : (e1 + e2));
-                    if constexpr (e != 0)
-                    {
-                        using F = Factor<T1, e>;
-                        return Complex<F>{} + impl::Merge<MT>(impl::Tail(lhs), impl::Tail(rhs));
-                    }
-                    else
-                    {
-                        return impl::Merge<MT>(impl::Tail(lhs), impl::Tail(rhs));
-                    }
+                    return impl::Merge<MT>(impl::Tail(lhs), impl::Tail(rhs));
                 }
             }
         }
-
-        template <typename T>
-        struct Wrap1 { using type = Complex<Factor<T, 1>>; };
-
-        template <typename ...Fs>
-        struct Wrap1<Complex<Fs...>> { using type = Complex<Fs...>; };
-
-        template <typename T>
-        struct Unwrap1 { using type = T; };
-
-        template <>
-        struct Unwrap1<Complex<>> { using type = Simple; };
-
-        template <typename T>
-        struct Unwrap1<Complex<Factor<T, 1>>> { using type = T; };
-
-    } // namespace impl
+    }
 
     template <typename T>
-    using Wrap = typename impl::Wrap1<T>::type;
+    struct Wrap { using type = Complex<Factor<T, 1>>; };
+
+    template <typename ...Fs>
+    struct Wrap<Complex<Fs...>> { using type = Complex<Fs...>; };
 
     template <typename T>
-    using Unwrap = typename impl::Unwrap1<T>::type;
+    struct Unwrap { using type = T; };
+
+    template <>
+    struct Unwrap<Complex<>> { using type = Simple; };
+
+    template <typename T>
+    struct Unwrap<Complex<Factor<T, 1>>> { using type = T; };
 
     template <typename T1, typename T2>
-    struct MulTags1
+    struct MulTags
     {
-        using type = Unwrap< decltype( impl::Merge<impl::MergeType::mul>(Wrap<T1>{}, Wrap<T2>{}) ) >;
+        using W1 = typename Wrap<T1>::type;
+        using W2 = typename Wrap<T2>::type;
+        using WR = decltype( impl::Merge<impl::MergeType::mul>(W1{}, W2{}) );
+
+        using type = typename Unwrap<WR>::type;
     };
 
     template <typename T1, typename T2>
-    struct DivTags1
+    struct DivTags
     {
-        using type = Unwrap< decltype( impl::Merge<impl::MergeType::div>(Wrap<T1>{}, Wrap<T2>{}) ) >;
+        using W1 = typename Wrap<T1>::type;
+        using W2 = typename Wrap<T2>::type;
+        using WR = decltype( impl::Merge<impl::MergeType::div>(W1{}, W2{}) );
+
+        using type = typename Unwrap<WR>::type;
     };
 
 #if 1
     // (reduce compile-time???)
     template <>
-    struct MulTags1<Simple, Simple> { using type = Simple; };
+    struct MulTags<Simple, Simple> { using type = Simple; };
 
     // (reduce compile-time???)
     template <>
-    struct DivTags1<Simple, Simple> { using type = Simple; };
+    struct DivTags<Simple, Simple> { using type = Simple; };
 #endif
 
-    template <typename T1, typename T2>
-    using MulTags = typename kinds::MulTags1<T1, T2>::type;
+} // namespace kinds::impl
 
-    template <typename T1, typename T2>
-    using DivTags = typename kinds::DivTags1<T1, T2>::type;
+template <typename T1, typename T2>
+using MulTags = typename kinds::impl::MulTags<T1, T2>::type;
 
-} // namespace kinds
-
-template <typename K1, typename K2>
-using MulKinds = Kind< kinds::MulTags<typename K1::tag, typename K2::tag>,
-                       kinds::MulDimensions<typename K1::dimension, typename K2::dimension> >;
+template <typename T1, typename T2>
+using DivTags = typename kinds::impl::DivTags<T1, T2>::type;
 
 template <typename K1, typename K2>
-using DivKinds = Kind< kinds::DivTags<typename K1::tag, typename K2::tag>,
-                       kinds::DivDimensions<typename K1::dimension, typename K2::dimension> >;
+using MulKinds = Kind< MulTags<typename K1::tag, typename K2::tag>,
+                       MulDimensions<typename K1::dimension, typename K2::dimension> >;
 
-namespace kinds
-{
-    //----------------------------------------------------------------------
-    // Base kinds
-
-    // Some prime numbers:
-    // 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, ...
-    //                             ^^  ^^  ^^
-
-    namespace dim
-    {
-        using One               = Dimension< 1>; // 1
-        using Length            = Dimension< 2>; // Meter m
-        using Mass              = Dimension< 3>; // Kilogram kg
-        using Time              = Dimension< 5>; // Second s
-        using ElectricCurrent   = Dimension< 7>; // Ampere A
-        using Temperature       = Dimension<11>; // Kelvin K
-        using AmountOfSubstance = Dimension<13>; // Mole mol
-        using LuminousIntensity = Dimension<17>; // Candela cd
-        using PlaneAngle        = Dimension<19>; // Radian rad
-
-//      using Entity            = Dimension<23>;
-//      using Event             = Dimension<29>;
-        using Bit               = Dimension<31>;
-
-    } // namespace dim
-
-    using One               = Kind< Simple, dim::One               >; // 1
-    using Length            = Kind< Simple, dim::Length            >; // Meter m
-    using Mass              = Kind< Simple, dim::Mass              >; // Kilogram kg
-    using Time              = Kind< Simple, dim::Time              >; // Second s
-    using ElectricCurrent   = Kind< Simple, dim::ElectricCurrent   >; // Ampere A
-    using Temperature       = Kind< Simple, dim::Temperature       >; // Kelvin K
-    using AmountOfSubstance = Kind< Simple, dim::AmountOfSubstance >; // Mole mol
-    using LuminousIntensity = Kind< Simple, dim::LuminousIntensity >; // Candela cd
-    using PlaneAngle        = Kind< Simple, dim::PlaneAngle        >; // Radian rad
-
-    using Bit               = Kind< Simple, dim::Bit >;
-
-} // namespace kinds
+template <typename K1, typename K2>
+using DivKinds = Kind< DivTags<typename K1::tag, typename K2::tag>,
+                       DivDimensions<typename K1::dimension, typename K2::dimension> >;
 
 //==================================================================================================
 // Conversion
@@ -262,6 +262,7 @@ using Ratio = typename std::ratio<Num, Den>::type;
 template <typename R, int64_t PiExp = 0>
 struct Conversion final
 {
+    using type = Conversion;
     using ratio = typename R::type;
     static constexpr int64_t num = ratio::num;
     static constexpr int64_t den = ratio::den;
@@ -336,10 +337,10 @@ struct Conversion final
 };
 
 template <typename C1, typename C2 /* = C1 */>
-using MulConversions = Conversion<std::ratio_multiply<typename C1::ratio, typename C2::ratio>, C1::exp + C2::exp>;
+using MulConversions = Conversion<typename std::ratio_multiply<typename C1::ratio, typename C2::ratio>::type, C1::exp + C2::exp>;
 
 template <typename C1, typename C2>
-using DivConversions = Conversion<std::ratio_divide<typename C1::ratio, typename C2::ratio>, C1::exp - C2::exp>;
+using DivConversions = Conversion<typename std::ratio_divide<typename C1::ratio, typename C2::ratio>::type, C1::exp - C2::exp>;
 
 namespace impl
 {
@@ -414,50 +415,6 @@ template <typename U1, typename U2>
 using DivUnits = typename Unit< DivConversions<typename U1::conversion, typename U2::conversion>,
                                 DivKinds<typename U1::kind, typename U2::kind> >::type;
 
-namespace impl
-{
-    template <typename T>
-    inline constexpr bool IsUnit = false;
-
-    template <typename C, typename K>
-    inline constexpr bool IsUnit<Unit<C, K>> = true;
-    //
-    // TODO:
-    //  IsConversion<C>
-    //  IsKind<K>
-    //
-
-} // namespace impl
-
-//--------------------------------------------------------------------------------------------------
-// Typedefs
-//--------------------------------------------------------------------------------------------------
-
-namespace units
-{
-    //--------------------------------------------------------------------------
-
-    using One               = Unit<Conversion<Ratio<1>>, kinds::One>;
-    using Dimensionless     = Unit<Conversion<Ratio<1>>, kinds::One>;
-
-    //--------------------------------------------------------------------------
-    // SI base units
-
-    using Meter             = Unit<Conversion<Ratio<1>>, kinds::Length>;
-    using Second            = Unit<Conversion<Ratio<1>>, kinds::Time>;
-    using Ampere            = Unit<Conversion<Ratio<1>>, kinds::ElectricCurrent>;
-    using Kilogram          = Unit<Conversion<Ratio<1>>, kinds::Mass>;
-    using Kelvin            = Unit<Conversion<Ratio<1>>, kinds::Temperature>;
-    using Mole              = Unit<Conversion<Ratio<1>>, kinds::AmountOfSubstance>;
-    using Candela           = Unit<Conversion<Ratio<1>>, kinds::LuminousIntensity>;
-    using Radian            = Unit<Conversion<Ratio<1>>, kinds::PlaneAngle>;
-
-    //--------------------------------------------------------------------------
-
-    using Bit               = Unit<Conversion<Ratio<1>>, kinds::Bit>;
-
-} // namespace units
-
 //==================================================================================================
 // Quantity (value + compile-time unit)
 //==================================================================================================
@@ -472,12 +429,6 @@ struct Retag
 
 namespace impl
 {
-    template <typename T>
-    inline constexpr bool IsQuantity = false;
-
-    template <typename U>
-    inline constexpr bool IsQuantity<Quantity<U>> = true;
-
     template <typename T>
     struct Untag1
     {
@@ -510,9 +461,6 @@ using Untagged // a.k.a. Change-Kind
 template <typename U>
 class Quantity final
 {
-    static_assert(impl::IsUnit<U>,
-        "'Quantity' can only be used with 'Unit's");
-
 public:
     using type        = Quantity;
     using scalar_type = double;
@@ -587,9 +535,6 @@ public:
             return Q(*this).count_internal();
     }
 
-    //--------------------------------------------------------------------------
-    // Arithmetic
-
     [[nodiscard]] constexpr friend Quantity operator+(Quantity q) noexcept
     {
         return q;
@@ -639,7 +584,8 @@ public:
 
     [[nodiscard]] constexpr friend auto operator/(scalar_type lhs, Quantity rhs) noexcept
     {
-        return Quantity<DivUnits<units::One, unit>>(lhs / rhs.count_internal());
+        using _1 = Unit<Conversion<Ratio<1>>, kinds::One>;
+        return Quantity<DivUnits<_1, unit>>(lhs / rhs.count_internal());
     }
 
     constexpr friend Quantity& operator+=(Quantity& lhs, Quantity rhs) noexcept
@@ -665,9 +611,6 @@ public:
         lhs._count /= rhs;
         return lhs;
     }
-
-    //--------------------------------------------------------------------------
-    // Comparisons
 
     template <typename C2, typename Q = CommonQuantity<C2>>
     [[nodiscard]] constexpr friend int compare(Quantity lhs, Quantity<Unit<C2, kind>> rhs) noexcept
@@ -722,14 +665,12 @@ public:
 // Absolute
 //==================================================================================================
 
-template <typename Relative, typename Zero = Ratio<0>>
+template <typename RelativeType, typename Zero = Ratio<0>>
 class Absolute final
 {
-    static_assert(impl::IsQuantity<Relative>,
-        "Absolute can only be used with 'Quantity's");
-
 public:
-    using relative_type = Relative;
+    using type          = Absolute;
+    using relative_type = RelativeType;
     using scalar_type   = typename relative_type::scalar_type;
     using unit          = typename relative_type::unit;
     using conversion    = typename relative_type::conversion;
@@ -884,6 +825,23 @@ public:
 // Typedefs
 //==================================================================================================
 
+namespace units
+{
+    using One               = Unit<Conversion<Ratio<1>>, kinds::One>;
+    using Dimensionless     = Unit<Conversion<Ratio<1>>, kinds::One>;
+
+    using Meter             = Unit<Conversion<Ratio<1>>, kinds::Length>;
+    using Second            = Unit<Conversion<Ratio<1>>, kinds::Time>;
+    using Ampere            = Unit<Conversion<Ratio<1>>, kinds::ElectricCurrent>;
+    using Kilogram          = Unit<Conversion<Ratio<1>>, kinds::Mass>;
+    using Kelvin            = Unit<Conversion<Ratio<1>>, kinds::Temperature>;
+    using Mole              = Unit<Conversion<Ratio<1>>, kinds::AmountOfSubstance>;
+    using Candela           = Unit<Conversion<Ratio<1>>, kinds::LuminousIntensity>;
+    using Radian            = Unit<Conversion<Ratio<1>>, kinds::PlaneAngle>;
+    using Bit               = Unit<Conversion<Ratio<1>>, kinds::Bit>;
+
+} // namespace units
+
 template <typename Conv, typename Q>
 using ScaledQuantity
     = Quantity<Unit<MulConversions<Conv, typename Q::conversion>, typename Q::kind>>;
@@ -943,6 +901,8 @@ using Reaumurs          = ScaledQuantity<Conversion<Ratio<5, 4>>, Kelvin>;
 
 //using Celsius           = ScaledQuantity<Conversion<Ratio<1>>, Kelvin>;
 //using Fahrenheit        = ScaledQuantity<Conversion<Ratio<5, 9>>, Kelvin>;
+
+using DegKelvin         = Absolute<Kelvin>;
 
 // t_C = t_K - 273.15
 using DegCelsius        = Absolute<Kelvin, Ratio<27315, 100>>;
@@ -1027,21 +987,9 @@ using SquareDegrees     = Tagged<decltype(Degrees{} * Degrees{}), class _solid_a
 //------------------------------------------------------------------------------
 // Photometric
 
-// Lumen lm = cd sr
-// Luminous flux/power is the change of luminous energy with time.
 using Lumens            = decltype(Candelas{} * Steradians{});
-
-// lm s = cd sr s = talbot
-// Luminous energy is the perceived energy of light.
 using Talbots           = decltype(Lumens{} * Seconds{});
-
-// nit = cd/m^2 = lm/(m^2 sr)
-// Luminance is the density of luminous intensity with respect to projected area in a specified direction at a
-// specified point on a real or imaginary surface.
 using Nits              = decltype(Candelas{} / SquareMeters{});
-
-// Lux lx = lm/m^2
-// Illuminance is the density of incident luminous flux with respect to area at a point on a real or imaginary surface.
 using Luxs              = decltype(Lumens{} / SquareMeters{});
 
 //--------------------------------------------------------------------------
