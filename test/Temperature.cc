@@ -42,6 +42,10 @@ using namespace uom::literals;
 static void test()
 {
     {
+        constexpr auto v = 110_km / 1_h;
+        constexpr auto d = v * 2.7_h;
+        static_assert(Kilometers(d) == 297_km);
+
         constexpr auto t00 = DegCelsius(10_K);
         constexpr auto t01 = Kelvin(t00);
         static_assert(t01.count_internal() == 10.0);

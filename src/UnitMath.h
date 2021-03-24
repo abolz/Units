@@ -158,6 +158,18 @@ namespace impl {
         static constexpr bool is_exact = (root_num.is_exact && root_den.is_exact);
     };
 
+    constexpr int64_t Pow10(int n) noexcept
+    {
+        UNITS_ASSERT(n >= 0);
+        UNITS_ASSERT(n <= 18);
+
+        int64_t p = 1;
+        for (int i = 0; i < n; ++i)
+            p *= 10;
+
+        return p;
+    }
+
 } // namespace impl
 
 //==================================================================================================
@@ -530,28 +542,88 @@ template <typename U>
 //
 //==================================================================================================
 
-template <typename U>
+template <int Prec = 0, typename U>
 [[nodiscard]] inline Quantity<U> ceil(Quantity<U> x) noexcept
 {
-    return Quantity<U>(std::ceil(x.count_internal()));
+    using scalar_type = typename Quantity<U>::scalar_type;
+
+    if constexpr (Prec == 0)
+    {
+        return Quantity<U>(std::ceil(x.count_internal()));
+    }
+    else if constexpr (Prec > 0)
+    {
+        constexpr scalar_type scale = static_cast<scalar_type>(impl::Pow10(+Prec));
+        return Quantity<U>(std::ceil(x.count_internal() / scale) * scale);
+    }
+    else
+    {
+        constexpr scalar_type scale = static_cast<scalar_type>(impl::Pow10(-Prec));
+        return Quantity<U>(std::ceil(x.count_internal() * scale) / scale);
+    }
 }
 
-template <typename U>
+template <int Prec = 0, typename U>
 [[nodiscard]] inline Quantity<U> floor(Quantity<U> x) noexcept
 {
-    return Quantity<U>(std::floor(x.count_internal()));
+    using scalar_type = typename Quantity<U>::scalar_type;
+
+    if constexpr (Prec == 0)
+    {
+        return Quantity<U>(std::floor(x.count_internal()));
+    }
+    else if constexpr (Prec > 0)
+    {
+        constexpr scalar_type scale = static_cast<scalar_type>(impl::Pow10(+Prec));
+        return Quantity<U>(std::floor(x.count_internal() / scale) * scale);
+    }
+    else
+    {
+        constexpr scalar_type scale = static_cast<scalar_type>(impl::Pow10(-Prec));
+        return Quantity<U>(std::floor(x.count_internal() * scale) / scale);
+    }
 }
 
-template <typename U>
-[[nodiscard]] inline Quantity<U> round(Quantity<U> x) noexcept
-{
-    return Quantity<U>(std::round(x.count_internal()));
-}
-
-template <typename U>
+template <int Prec = 0, typename U>
 [[nodiscard]] inline Quantity<U> trunc(Quantity<U> x) noexcept
 {
-    return Quantity<U>(std::trunc(x.count_internal()));
+    using scalar_type = typename Quantity<U>::scalar_type;
+
+    if constexpr (Prec == 0)
+    {
+        return Quantity<U>(std::trunc(x.count_internal()));
+    }
+    else if constexpr (Prec > 0)
+    {
+        constexpr scalar_type scale = static_cast<scalar_type>(impl::Pow10(+Prec));
+        return Quantity<U>(std::trunc(x.count_internal() / scale) * scale);
+    }
+    else
+    {
+        constexpr scalar_type scale = static_cast<scalar_type>(impl::Pow10(-Prec));
+        return Quantity<U>(std::trunc(x.count_internal() * scale) / scale);
+    }
+}
+
+template <int Prec = 0, typename U>
+[[nodiscard]] inline Quantity<U> round(Quantity<U> x) noexcept
+{
+    using scalar_type = typename Quantity<U>::scalar_type;
+
+    if constexpr (Prec == 0)
+    {
+        return Quantity<U>(std::round(x.count_internal()));
+    }
+    else if constexpr (Prec > 0)
+    {
+        constexpr scalar_type scale = static_cast<scalar_type>(impl::Pow10(+Prec));
+        return Quantity<U>(std::round(x.count_internal() / scale) * scale);
+    }
+    else
+    {
+        constexpr scalar_type scale = static_cast<scalar_type>(impl::Pow10(-Prec));
+        return Quantity<U>(std::round(x.count_internal() * scale) / scale);
+    }
 }
 
 //==================================================================================================

@@ -215,7 +215,7 @@ namespace kinds::impl
     template <>
     struct MulTags<Simple, Simple> { using type = Simple; };
 
-    // (reduce compile-time???)
+   // (reduce compile-time???)
     template <>
     struct DivTags<Simple, Simple> { using type = Simple; };
 #endif
@@ -436,12 +436,16 @@ namespace impl
 } // namespace impl
 
 template <typename Q, typename Tag>
-using Tagged // a.k.a. Change-Kind
+using TaggedQuantity // a.k.a. Change-Kind
     = Quantity<Unit<typename Q::conversion, Kind<typename Q::dimension, impl::Retag<typename Q::tag, Tag>>>>;
 
 template <typename Q>
-using Untagged // a.k.a. Change-Kind
+using UntaggedQuantity // a.k.a. Change-Kind
     = Quantity<Unit<typename Q::conversion, Kind<typename Q::dimension, impl::Untag<typename Q::tag>>>>;
+
+template <typename Conv, typename Q>
+using ScaledQuantity
+    = Quantity<Unit<MulConversions<Conv, typename Q::conversion>, typename Q::kind>>;
 
 //--------------------------------------------------------------------------------------------------
 //
@@ -459,8 +463,8 @@ public:
     using dimension   = typename U::dimension;
     using tag         = typename U::tag;
 
-    using untagged_type = Untagged<Quantity>;
-    using simplified_type = Tagged<Quantity, kinds::Simple>;
+    using simplified_type = TaggedQuantity<Quantity, kinds::Simple>;
+    using untagged_type = UntaggedQuantity<Quantity>;
 
 private:
     scalar_type _count = 0;
@@ -488,6 +492,13 @@ public:
     {
     }
 
+    // static Quantity from_count(scalar_type c) noexcept
+    // {
+    //     Quantity q;
+    //     q._count = c;
+    //     return q;
+    // }
+
     template <typename C2, EnableImplicitConversion<conversion, C2, int> = 0>
     constexpr Quantity(Quantity<Unit<C2, kind>> q) noexcept
         : _count(DivConversions<C2, conversion>{}(q.count_internal()))
@@ -500,14 +511,14 @@ public:
     {
     }
 
-    [[nodiscard]] constexpr untagged_type untag() const noexcept
-    {
-        return untagged_type(_count);
-    }
-
     [[nodiscard]] constexpr simplified_type simplify() const noexcept
     {
         return simplified_type(_count);
+    }
+
+    [[nodiscard]] constexpr untagged_type untag() const noexcept
+    {
+        return untagged_type(_count);
     }
 
     [[nodiscard]] constexpr scalar_type count_internal() const noexcept
@@ -715,15 +726,17 @@ public:
     {
     }
 
+    // static Absolute from_count(scalar_type c) noexcept
+    // {
+    //     Absolute a;
+    //     a._relative = relative_type::from_count(c);
+    //     return a;
+    // }
+
     [[nodiscard]] constexpr scalar_type count_internal() const noexcept
     {
         return _relative.count_internal();
     }
-
-    // [[nodiscard]] constexpr relative_type relative() const noexcept
-    // {
-    //     return _relative;
-    // }
 
     template <typename C2, typename Z2>
     constexpr explicit Absolute(Absolute<Quantity<Unit<C2, kind>>, Z2> a) noexcept
@@ -731,9 +744,13 @@ public:
     {
     }
 
+#if 1
+    // Assumes:
+    // Relative == Absolute with Origin at 0
+
     template <typename C2>
-    constexpr explicit Absolute(Quantity<Unit<C2, kind>> a) noexcept
-        : _relative( convert<conversion, zero, C2, std::ratio<0>>( a.count_internal() ) )
+    constexpr explicit Absolute(Quantity<Unit<C2, kind>> r) noexcept
+        : _relative( convert<conversion, zero, C2, std::ratio<0>>( r.count_internal() ) )
     {
     }
 
@@ -744,6 +761,17 @@ public:
     {
         return Quantity<Unit<C2, kind>>( convert<C2, std::ratio<0>, conversion, zero>( count_internal() ) );
     }
+#else
+    constexpr explicit Absolute(relative_type r) noexcept
+        : _relative(r)
+    {
+    }
+
+    [[nodiscard]] constexpr relative_type relative() const noexcept
+    {
+        return _relative;
+    }
+#endif
 
     [[nodiscard]] constexpr friend Absolute operator+(Absolute lhs, relative_type rhs) noexcept
     {
@@ -809,6 +837,16 @@ public:
 };
 
 //==================================================================================================
+//
+//==================================================================================================
+
+// template <typename T>
+// constexpr T count_as(double count) noexcept
+// {
+//     return T(count);
+// }
+
+//==================================================================================================
 // SI
 //==================================================================================================
 
@@ -827,24 +865,13 @@ namespace dims
     using LuminousIntensity = Dimension<17>; // Candela cd
     using PlaneAngle        = Dimension<19>; // Radian rad
     using Bit               = Dimension<23>;
-//  using Entity            = Dimension<29>;
-//  using Event             = Dimension<31>;
-//  using Cycle             = Dimension<37>;
+    using Entity            = Dimension<29>;
+    using Event             = Dimension<31>;
+    using Cycle             = Dimension<37>;
 }
 
 namespace kinds
 {
-#if UNITS_STRICT()
-    struct Length            : Kind< dims::Length,            Length            >;
-    struct Mass              : Kind< dims::Mass,              Mass              >;
-    struct Time              : Kind< dims::Time,              Time              >;
-    struct ElectricCurrent   : Kind< dims::ElectricCurrent,   ElectricCurrent   >;
-    struct Temperature       : Kind< dims::Temperature,       Temperature       >;
-    struct AmountOfSubstance : Kind< dims::AmountOfSubstance, AmountOfSubstance >;
-    struct LuminousIntensity : Kind< dims::LuminousIntensity, LuminousIntensity >;
-    struct PlaneAngle        : Kind< dims::PlaneAngle,        PlaneAngle        >;
-    struct Bit               : Kind< dims::Bit,               Bit               >;
-#else
     using Length            = Kind< dims::Length,            Simple >;
     using Mass              = Kind< dims::Mass,              Simple >;
     using Time              = Kind< dims::Time,              Simple >;
@@ -854,7 +881,9 @@ namespace kinds
     using LuminousIntensity = Kind< dims::LuminousIntensity, Simple >;
     using PlaneAngle        = Kind< dims::PlaneAngle,        Simple >;
     using Bit               = Kind< dims::Bit,               Simple >;
-#endif
+    using Entity            = Kind< dims::Entity,            Simple >;
+    using Event             = Kind< dims::Event,             Simple >;
+    using Cycle             = Kind< dims::Cycle,             Simple >;
 }
 
 namespace units
@@ -872,12 +901,6 @@ namespace units
 
     using Dimensionless     = Unit<Conversion<Ratio<1>>, kinds::One>;
 }
-
-//------------------------------------------------------------------------------
-
-template <typename Conv, typename Q>
-using ScaledQuantity
-    = Quantity<Unit<MulConversions<Conv, typename Q::conversion>, typename Q::kind>>;
 
 //------------------------------------------------------------------------------
 // One
@@ -976,8 +999,8 @@ using SquareKilometers  = decltype(Kilometers{} * Kilometers{});
 //--------------------------------------------------------------------------
 // Area per Length
 
-using SquareCentimetersPerMeter = Tagged<decltype(SquareCentimeters{} / Meters{}), class _area_per_length>;
-using SquareMetersPerMeter      = Tagged<decltype(SquareMeters{}      / Meters{}), class _area_per_length>;
+using SquareCentimetersPerMeter = TaggedQuantity<decltype(SquareCentimeters{} / Meters{}), class _area_per_length>;
+using SquareMetersPerMeter      = TaggedQuantity<decltype(SquareMeters{}      / Meters{}), class _area_per_length>;
 
 //------------------------------------------------------------------------------
 // Volume
@@ -1004,8 +1027,8 @@ using KilometersPerHour = decltype(Kilometers{} / Hours{});
 //------------------------------------------------------------------------------
 // Solid angle
 
-using Steradians        = Tagged<decltype(Radians{} * Radians{}), class _solid_angle>;
-using SquareDegrees     = Tagged<decltype(Degrees{} * Degrees{}), class _solid_angle>;
+using Steradians        = TaggedQuantity<decltype(Radians{} * Radians{}), class _solid_angle>;
+using SquareDegrees     = TaggedQuantity<decltype(Degrees{} * Degrees{}), class _solid_angle>;
 
 //------------------------------------------------------------------------------
 // Photometric
@@ -1042,6 +1065,7 @@ using Kilowatts         = ScaledQuantity<Conversion<Ratio<1000>>, Watts>;
 // using Kilovars          = ScaledQuantity<Conversion<Ratio<1000>>, Vars>;
 
 // using VoltAmperes       = Tagged<Watts, class _apparent_power>;
+// using KiloVoltAmperes   = ScaledQuantity<Conversion<Ratio<1000>>, VoltAmperes>;
 
 //--------------------------------------------------------------------------
 // Data

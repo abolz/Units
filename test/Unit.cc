@@ -49,6 +49,15 @@ template <typename T1, typename T2>
 inline constexpr bool IsSame = std::is_same_v<std::remove_const_t<std::remove_reference_t<T1>>,
                                               std::remove_const_t<std::remove_reference_t<T2>>>;
 
+static void test_round()
+{
+    const Kilograms kg(1509.72);
+    const Kilograms r1 = round<+1>(kg);
+    const Kilograms r2 = round<-1>(kg);
+
+    return;
+}
+
 static constexpr void fun_mm(Millimeters mm)
 {
 }
@@ -329,8 +338,8 @@ static void test2()
         assert(mm.count_internal() == 11.0);
     }
     {
-        using Width  = Tagged<Millimeters, class _width>;
-        using Height = Tagged<Millimeters, class _height>;
+        using Width  = TaggedQuantity<Millimeters, class _width>;
+        using Height = TaggedQuantity<Millimeters, class _height>;
 
         static_assert(!Compiles<Add, Width, Millimeters>);
 
@@ -354,9 +363,9 @@ static void test2()
         const Centimeters mmm = 1_m + 1_km + 1_cm;
     }
     {
-        using Length   = Tagged<Millimeters, class _length>;
-        using Height   = Tagged<Millimeters, class _height>;
-        using Width    = Tagged<Millimeters, class _width>;
+        using Length   = TaggedQuantity<Millimeters, class _length>;
+        using Height   = TaggedQuantity<Millimeters, class _height>;
+        using Width    = TaggedQuantity<Millimeters, class _width>;
         using Position = Absolute<Length>;
 
         const Height h(0);
@@ -397,7 +406,7 @@ static void test2()
     }
 #if 1
     {
-        using ReinfCont = Tagged<decltype(1_cm2/1_m), class AreaPerLength>;
+        using ReinfCont = TaggedQuantity<decltype(1_cm2/1_m), class AreaPerLength>;
 
         ReinfCont r(3.1415_cm2 / 1_m);
         // r = 3.1415_cm2 / 1_m;
@@ -435,4 +444,5 @@ static void test3()
 
 int main()
 {
+    test_round();
 }

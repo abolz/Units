@@ -222,6 +222,14 @@ namespace uom::literals {
 {
     return Hours(static_cast<double>(x));
 }
+[[nodiscard]] constexpr auto operator""_d(long double x) noexcept
+{
+    return Days(static_cast<double>(x));
+}
+[[nodiscard]] constexpr auto operator""_d(unsigned long long x) noexcept
+{
+    return Days(static_cast<double>(x));
+}
 
 //--------------------------------------------------------------------------------------------------
 // Frequency

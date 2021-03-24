@@ -7,8 +7,8 @@ using namespace uom::literals;
 
 static void test()
 {
-    using Width  = Tagged<Millimeters, struct _width>;
-    using Height = Tagged<Centimeters, struct _height>;
+    using Width  = TaggedQuantity<Millimeters, struct _width>;
+    using Height = TaggedQuantity<Centimeters, struct _height>;
 
     Width  w(1.0);
     Height h(2.0_cm);
