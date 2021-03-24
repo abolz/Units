@@ -8,16 +8,9 @@ using namespace uom::literals;
 // See:
 // https://what-if.xkcd.com/11/
 
-// 71, 73, 79
-#if 1
-using Birds  = Quantity<Unit<Conversion<Ratio<1>>, Kind<Dimension<71>, uom::kinds::Simple>>>;
-using Poops  = Quantity<Unit<Conversion<Ratio<1>>, Kind<Dimension<73>, uom::kinds::Simple>>>;
-using Mouths = Quantity<Unit<Conversion<Ratio<1>>, Kind<Dimension<79>, uom::kinds::Simple>>>;
-#else
-using Birds  = Quantity<Unit<Conversion<Ratio<1>>, Kind<Dimension<71>, uom::kinds::Simple>>>;
-using Poops  = Quantity<Unit<Conversion<Ratio<1>>, Kind<Dimension<73>, uom::kinds::Simple>>>;
-using Mouths = Quantity<Unit<Conversion<Ratio<1>>, Kind<Dimension<79>, uom::kinds::Simple>>>;
-#endif
+using Birds  = TaggedQuantity<Entities, struct _birds>;
+using Poops  = TaggedQuantity<Entities, struct _poops>;
+using Mouths = TaggedQuantity<Entities, struct _mouths>;
 
 inline constexpr auto k4Pi = 4 * impl::kPi;
 inline constexpr auto kEarthRadius = 6371.0_km;

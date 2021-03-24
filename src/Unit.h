@@ -854,7 +854,7 @@ namespace dims
 {
     // Some prime numbers:
     // 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, ...
-    //                             ^^  ^^  ^^  ^^
+    //                         ~~  ^^  ^^  ^^  ^^
 
     using Length            = Dimension< 2>; // Meter m
     using Mass              = Dimension< 3>; // Kilogram kg
@@ -898,6 +898,9 @@ namespace units
     using Candela           = Unit<Conversion<Ratio<1>>, kinds::LuminousIntensity>;
     using Radian            = Unit<Conversion<Ratio<1>>, kinds::PlaneAngle>;
     using Bit               = Unit<Conversion<Ratio<1>>, kinds::Bit>;
+    using Entity            = Unit<Conversion<Ratio<1>>, kinds::Entity>;
+    using Event             = Unit<Conversion<Ratio<1>>, kinds::Event>;
+    using Cycle             = Unit<Conversion<Ratio<1>>, kinds::Cycle>;
 
     using Dimensionless     = Unit<Conversion<Ratio<1>>, kinds::One>;
 }
@@ -908,6 +911,10 @@ namespace units
 using Dimensionless     = Quantity<units::Dimensionless>;
 using Percent           = ScaledQuantity<Conversion<Ratio<1, 100>>, Dimensionless>;
 using Permill           = ScaledQuantity<Conversion<Ratio<1, 1000>>, Dimensionless>;
+
+using Entities          = Quantity<units::Entity>;
+using Events            = Quantity<units::Event>;
+using Cycles            = Quantity<units::Cycle>;
 
 //------------------------------------------------------------------------------
 // Length
