@@ -411,41 +411,13 @@ using DivUnits = typename Unit< DivConversions<typename U1::conversion, typename
 template <typename U>
 class Quantity;
 
-namespace impl
-{
-    template <typename OldTag, typename NewTag>
-    struct Retag
-    {
-    };
-
-    template <typename T>
-    struct Untag1
-    {
-        using type = T;
-    };
-
-    template <typename OldTag, typename NewTag>
-    struct Untag1<Retag<OldTag, NewTag>>
-    {
-        using type = OldTag;
-    };
-
-    template <typename T>
-    using Untag = typename Untag1<T>::type;
-
-} // namespace impl
-
-template <typename Q, typename Tag>
-using TaggedQuantity // a.k.a. Change-Kind
-    = Quantity<Unit<typename Q::conversion, Kind<typename Q::dimension, impl::Retag<typename Q::tag, Tag>>>>;
-
-template <typename Q>
-using UntaggedQuantity // a.k.a. Change-Kind
-    = Quantity<Unit<typename Q::conversion, Kind<typename Q::dimension, impl::Untag<typename Q::tag>>>>;
-
 template <typename Conv, typename Q>
 using ScaledQuantity
     = Quantity<Unit<MulConversions<Conv, typename Q::conversion>, typename Q::kind>>;
+
+template <typename Q, typename Tag>
+using TaggedQuantity // a.k.a. Change-Kind
+    = Quantity<Unit<typename Q::conversion, Kind<typename Q::dimension, Tag>>>;
 
 //--------------------------------------------------------------------------------------------------
 //
@@ -464,7 +436,6 @@ public:
     using tag         = typename U::tag;
 
     using simplified_type = TaggedQuantity<Quantity, kinds::Simple>;
-    using untagged_type = UntaggedQuantity<Quantity>;
 
 private:
     scalar_type _count = 0;
@@ -492,13 +463,6 @@ public:
     {
     }
 
-    // static Quantity from_count(scalar_type c) noexcept
-    // {
-    //     Quantity q;
-    //     q._count = c;
-    //     return q;
-    // }
-
     template <typename C2, EnableImplicitConversion<conversion, C2, int> = 0>
     constexpr Quantity(Quantity<Unit<C2, kind>> q) noexcept
         : _count(DivConversions<C2, conversion>{}(q.count_internal()))
@@ -514,11 +478,6 @@ public:
     [[nodiscard]] constexpr simplified_type simplify() const noexcept
     {
         return simplified_type(_count);
-    }
-
-    [[nodiscard]] constexpr untagged_type untag() const noexcept
-    {
-        return untagged_type(_count);
     }
 
     [[nodiscard]] constexpr scalar_type count_internal() const noexcept
