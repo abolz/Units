@@ -9,8 +9,6 @@
 #include <ratio>
 #include <type_traits>
 
-#define UNITS_STRICT() 0
-
 #ifndef UNITS_ASSERT
 #define UNITS_ASSERT(X) assert(X)
 #endif
@@ -638,9 +636,6 @@ private:
     template <typename C1, typename Z1, typename C2, typename Z2>
     static constexpr double convert(double x) noexcept
     {
-        // static_assert(impl::IsConversion<C1>::value);
-        // static_assert(impl::IsConversion<C2>::value);
-
         static_assert(C1::exp == 0,
             "sorry, not supported (yet)");
         static_assert(C2::exp == 0,
