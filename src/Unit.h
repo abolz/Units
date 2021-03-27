@@ -409,21 +409,6 @@ using DivUnits = typename Unit< DivConversions<typename U1::conversion, typename
 //==================================================================================================
 
 template <typename U>
-class Quantity;
-
-template <typename Conv, typename Q>
-using ScaledQuantity
-    = Quantity<Unit<MulConversions<Conv, typename Q::conversion>, typename Q::kind>>;
-
-template <typename Q, typename Tag>
-using TaggedQuantity // a.k.a. Change-Kind
-    = Quantity<Unit<typename Q::conversion, Kind<typename Q::dimension, Tag>>>;
-
-//--------------------------------------------------------------------------------------------------
-//
-//--------------------------------------------------------------------------------------------------
-
-template <typename U>
 class Quantity final
 {
 public:
@@ -435,7 +420,7 @@ public:
     using dimension   = typename U::dimension;
     using tag         = typename U::tag;
 
-    using simplified_type = TaggedQuantity<Quantity, kinds::Simple>;
+    using simplified_type = Quantity<Unit<conversion, Kind<dimension, kinds::Simple>>>;
 
 private:
     scalar_type _count = 0;
@@ -617,6 +602,14 @@ public:
     }
 };
 
+template <typename Conv, typename Q>
+using ScaledQuantity
+    = Quantity<Unit<MulConversions<Conv, typename Q::conversion>, typename Q::kind>>;
+
+template <typename Q, typename Tag>
+using TaggedQuantity // a.k.a. Change-Kind
+    = Quantity<Unit<typename Q::conversion, Kind<typename Q::dimension, Tag>>>;
+
 //==================================================================================================
 // Absolute
 //==================================================================================================
@@ -787,16 +780,6 @@ public:
         return lhs._relative >= rhs._relative;
     }
 };
-
-//==================================================================================================
-//
-//==================================================================================================
-
-// template <typename T>
-// constexpr T count_as(double count) noexcept
-// {
-//     return T(count);
-// }
 
 //==================================================================================================
 // SI
