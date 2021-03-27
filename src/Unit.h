@@ -468,10 +468,10 @@ public:
         return _count;
     }
 
-    template <typename Q, EnableExplicitConversion<typename Q::kind, kind, int> = 0>
+    template <typename T, std::enable_if_t<std::is_constructible_v<T, Quantity>, int> = 0>
     [[nodiscard]] constexpr scalar_type count() const noexcept
     {
-        return Q(*this).count_internal();
+        return T(*this).count_internal();
     }
 
     [[nodiscard]] constexpr friend Quantity operator+(Quantity q) noexcept
@@ -633,7 +633,13 @@ private:
     // Value = (C2 / C1)( a + Z2 ) - Z1
     //       = (C2 / C1)( a + Z2 - Z1 * (C1 / C2) )
     //       = (C2 / C1)( a ) + (Z2 * (C2 / C1) - Z1)
-    template <typename C1, typename Z1, typename C2, typename Z2>
+
+    enum class Forward {
+        no,
+        yes,
+    };
+
+    template <Forward Fwd, typename C1, typename Z1, typename C2, typename Z2>
     static constexpr double convert(double x) noexcept
     {
         static_assert(C1::exp == 0,
@@ -641,25 +647,34 @@ private:
         static_assert(C2::exp == 0,
             "sorry, not supported (yet)");
 
-        using R1 = std::ratio_divide<typename C2::ratio, typename C1::ratio>;
-        using R2 = std::ratio_subtract<std::ratio_multiply<Z2, R1>, Z1>;
+        if constexpr (Fwd == Forward::yes)
+        {
+            using R1 = std::ratio_divide<typename C2::ratio, typename C1::ratio>;
+            using R2 = std::ratio_subtract<std::ratio_multiply<Z2, R1>, Z1>;
 
-//      static_assert(R1::num != 0);
-        static_assert(R1::den != 0);
-        static_assert(R2::den != 0);
+            static_assert(R1::den != 0);
+            static_assert(R2::den != 0);
 
-#if 1
-        constexpr double a = (static_cast<double>(R1::num) / static_cast<double>(R1::den));
-        constexpr double b = (static_cast<double>(R2::num) / static_cast<double>(R2::den));
+            constexpr double a = (static_cast<double>(R1::num) / static_cast<double>(R1::den));
+            constexpr double b = (static_cast<double>(R2::num) / static_cast<double>(R2::den));
 
-        return a * x + b;
-#else
-        constexpr int64_t a = R1::num * R2::den;
-        constexpr int64_t b = R1::den * R2::num;
-        constexpr int64_t c = R1::den * R2::den;
+            return a * x + b;
+        }
+        else
+        {
+            using R1 = std::ratio_divide<typename C1::ratio, typename C2::ratio>;
+            using R2 = std::ratio_subtract<std::ratio_multiply<Z1, R1>, Z2>;
 
-        return (a * x + b) / c;
-#endif
+            static_assert(R1::den != 0);
+            static_assert(R2::den != 0);
+
+            constexpr double a = (static_cast<double>(R1::num) / static_cast<double>(R1::den));
+//          constexpr double a = (static_cast<double>(R1::den) / static_cast<double>(R1::num));
+            constexpr double b = (static_cast<double>(R2::num) / static_cast<double>(R2::den));
+
+            return (x - b) / a;
+//          return (x - b) * a;
+        }
     }
 
 private:
@@ -673,14 +688,9 @@ public:
     {
     }
 
-    [[nodiscard]] constexpr scalar_type count_internal() const noexcept
-    {
-        return _relative.count_internal();
-    }
-
     template <typename C2, typename Z2>
     constexpr explicit Absolute(Absolute<Quantity<Unit<C2, kind>>, Z2> a) noexcept
-        : _relative( convert<conversion, zero, C2, Z2>( a.count_internal() ) )
+        : _relative( convert<Forward::yes, conversion, zero, C2, Z2>( a.count_internal() ) )
     {
     }
 
@@ -690,7 +700,7 @@ public:
 
     template <typename C2>
     constexpr explicit Absolute(Quantity<Unit<C2, kind>> r) noexcept
-        : _relative( convert<conversion, zero, C2, std::ratio<0>>( r.count_internal() ) )
+        : _relative( convert<Forward::yes, conversion, zero, C2, std::ratio<0>>( r.count_internal() ) )
     {
     }
 
@@ -699,7 +709,7 @@ public:
     template <typename C2>
     [[nodiscard]] constexpr explicit operator Quantity<Unit<C2, kind>>() const noexcept
     {
-        return Quantity<Unit<C2, kind>>( convert<C2, std::ratio<0>, conversion, zero>( count_internal() ) );
+        return Quantity<Unit<C2, kind>>( convert<Forward::no, C2, std::ratio<0>, conversion, zero>( count_internal() ) );
     }
 #else
     constexpr explicit Absolute(relative_type r) noexcept
@@ -712,6 +722,17 @@ public:
         return _relative;
     }
 #endif
+
+    [[nodiscard]] constexpr scalar_type count_internal() const noexcept
+    {
+        return _relative.count_internal();
+    }
+
+    template <typename T, std::enable_if_t<std::is_constructible_v<T, Absolute>, int> = 0>
+    [[nodiscard]] constexpr scalar_type count() const noexcept
+    {
+        return T(*this).count_internal();
+    }
 
     [[nodiscard]] constexpr friend Absolute operator+(Absolute lhs, relative_type rhs) noexcept
     {

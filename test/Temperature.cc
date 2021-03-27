@@ -42,18 +42,8 @@ using namespace uom::literals;
 static void test()
 {
     {
-        constexpr auto v = 110_km / 1_h;
-        constexpr auto d = v * 2.7_h;
-        static_assert(Kilometers(d) == 297_km);
-
-        constexpr auto t00 = DegCelsius(10_K);
-        constexpr auto t01 = Kelvin(t00);
-        static_assert(t01.count_internal() == 10.0);
-    }
-
-    {
         constexpr auto t00 = DegCelsius(0_K);
-        constexpr auto x00 = t00.count_internal();
+        constexpr auto x00 = t00.count<DegCelsius>();
         constexpr auto v00 = -273.15;
         static_assert(x00 == v00);
 
@@ -98,7 +88,7 @@ static void test()
     {
         constexpr auto t00 = Kelvin(100_degC);
         constexpr auto x00 = t00.count_internal();
-        constexpr auto v00 = 100.00 + 273.15;
+        constexpr auto v00 = 373.15;
         static_assert(x00 == v00);
 
         constexpr auto t01 = DegFahrenheit(100_degC);
@@ -142,56 +132,56 @@ static void test()
     {
         constexpr auto t00 = Kelvin(32_degF);
         constexpr auto x00 = t00.count_internal();
-        constexpr auto v00 = 32.0 * (5.0 / 9.0) + (45967.0 * 5.0) / (100.0 * 9.0);
+        constexpr auto v00 = 273.15;
         static_assert(x00 == v00);
 
         constexpr auto t01 = DegCelsius(32_degF);
         constexpr auto x01 = t01.count_internal();
-        constexpr auto v01 = 32.0 * (5.0 / 9.0) - (32.0 * 5.0) / 9.0;
+        constexpr auto v01 = 0.0;
         static_assert(x01 == v01);
 
         constexpr auto t02 = DegRankine(32_degF);
         constexpr auto x02 = t02.count_internal();
-        constexpr auto v02 = 32.0 + 459.67;
+        constexpr auto v02 = 491.67;
         static_assert(x02 == v02);
 
         constexpr auto t03 = DegReaumur(32_degF);
         constexpr auto x03 = t03.count_internal();
-        constexpr auto v03 = 32.0 * (4.0 / 9.0) - (32.0 * 4.0) / 9.0;
+        constexpr auto v03 = 0.0;
         static_assert(x03 == v03);
     }
 
     {
         constexpr auto t00 = Kelvin(0_degRe);
         constexpr auto x00 = t00.count_internal();
-        constexpr auto v00 = 0.0 * 1.25 + 273.15;
+        constexpr auto v00 = 273.15;
         static_assert(x00 == v00);
 
         constexpr auto t01 = DegCelsius(0_degRe);
         constexpr auto x01 = t01.count_internal();
-        constexpr auto v01 = 0.0 * 1.25;
+        constexpr auto v01 = 0.0;
         static_assert(x01 == v01);
 
         constexpr auto t02 = DegRankine(0_degRe);
         constexpr auto x02 = t02.count_internal();
-        constexpr auto v02 = 0.0 * 2.25 + 491.67;
+        constexpr auto v02 = 491.67;
         static_assert(x02 == v02);
 
         constexpr auto t03 = DegFahrenheit(0_degRe);
         constexpr auto x03 = t03.count_internal();
-        constexpr auto v03 = 0.0 * 2.25 + 32.0;
+        constexpr auto v03 = 32.0;
         static_assert(x03 == v03);
     }
 
     {
         constexpr auto t00 = Kelvin(80_degRe);
         constexpr auto x00 = t00.count_internal();
-        constexpr auto v00 = 80.0 * 1.25 + 273.15;
+        constexpr auto v00 = 373.15;
         static_assert(x00 == v00);
 
         constexpr auto t01 = DegCelsius(80_degRe);
         constexpr auto x01 = t01.count_internal();
-        constexpr auto v01 = 80.0 * 1.25;
+        constexpr auto v01 = 100.0;
         static_assert(x01 == v01);
 
         constexpr auto t02 = DegRankine(80_degRe);
@@ -201,7 +191,7 @@ static void test()
 
         constexpr auto t03 = DegFahrenheit(80_degRe);
         constexpr auto x03 = t03.count_internal();
-        constexpr auto v03 = 80.0 * 2.25 + 32.0;
+        constexpr auto v03 = 212.0;
         static_assert(x03 == v03);
     }
 }
