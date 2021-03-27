@@ -685,13 +685,6 @@ public:
     {
     }
 
-    // static Absolute from_count(scalar_type c) noexcept
-    // {
-    //     Absolute a;
-    //     a._relative = relative_type::from_count(c);
-    //     return a;
-    // }
-
     [[nodiscard]] constexpr scalar_type count_internal() const noexcept
     {
         return _relative.count_internal();
