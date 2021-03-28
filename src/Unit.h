@@ -402,6 +402,12 @@ template <typename U1, typename U2>
 using DivUnits = typename Unit< DivConversions<typename U1::conversion, typename U2::conversion>,
                                 DivKinds<typename U1::kind, typename U2::kind> >::type;
 
+namespace units
+{
+    using One               = Unit<Conversion<Ratio<1>>, kinds::One>;
+    using Dimensionless     = Unit<Conversion<Ratio<1>>, kinds::One>;
+}
+
 //==================================================================================================
 // Quantity (value + compile-time unit)
 //==================================================================================================
@@ -469,7 +475,7 @@ public:
     }
 
     template <typename T, std::enable_if_t<std::is_constructible_v<T, Quantity>, int> = 0>
-    [[nodiscard]] constexpr scalar_type count() const noexcept
+    [[nodiscard]] constexpr auto count() const noexcept
     {
         return T(*this).count_internal();
     }
@@ -497,13 +503,49 @@ public:
     template <typename U2>
     [[nodiscard]] constexpr friend auto operator*(Quantity lhs, Quantity<U2> rhs) noexcept
     {
-        return Quantity<MulUnits<unit, U2>>(lhs.count_internal() * rhs.count_internal());
+#if 1
+        using Q1 = Quantity;
+        using Q2 = Quantity<U2>;
+
+        if constexpr (std::is_convertible_v<Q2, Q1>)
+        {
+            // return lhs * Q1(rhs);
+            return Quantity<MulUnits<unit, unit>>(lhs.count_internal() * Q1(rhs).count_internal());
+        }
+        else if constexpr (std::is_convertible_v<Q1, Q2>)
+        {
+            // return Q2(lhs) * rhs;
+            return Quantity<MulUnits<U2, U2>>(Q2(lhs).count_internal() * rhs.count_internal());
+        }
+        else
+#endif
+        {
+            return Quantity<MulUnits<unit, U2>>(lhs.count_internal() * rhs.count_internal());
+        }
     }
 
     template <typename U2>
     [[nodiscard]] constexpr friend auto operator/(Quantity lhs, Quantity<U2> rhs) noexcept
     {
-        return Quantity<DivUnits<unit, U2>>(lhs.count_internal() / rhs.count_internal());
+#if 1
+        using Q1 = Quantity;
+        using Q2 = Quantity<U2>;
+
+        if constexpr (std::is_convertible_v<Q2, Q1>)
+        {
+            // return lhs / Q1(rhs);
+            return Quantity<DivUnits<unit, unit>>(lhs.count_internal() / Q1(rhs).count_internal());
+        }
+        else if constexpr (std::is_convertible_v<Q1, Q2>)
+        {
+            // return Q2(lhs) / rhs;
+            return Quantity<DivUnits<U2, U2>>(Q2(lhs).count_internal() / rhs.count_internal());
+        }
+        else
+#endif
+        {
+            return Quantity<DivUnits<unit, U2>>(lhs.count_internal() / rhs.count_internal());
+        }
     }
 
     [[nodiscard]] constexpr friend Quantity operator*(Quantity lhs, scalar_type rhs) noexcept
@@ -655,8 +697,8 @@ private:
             static_assert(R1::den != 0);
             static_assert(R2::den != 0);
 
-            constexpr double a = (static_cast<double>(R1::num) / static_cast<double>(R1::den));
-            constexpr double b = (static_cast<double>(R2::num) / static_cast<double>(R2::den));
+            constexpr double a = static_cast<double>(R1::num) / static_cast<double>(R1::den);
+            constexpr double b = static_cast<double>(R2::num) / static_cast<double>(R2::den);
 
             return a * x + b;
         }
@@ -668,12 +710,10 @@ private:
             static_assert(R1::den != 0);
             static_assert(R2::den != 0);
 
-            constexpr double a = (static_cast<double>(R1::num) / static_cast<double>(R1::den));
-//          constexpr double a = (static_cast<double>(R1::den) / static_cast<double>(R1::num));
-            constexpr double b = (static_cast<double>(R2::num) / static_cast<double>(R2::den));
+            constexpr double a = static_cast<double>(R1::num) / static_cast<double>(R1::den);
+            constexpr double b = static_cast<double>(R2::num) / static_cast<double>(R2::den);
 
             return (x - b) / a;
-//          return (x - b) * a;
         }
     }
 
@@ -729,7 +769,7 @@ public:
     }
 
     template <typename T, std::enable_if_t<std::is_constructible_v<T, Absolute>, int> = 0>
-    [[nodiscard]] constexpr scalar_type count() const noexcept
+    [[nodiscard]] constexpr auto count() const noexcept
     {
         return T(*this).count_internal();
     }
@@ -839,7 +879,6 @@ namespace kinds
 
 namespace units
 {
-    using One               = Unit<Conversion<Ratio<1>>, kinds::One>;
     using Meter             = Unit<Conversion<Ratio<1>>, kinds::Length>;
     using Second            = Unit<Conversion<Ratio<1>>, kinds::Time>;
     using Ampere            = Unit<Conversion<Ratio<1>>, kinds::ElectricCurrent>;
@@ -852,8 +891,6 @@ namespace units
     using Entity            = Unit<Conversion<Ratio<1>>, kinds::Entity>;
     using Event             = Unit<Conversion<Ratio<1>>, kinds::Event>;
     using Cycle             = Unit<Conversion<Ratio<1>>, kinds::Cycle>;
-
-    using Dimensionless     = Unit<Conversion<Ratio<1>>, kinds::One>;
 }
 
 //------------------------------------------------------------------------------
