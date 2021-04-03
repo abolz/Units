@@ -1027,6 +1027,11 @@ using MetersPerSecond   = decltype(Meters{} / Seconds{});
 using KilometersPerHour = decltype(Kilometers{} / Hours{});
 
 //------------------------------------------------------------------------------
+// Acceleration
+
+using MetersPerSecondSquared = decltype(Meters{} / (Seconds{} * Seconds{}));
+
+//------------------------------------------------------------------------------
 // Solid angle
 
 using Steradians        = TaggedQuantity<decltype(Radians{} * Radians{}), class _solid_angle>;

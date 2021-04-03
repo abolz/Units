@@ -317,6 +317,18 @@ namespace uom::literals {
 }
 
 //--------------------------------------------------------------------------------------------------
+// Acceleration
+
+[[nodiscard]] constexpr auto operator""_m_per_s2(long double x) noexcept
+{
+    return MetersPerSecondSquared(static_cast<double>(x));
+}
+[[nodiscard]] constexpr auto operator""_m_per_s2(unsigned long long x) noexcept
+{
+    return MetersPerSecondSquared(static_cast<double>(x));
+}
+
+//--------------------------------------------------------------------------------------------------
 // Temperature
 
 [[nodiscard]] constexpr auto operator""_K(long double x) noexcept

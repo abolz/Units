@@ -63,6 +63,12 @@ static void test_round()
     return;
 }
 
+static void test_force()
+{
+    constexpr Kilonewtons kf ( 1_kg * 9.81_m_per_s2 );
+    constexpr Newtons f      = 1_t  * 9.81_m_per_s2;
+}
+
 static constexpr void fun_mm(Millimeters mm)
 {
 }
