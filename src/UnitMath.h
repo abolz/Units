@@ -158,18 +158,6 @@ namespace impl {
         static constexpr bool is_exact = (root_num.is_exact && root_den.is_exact);
     };
 
-    constexpr int64_t Pow10(int n) noexcept
-    {
-        UNITS_ASSERT(n >= 0);
-        UNITS_ASSERT(n <= 18);
-
-        int64_t p = 1;
-        for (int i = 0; i < n; ++i)
-            p *= 10;
-
-        return p;
-    }
-
 } // namespace impl
 
 //==================================================================================================
