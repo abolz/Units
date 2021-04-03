@@ -551,87 +551,63 @@ template <typename C1, typename C2, typename K>
 //
 //==================================================================================================
 
-template <int Prec = 0, typename U>
-[[nodiscard]] inline Quantity<U> ceil(Quantity<U> x) noexcept
+template <typename Scale = Ratio<1>, typename U>
+[[nodiscard]] inline auto ceil(Quantity<U> x) noexcept
 {
-    using scalar_type = typename Quantity<U>::scalar_type;
-
-    if constexpr (Prec == 0)
+    if constexpr (IsRatio<Scale>)
     {
-        return Quantity<U>(std::ceil(x.count_internal()));
-    }
-    else if constexpr (Prec > 0)
-    {
-        constexpr scalar_type scale = static_cast<scalar_type>(impl::Pow10(+Prec));
-        return Quantity<U>(std::ceil(x.count_internal() / scale) * scale);
+        using T = ScaledQuantity<Conversion<Scale>, Quantity<U>>;
+        return Quantity<U>( T( std::ceil( T(x).count_internal() ) ) );
     }
     else
     {
-        constexpr scalar_type scale = static_cast<scalar_type>(impl::Pow10(-Prec));
-        return Quantity<U>(std::ceil(x.count_internal() * scale) / scale);
+        using T = Scale;
+        return T( std::ceil( T(x).count_internal() ) );
     }
 }
 
-template <int Prec = 0, typename U>
-[[nodiscard]] inline Quantity<U> floor(Quantity<U> x) noexcept
+template <typename Scale = Ratio<1>, typename U>
+[[nodiscard]] inline auto floor(Quantity<U> x) noexcept
 {
-    using scalar_type = typename Quantity<U>::scalar_type;
-
-    if constexpr (Prec == 0)
+    if constexpr (IsRatio<Scale>)
     {
-        return Quantity<U>(std::floor(x.count_internal()));
-    }
-    else if constexpr (Prec > 0)
-    {
-        constexpr scalar_type scale = static_cast<scalar_type>(impl::Pow10(+Prec));
-        return Quantity<U>(std::floor(x.count_internal() / scale) * scale);
+        using T = ScaledQuantity<Conversion<Scale>, Quantity<U>>;
+        return Quantity<U>( T( std::floor( T(x).count_internal() ) ) );
     }
     else
     {
-        constexpr scalar_type scale = static_cast<scalar_type>(impl::Pow10(-Prec));
-        return Quantity<U>(std::floor(x.count_internal() * scale) / scale);
+        using T = Scale;
+        return T( std::floor( T(x).count_internal() ) );
     }
 }
 
-template <int Prec = 0, typename U>
-[[nodiscard]] inline Quantity<U> trunc(Quantity<U> x) noexcept
+template <typename Scale = Ratio<1>, typename U>
+[[nodiscard]] inline auto trunc(Quantity<U> x) noexcept
 {
-    using scalar_type = typename Quantity<U>::scalar_type;
-
-    if constexpr (Prec == 0)
+    if constexpr (IsRatio<Scale>)
     {
-        return Quantity<U>(std::trunc(x.count_internal()));
-    }
-    else if constexpr (Prec > 0)
-    {
-        constexpr scalar_type scale = static_cast<scalar_type>(impl::Pow10(+Prec));
-        return Quantity<U>(std::trunc(x.count_internal() / scale) * scale);
+        using T = ScaledQuantity<Conversion<Scale>, Quantity<U>>;
+        return Quantity<U>( T( std::trunc( T(x).count_internal() ) ) );
     }
     else
     {
-        constexpr scalar_type scale = static_cast<scalar_type>(impl::Pow10(-Prec));
-        return Quantity<U>(std::trunc(x.count_internal() * scale) / scale);
+        using T = Scale;
+        return T( std::trunc( T(x).count_internal() ) );
     }
 }
 
-template <int Prec = 0, typename U>
-[[nodiscard]] inline Quantity<U> round(Quantity<U> x) noexcept
+template <typename Scale = Ratio<1>, typename U>
+[[nodiscard]] inline auto round(Quantity<U> x) noexcept
 {
-    using scalar_type = typename Quantity<U>::scalar_type;
-
-    if constexpr (Prec == 0)
+    if constexpr (IsRatio<Scale>)
     {
-        return Quantity<U>(std::round(x.count_internal()));
-    }
-    else if constexpr (Prec > 0)
-    {
-        constexpr scalar_type scale = static_cast<scalar_type>(impl::Pow10(+Prec));
-        return Quantity<U>(std::round(x.count_internal() / scale) * scale);
+        using T = ScaledQuantity<Conversion<Scale>, Quantity<U>>;
+        return Quantity<U>( T( std::round( T(x).count_internal() ) ) );
     }
     else
     {
-        constexpr scalar_type scale = static_cast<scalar_type>(impl::Pow10(-Prec));
-        return Quantity<U>(std::round(x.count_internal() * scale) / scale);
+        using T = Scale;
+        return T( std::round( T(x).count_internal() ) );
     }
 }
 

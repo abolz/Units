@@ -52,8 +52,13 @@ inline constexpr bool IsSame = std::is_same_v<std::remove_const_t<std::remove_re
 static void test_round()
 {
     const Kilograms kg(1509.72);
-    const Kilograms r1 = round<+1>(kg);
-    const Kilograms r2 = round<-1>(kg);
+    const Kilograms w1 = round<Ratio<10>>(kg);
+    const Kilograms w2 = round<Ratio<1,10>>(kg);
+
+    const Minutes min(39.34);
+    const Minutes t1 = round<Ratio<10>>(min);
+    const Seconds t0 = min;
+    const auto t2 = round<Hours>(min);
 
     return;
 }
@@ -439,10 +444,32 @@ static void test3()
         constexpr auto t01 = 1_cm * 1_cm;
         constexpr auto t02 = 1_cm2;
         const auto xxx = fma(1_cm, 1_cm, 1_cm2);
+
+        constexpr auto zzz = 1_cm + Centimeters(1_in + 1_ft);
     }
 }
+
+#if 0
+static void test4()
+{
+    using Rep = int32_t;
+    using Meters_i32 = ChangeRep<Meters, Rep>;
+    using Kilometers_i32 = ChangeRep<Kilometers, Rep>;
+    using Seconds_i32 = ChangeRep<Seconds, Rep>;
+
+    constexpr auto t = Meters_i32(Kilometers_i32(1));
+    constexpr auto x = Kilometers_i32(1) + Meters_i32(500);
+    constexpr auto y = Kilometers_i32(1) * Meters_i32(500);
+    constexpr auto z = Kilometers_i32(1) / Meters_i32(500);
+    constexpr auto w = Kilometers_i32(1) / 2;
+
+    constexpr auto t00 = Kilometers_i32(1) / Seconds_i32(2);
+    constexpr auto t01 = Meters_i32(1) / Seconds_i32(2);
+}
+#endif
 
 int main()
 {
     test_round();
+    //test4();
 }
