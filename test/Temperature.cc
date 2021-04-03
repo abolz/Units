@@ -30,19 +30,18 @@ using namespace uom::literals;
     return DegReaumur(static_cast<double>(x));
 }
 
-//static void test0()
-//{
-//    {
-//        constexpr auto t00 = Fahrenheit(Celsius(5.0)) + Fahrenheit(9.0);
-//        constexpr auto t01 = Celsius(5.0) + Celsius(Fahrenheit(9.0));
-//        static_assert(t00 == t01);
-//    }
-//}
+static void test0()
+{
+    {
+        constexpr auto t00 = 0_degC + 1_K;
+        static_assert(t00.count_internal() == -272.15);
+    }
+}
 
 static void test()
 {
     {
-        constexpr auto t00 = DegCelsius(0_K);
+        constexpr auto t00 = DegCelsius(0_mK);
         constexpr auto x00 = t00.count<DegCelsius>();
         constexpr auto v00 = -273.15;
         static_assert(x00 == v00);
@@ -64,9 +63,9 @@ static void test()
     }
 
     {
-        constexpr auto t00 = Kelvin(0_degC);
+        constexpr auto t00 = Millikelvin(0_degC);
         constexpr auto x00 = t00.count_internal();
-        constexpr auto v00 = 273.15;
+        constexpr auto v00 = 273150.0;
         static_assert(x00 == v00);
 
         constexpr auto t01 = DegFahrenheit(0_degC);
@@ -77,7 +76,7 @@ static void test()
         constexpr auto t02 = DegRankine(0_degC);   // t_R = 9/5 t_C + 491.67
         constexpr auto x02 = t02.count_internal();
         constexpr auto v02 = 491.67;
-        static_assert(x02 == v02); // v1 FAIL
+        static_assert(x02 == v02);
 
         constexpr auto t03 = DegReaumur(0_degC);
         constexpr auto x03 = t03.count_internal();
@@ -98,8 +97,8 @@ static void test()
 
         constexpr auto t02 = DegRankine(100_degC);
         constexpr auto x02 = t02.count_internal();
-        constexpr auto v02 = 100.0 * (9.0 / 5.0) + 491.67;
-        static_assert(x02 == v02);  // v2 FAIL
+        constexpr auto v02 = 100.0 * (9.0 / 5.0) + 491.67; // ~671.67
+        static_assert(x02 == v02);
 
         constexpr auto t03 = DegReaumur(100_degC);
         constexpr auto x03 = t03.count_internal();
@@ -186,7 +185,7 @@ static void test()
 
         constexpr auto t02 = DegRankine(80_degRe);
         constexpr auto x02 = t02.count_internal();
-        constexpr auto v02 = 80.0 * 2.25 + 491.67;
+        constexpr auto v02 = 80.0 * 2.25 + 491.67; // ~671.67
         static_assert(x02 == v02);
 
         constexpr auto t03 = DegFahrenheit(80_degRe);

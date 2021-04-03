@@ -565,8 +565,13 @@ public:
 
     [[nodiscard]] constexpr friend auto operator/(scalar_type lhs, Quantity rhs) noexcept
     {
+#if 1
+        using _1 = Unit<Conversion<Ratio<1>>, kinds::One>;
+        return Quantity<_1>(lhs) / rhs;
+#else
         using _1 = Unit<Conversion<Ratio<1>>, kinds::One>;
         return Quantity<DivUnits<_1, unit>>(lhs / rhs.count_internal());
+#endif
     }
 
     constexpr friend Quantity& operator+=(Quantity& lhs, Quantity rhs) noexcept
@@ -949,6 +954,8 @@ using Amperes           = Quantity<units::Ampere>;
 using Kelvin            = Quantity<units::Kelvin>;
 using Rankine           = ScaledQuantity<Conversion<Ratio<5, 9>>, Kelvin>;
 using Reaumurs          = ScaledQuantity<Conversion<Ratio<5, 4>>, Kelvin>;
+
+using Millikelvin       = ScaledQuantity<Conversion<Ratio<1, 1000>>, Kelvin>;
 
 //using Celsius           = ScaledQuantity<Conversion<Ratio<1>>, Kelvin>;
 //using Fahrenheit        = ScaledQuantity<Conversion<Ratio<5, 9>>, Kelvin>;

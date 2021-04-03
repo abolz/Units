@@ -327,6 +327,14 @@ namespace uom::literals {
 {
     return Kelvin(static_cast<double>(x));
 }
+[[nodiscard]] constexpr auto operator""_mK(long double x) noexcept
+{
+    return Millikelvin(static_cast<double>(x));
+}
+[[nodiscard]] constexpr auto operator""_mK(unsigned long long x) noexcept
+{
+    return Millikelvin(static_cast<double>(x));
+}
 
 //--------------------------------------------------------------------------------------------------
 // Plane angle
