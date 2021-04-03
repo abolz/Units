@@ -7,6 +7,10 @@
 using namespace uom;
 using namespace uom::literals;
 
+// See:
+// https://github.com/mpusz/units/issues/228
+// https://github.com/erplsf/smok/blob/master/calc.hpp
+
 //using MetersPerSecond
 //    = decltype(1_m / 1_s);
 using SquareSeconds

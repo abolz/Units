@@ -5,6 +5,9 @@
 using namespace uom;
 using namespace uom::literals;
 
+// See:
+// https://github.com/mpusz/units/tree/master/example
+
 inline constexpr Kilometers EarthRadius = 6371_km;
 
 using Latitude
