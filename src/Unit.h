@@ -361,6 +361,8 @@ namespace impl
     {
         // SFINAE:
         // missing 'type' !!!
+
+        static constexpr bool enabled = false;
     };
 
     template <typename R1, typename R2, int64_t CommonPiExp>
@@ -372,13 +374,17 @@ namespace impl
         static constexpr int64_t num = impl::Gcd(R1::num, R2::num);
         static constexpr int64_t den = impl::Lcm(R1::den, R2::den);
 
+        static constexpr bool enabled = true;
         using type = Conversion<Ratio<num, den>, CommonPiExp>;
     };
 
-    template <typename C1, typename C2>
-    using CommonConversion = typename CommonConversionImpl<C1, C2>::type;
-
 } // namespace impl
+
+template <typename C1, typename C2>
+inline constexpr bool HasCommonConversion = impl::CommonConversionImpl<C1, C2>::enabled;
+
+template <typename C1, typename C2>
+using CommonConversion = typename impl::CommonConversionImpl<C1, C2>::type;
 
 //==================================================================================================
 // Unit
@@ -431,7 +437,7 @@ private:
 
 private:
     template <typename C2>
-    using CommonQuantity = Quantity<Unit<impl::CommonConversion<conversion, C2>, kind>>;
+    using CommonQuantity = Quantity<Unit<CommonConversion<conversion, C2>, kind>>;
 
     // asymmetric
     template <typename C1, typename C2, typename T = void>
@@ -1068,10 +1074,10 @@ using NewtonMeters      = decltype(Newtons{} * Meters{} / Radians{});
 using Watts             = decltype(Joules{} / Seconds{});
 using Kilowatts         = ScaledQuantity<Conversion<Ratio<1000>>, Watts>;
 
-// using Vars              = Tagged<Watts, class _reactive_power>;
+// using Vars              = TaggedQuantity<Watts, class _reactive_power>;
 // using Kilovars          = ScaledQuantity<Conversion<Ratio<1000>>, Vars>;
 
-// using VoltAmperes       = Tagged<Watts, class _apparent_power>;
+// using VoltAmperes       = TaggedQuantity<Watts, class _apparent_power>;
 // using KiloVoltAmperes   = ScaledQuantity<Conversion<Ratio<1000>>, VoltAmperes>;
 
 //--------------------------------------------------------------------------

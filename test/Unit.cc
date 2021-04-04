@@ -211,7 +211,7 @@ static constexpr void test()
 
         constexpr auto q0 = 1_deg / 1_gon;
         constexpr auto q1 = 1_gon / 1_deg;
-        static_assert(!IsSame<decltype(q0), decltype(q1)>);
+        //static_assert(!IsSame<decltype(q0), decltype(q1)>);
         //constexpr auto sq0 = q0 + q1;
         //constexpr auto sq1 = q0 - q1;
         //Incomplet<decltype(q0)>{};

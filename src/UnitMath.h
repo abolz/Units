@@ -492,7 +492,7 @@ template <typename U>
 template <typename C1, typename C2, typename K>
 [[nodiscard]] inline Radians atan2(Quantity<Unit<C1, K>> y, Quantity<Unit<C2, K>> x) noexcept
 {
-    using Q = Quantity<Unit<impl::CommonConversion<C1, C2>, kinds::Simple>>;
+    using Q = Quantity<Unit<CommonConversion<C1, C2>, kinds::Simple>>;
     return Radians(std::atan2(Q(y).count_internal(), Q(x).count_internal()));
 }
 #else
