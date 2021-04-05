@@ -5,31 +5,6 @@
 using namespace uom;
 using namespace uom::literals;
 
-[[nodiscard]] constexpr auto operator""_degC(long double x) noexcept {
-    return DegCelsius(static_cast<double>(x));
-}
-[[nodiscard]] constexpr auto operator""_degC(unsigned long long x) noexcept {
-    return DegCelsius(static_cast<double>(x));
-}
-[[nodiscard]] constexpr auto operator""_degRa(long double x) noexcept {
-    return DegRankine(static_cast<double>(x));
-}
-[[nodiscard]] constexpr auto operator""_degRa(unsigned long long x) noexcept {
-    return DegRankine(static_cast<double>(x));
-}
-[[nodiscard]] constexpr auto operator""_degF(long double x) noexcept {
-    return DegFahrenheit(static_cast<double>(x));
-}
-[[nodiscard]] constexpr auto operator""_degF(unsigned long long x) noexcept {
-    return DegFahrenheit(static_cast<double>(x));
-}
-[[nodiscard]] constexpr auto operator""_degRe(long double x) noexcept {
-    return DegReaumur(static_cast<double>(x));
-}
-[[nodiscard]] constexpr auto operator""_degRe(unsigned long long x) noexcept {
-    return DegReaumur(static_cast<double>(x));
-}
-
 static void test0()
 {
     {
