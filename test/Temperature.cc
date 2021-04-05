@@ -9,7 +9,22 @@ static void test0()
 {
     {
         constexpr auto t00 = 0_degC + 1_K;
-        static_assert(t00.count_internal() == -272.15);
+        constexpr auto v00 = t00.count<DegCelsius>();
+        static_assert(v00 == 1.0);
+        static_assert(t00.count_internal() == 1.0);
+
+        static_assert(1_degC - 1_K == 0_degC);
+        static_assert(1_K + 1_degC == 2_degC);
+        static_assert(1_degC - 1_degC == 0_K);
+
+        constexpr auto v01 = (0_degC).count<Kelvin>();
+        static_assert(v01 == 273.15);
+
+        // should not compile:
+//      static_assert(1_K + 2_degC / 2 == 2_degC);
+//      static_assert(1_degC + 1_degC == 2_degC);
+//      static_assert(2 * 1_degC == 2_degC);
+//      static_assert(1_K * 1_degC == 1_degC);
     }
 }
 
@@ -17,7 +32,7 @@ static void test()
 {
     {
         constexpr auto t00 = DegCelsius(0_mK);
-        constexpr auto x00 = t00.count<DegCelsius>();
+        constexpr auto x00 = t00.count_internal();
         constexpr auto v00 = -273.15;
         static_assert(x00 == v00);
 
@@ -27,7 +42,7 @@ static void test()
         static_assert(x01 == v01);
 
         constexpr auto t02 = DegRankine(0_K);
-        constexpr auto x02 = t02.count_internal();
+        constexpr auto x02 = t02.count<Rankine>();
         constexpr auto v02 = 0.0;
         static_assert(x02 == v02);
 
@@ -44,7 +59,7 @@ static void test()
         static_assert(x00 == v00);
 
         constexpr auto t01 = DegFahrenheit(0_degC);
-        constexpr auto x01 = t01.count_internal();
+        constexpr auto x01 = (0_degC).count<DegFahrenheit>(); // t01.count_internal();
         constexpr auto v01 = 32.0;
         static_assert(x01 == v01);
 
@@ -61,7 +76,7 @@ static void test()
 
     {
         constexpr auto t00 = Kelvin(100_degC);
-        constexpr auto x00 = t00.count_internal();
+        constexpr auto x00 = t00.count<Kelvin>();
         constexpr auto v00 = 373.15;
         static_assert(x00 == v00);
 
@@ -175,6 +190,6 @@ static void test2()
     using HeightAboveSeaLevel = Absolute<Meters>;
     using HeightAboveLocal = Absolute<Meters, Ratio<200>>;
 
-    constexpr HeightAboveLocal h1(123);
+    constexpr HeightAboveLocal h1(123_m);
     constexpr HeightAboveSeaLevel h2(h1);
 }

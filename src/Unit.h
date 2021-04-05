@@ -429,6 +429,7 @@ public:
     using kind        = typename U::kind;
     using dimension   = typename U::dimension;
     using tag         = typename U::tag;
+    using zero        = Ratio<0>;
 
     using simplified_type = Quantity<Unit<conversion, Kind<dimension, kinds::Simple>>>;
 
@@ -773,12 +774,12 @@ public:
 
     [[nodiscard]] constexpr friend Absolute operator+(Absolute lhs, relative_type rhs) noexcept
     {
-        return Absolute(lhs._relative + rhs);
+        return Absolute(lhs.count_internal() + rhs.count_internal());
     }
 
     [[nodiscard]] constexpr friend Absolute operator+(relative_type lhs, Absolute rhs) noexcept
     {
-        return Absolute(lhs + rhs._relative);
+        return Absolute(lhs.count_internal() + rhs.count_internal());
     }
 
     [[nodiscard]] constexpr friend relative_type operator-(Absolute lhs, Absolute rhs) noexcept
@@ -788,7 +789,7 @@ public:
 
     [[nodiscard]] constexpr friend Absolute operator-(Absolute lhs, relative_type rhs) noexcept
     {
-        return Absolute(lhs._relative - rhs);
+        return Absolute(lhs.count_internal() - rhs.count_internal());
     }
 
     friend Absolute& operator+=(Absolute& lhs, relative_type rhs) noexcept
