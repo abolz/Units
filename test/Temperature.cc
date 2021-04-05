@@ -14,6 +14,7 @@ static void test0()
         static_assert(t00.count_internal() == 1.0);
 
         static_assert(1_degC - 1_K == 0_degC);
+        static_assert(1_degC + 1_K == 2_degC);
         static_assert(1_K + 1_degC == 2_degC);
         static_assert(1_degC - 1_degC == 0_K);
 
@@ -21,10 +22,14 @@ static void test0()
         static_assert(v01 == 273.15);
 
         // should not compile:
+//      static_assert(1_K - 1_degC == 0_degC);
 //      static_assert(1_K + 2_degC / 2 == 2_degC);
 //      static_assert(1_degC + 1_degC == 2_degC);
 //      static_assert(2 * 1_degC == 2_degC);
 //      static_assert(1_K * 1_degC == 1_degC);
+
+        constexpr auto v02 = (0_K).count<DegFahrenheit>();
+        static_assert(v02 == -459.67);
     }
 }
 
