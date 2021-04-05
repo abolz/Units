@@ -787,6 +787,17 @@ public:
         return lhs;
     }
 
+    [[nodiscard]] constexpr friend int compare(Absolute lhs, Absolute rhs) noexcept
+    {
+        const auto x = lhs.count_internal();
+        const auto y = rhs.count_internal();
+        if (x < y)
+            return -1;
+        if (x > y)
+            return +1;
+        return 0;
+    }
+
     [[nodiscard]] constexpr friend bool operator==(Absolute lhs, Absolute rhs) noexcept
     {
         return lhs.count_internal() == rhs.count_internal();
