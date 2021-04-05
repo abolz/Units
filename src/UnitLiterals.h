@@ -531,4 +531,40 @@ namespace uom::literals {
     return SquareMetersPerMeter(static_cast<double>(x));
 }
 
+//--------------------------------------------------------------------------------------------------
+// Entities
+
+[[nodiscard]] constexpr auto operator""_ent(long double x) noexcept
+{
+    return Entities(static_cast<double>(x));
+}
+[[nodiscard]] constexpr auto operator""_ent(unsigned long long x) noexcept
+{
+    return Entities(static_cast<double>(x));
+}
+
+//--------------------------------------------------------------------------------------------------
+// Events
+
+[[nodiscard]] constexpr auto operator""_evt(long double x) noexcept
+{
+    return Events(static_cast<double>(x));
+}
+[[nodiscard]] constexpr auto operator""_evt(unsigned long long x) noexcept
+{
+    return Events(static_cast<double>(x));
+}
+
+//--------------------------------------------------------------------------------------------------
+// Cycles
+
+[[nodiscard]] constexpr auto operator""_cyc(long double x) noexcept
+{
+    return Cycles(static_cast<double>(x));
+}
+[[nodiscard]] constexpr auto operator""_cyc(unsigned long long x) noexcept
+{
+    return Cycles(static_cast<double>(x));
+}
+
 } // namespace uom::literals
