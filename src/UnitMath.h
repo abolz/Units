@@ -536,63 +536,27 @@ template <typename C1, typename C2, typename K>
 //
 //==================================================================================================
 
-template <typename Scale = Ratio<1>, typename U>
-[[nodiscard]] inline auto ceil(Quantity<U> x) noexcept
+namespace impl
 {
-    if constexpr (IsRatio<Scale>)
+    template <typename Scale, typename U, typename Fn>
+    inline auto ToInt(Quantity<U> x, Fn fn) noexcept
     {
-        using T = ScaledQuantity<Conversion<Scale>, Quantity<U>>;
-        return Quantity<U>( T( std::ceil( T(x).count_internal() ) ) );
+        if constexpr (IsRatio<Scale>)
+        {
+            using T = ScaledQuantity<Conversion<Scale>, Quantity<U>>;
+            return Quantity<U>( T( fn( T(x).count_internal() ) ) );
+        }
+        else // if constexpr (IsQuantity<Scale>)
+        {
+            using T = Scale;
+            return T( fn( T(x).count_internal() ) );
+        }
     }
-    else
-    {
-        using T = Scale;
-        return T( std::ceil( T(x).count_internal() ) );
-    }
-}
 
-template <typename Scale = Ratio<1>, typename U>
-[[nodiscard]] inline auto floor(Quantity<U> x) noexcept
-{
-    if constexpr (IsRatio<Scale>)
+    template <typename Scale, typename Q, typename Z, typename Fn>
+    inline auto ToInt(Absolute<Q, Z> x, Fn fn) noexcept
     {
-        using T = ScaledQuantity<Conversion<Scale>, Quantity<U>>;
-        return Quantity<U>( T( std::floor( T(x).count_internal() ) ) );
-    }
-    else
-    {
-        using T = Scale;
-        return T( std::floor( T(x).count_internal() ) );
-    }
-}
-
-template <typename Scale = Ratio<1>, typename U>
-[[nodiscard]] inline auto trunc(Quantity<U> x) noexcept
-{
-    if constexpr (IsRatio<Scale>)
-    {
-        using T = ScaledQuantity<Conversion<Scale>, Quantity<U>>;
-        return Quantity<U>( T( std::trunc( T(x).count_internal() ) ) );
-    }
-    else
-    {
-        using T = Scale;
-        return T( std::trunc( T(x).count_internal() ) );
-    }
-}
-
-template <typename Scale = Ratio<1>, typename U>
-[[nodiscard]] inline auto round(Quantity<U> x) noexcept
-{
-    if constexpr (IsRatio<Scale>)
-    {
-        using T = ScaledQuantity<Conversion<Scale>, Quantity<U>>;
-        return Quantity<U>( T( std::round( T(x).count_internal() ) ) );
-    }
-    else
-    {
-        using T = Scale;
-        return T( std::round( T(x).count_internal() ) );
+        return Absolute<Q, Z>( ToInt<Scale>( Q(x.count_internal()) ).count_internal() );
     }
 }
 
@@ -600,28 +564,56 @@ template <typename Scale = Ratio<1>, typename U>
 //
 //--------------------------------------------------------------------------------------------------
 
-template <typename Q, typename Z>
+template <typename Scale = Ratio<1>, typename U>
+[[nodiscard]] inline auto ceil(Quantity<U> x) noexcept
+{
+    return impl::ToInt<Scale>(x, [](const double t) { return std::ceil(t); } );
+}
+
+template <typename Scale = Ratio<1>, typename U>
+[[nodiscard]] inline auto floor(Quantity<U> x) noexcept
+{
+    return impl::ToInt<Scale>(x, [](const double t) { return std::floor(t); } );
+}
+
+template <typename Scale = Ratio<1>, typename U>
+[[nodiscard]] inline auto trunc(Quantity<U> x) noexcept
+{
+    return impl::ToInt<Scale>(x, [](const double t) { return std::trunc(t); } );
+}
+
+template <typename Scale = Ratio<1>, typename U>
+[[nodiscard]] inline auto round(Quantity<U> x) noexcept
+{
+    return impl::ToInt<Scale>(x, [](const double t) { return std::round(t); } );
+}
+
+//--------------------------------------------------------------------------------------------------
+//
+//--------------------------------------------------------------------------------------------------
+
+template <typename Scale = Ratio<1>, typename Q, typename Z>
 [[nodiscard]] inline auto ceil(Absolute<Q, Z> x) noexcept
 {
-    return Absolute<Q, Z>( std::ceil( x.count_internal() ) );
+    return impl::ToInt<Scale>(x, [](const double t) { return std::ceil(t); } );
 }
 
-template <typename Q, typename Z>
+template <typename Scale = Ratio<1>, typename Q, typename Z>
 [[nodiscard]] inline auto floor(Absolute<Q, Z> x) noexcept
 {
-    return Absolute<Q, Z>( std::floor( x.count_internal() ) );
+    return impl::ToInt<Scale>(x, [](const double t) { return std::floor(t); } );
 }
 
-template <typename Q, typename Z>
+template <typename Scale = Ratio<1>, typename Q, typename Z>
 [[nodiscard]] inline auto trunc(Absolute<Q, Z> x) noexcept
 {
-    return Absolute<Q, Z>( std::trunc( x.count_internal() ) );
+    return impl::ToInt<Scale>(x, [](const double t) { return std::trunc(t); } );
 }
 
-template <typename Q, typename Z>
+template <typename Scale = Ratio<1>, typename Q, typename Z>
 [[nodiscard]] inline auto round(Absolute<Q, Z> x) noexcept
 {
-    return Absolute<Q, Z>( std::round( x.count_internal() ) );
+    return impl::ToInt<Scale>(x, [](const double t) { return std::round(t); } );
 }
 
 //==================================================================================================
