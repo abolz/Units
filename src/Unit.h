@@ -431,7 +431,8 @@ public:
     using tag         = typename U::tag;
     using zero        = Ratio<0>;
 
-    using simplified_type = Quantity<Unit<conversion, Kind<dimension, kinds::Simple>>>;
+    using simplified_type
+        = Quantity<Unit<conversion, Kind<dimension, kinds::Simple>>>;
 
 private:
     scalar_type _count = 0;
@@ -510,7 +511,6 @@ public:
     template <typename U2>
     [[nodiscard]] constexpr friend auto operator*(Quantity lhs, Quantity<U2> rhs) noexcept
     {
-#if 1
         using Q1 = Quantity;
         using Q2 = Quantity<U2>;
 
@@ -525,7 +525,6 @@ public:
             return Quantity<MulUnits<U2, U2>>(Q2(lhs).count_internal() * rhs.count_internal());
         }
         else
-#endif
         {
             return Quantity<MulUnits<unit, U2>>(lhs.count_internal() * rhs.count_internal());
         }
@@ -534,7 +533,6 @@ public:
     template <typename U2>
     [[nodiscard]] constexpr friend auto operator/(Quantity lhs, Quantity<U2> rhs) noexcept
     {
-#if 1
         using Q1 = Quantity;
         using Q2 = Quantity<U2>;
 
@@ -549,7 +547,6 @@ public:
             return Quantity<DivUnits<U2, U2>>(Q2(lhs).count_internal() / rhs.count_internal());
         }
         else
-#endif
         {
             return Quantity<DivUnits<unit, U2>>(lhs.count_internal() / rhs.count_internal());
         }
@@ -572,13 +569,8 @@ public:
 
     [[nodiscard]] constexpr friend auto operator/(scalar_type lhs, Quantity rhs) noexcept
     {
-#if 1
         using _1 = Unit<Conversion<Ratio<1>>, kinds::One>;
         return Quantity<_1>(lhs) / rhs;
-#else
-        using _1 = Unit<Conversion<Ratio<1>>, kinds::One>;
-        return Quantity<DivUnits<_1, unit>>(lhs / rhs.count_internal());
-#endif
     }
 
     constexpr friend Quantity& operator+=(Quantity& lhs, Quantity rhs) noexcept
@@ -684,9 +676,9 @@ private:
     // To    = [C1, Z1]
     // From  = [C2, Z2]
     //
-    // Value = (C2 / C1)( a + Z2 ) - Z1
-    //       = (C2 / C1)( a + Z2 - Z1 * (C1 / C2) )
-    //       = (C2 / C1)( a ) + (Z2 * (C2 / C1) - Z1)
+    // Value = (C2 / C1)( x + Z2 ) - Z1
+    //       = (C2 / C1)( x + Z2 - Z1 * (C1 / C2) )
+    //       = (C2 / C1)( x ) + (Z2 * (C2 / C1) - Z1)
 
     enum class Direction {
         forward,
