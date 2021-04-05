@@ -732,34 +732,17 @@ public:
     {
     }
 
-#if 1
-    // Assumes:
-    // Relative == Absolute with Origin at 0
-
     template <typename C2>
     constexpr explicit Absolute(Quantity<Unit<C2, kind>> r) noexcept
-        : _relative( convert<Direction::forward, conversion, zero, C2, std::ratio<0>>( r.count_internal() ) )
+        : _relative( convert<Direction::forward, conversion, zero, C2, Ratio<0>>( r.count_internal() ) )
     {
     }
 
-    // NB:
-    // Inverse of the constructor above!
     template <typename C2>
     [[nodiscard]] constexpr explicit operator Quantity<Unit<C2, kind>>() const noexcept
     {
-        return Quantity<Unit<C2, kind>>( convert<Direction::backward, conversion, zero, C2, std::ratio<0>>( count_internal() ) );
+        return Quantity<Unit<C2, kind>>( convert<Direction::backward, conversion, zero, C2, Ratio<0>>( count_internal() ) );
     }
-#else
-    constexpr explicit Absolute(relative_type r) noexcept
-        : _relative(r)
-    {
-    }
-
-    [[nodiscard]] constexpr relative_type relative() const noexcept
-    {
-        return _relative;
-    }
-#endif
 
     [[nodiscard]] constexpr scalar_type count_internal() const noexcept
     {
