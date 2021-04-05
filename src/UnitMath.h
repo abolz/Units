@@ -224,27 +224,27 @@ template <typename U>
 //--------------------------------------------------------------------------------------------------
 
 template <typename Q, typename Z>
-[[nodiscard]] inline constexpr Absolute<Q> min(Absolute<Q, Z> x, Absolute<Q, Z> y) noexcept
+[[nodiscard]] inline constexpr Absolute<Q, Z> min(Absolute<Q, Z> x, Absolute<Q, Z> y) noexcept
 {
     // std::min
     return y.count_internal() < x.count_internal() ? y : x;
 }
 
 template <typename Q, typename Z>
-[[nodiscard]] inline constexpr Absolute<Q> max(Absolute<Q, Z> x, Absolute<Q, Z> y) noexcept
+[[nodiscard]] inline constexpr Absolute<Q, Z> max(Absolute<Q, Z> x, Absolute<Q, Z> y) noexcept
 {
     // std::max
     return y.count_internal() < x.count_internal() ? x : y;
 }
 
 template <typename Q, typename Z>
-[[nodiscard]] inline Absolute<Q> fmin(Absolute<Q, Z> x, Absolute<Q, Z> y) noexcept
+[[nodiscard]] inline Absolute<Q, Z> fmin(Absolute<Q, Z> x, Absolute<Q, Z> y) noexcept
 {
     return Absolute<Q, Z>(std::fmin(x.count_internal(), y.count_internal()));
 }
 
 template <typename Q, typename Z>
-[[nodiscard]] inline Absolute<Q> fmax(Absolute<Q, Z> x, Absolute<Q, Z> y) noexcept
+[[nodiscard]] inline Absolute<Q, Z> fmax(Absolute<Q, Z> x, Absolute<Q, Z> y) noexcept
 {
     return Absolute<Q, Z>(std::fmax(x.count_internal(), y.count_internal()));
 }
@@ -594,6 +594,34 @@ template <typename Scale = Ratio<1>, typename U>
         using T = Scale;
         return T( std::round( T(x).count_internal() ) );
     }
+}
+
+//--------------------------------------------------------------------------------------------------
+//
+//--------------------------------------------------------------------------------------------------
+
+template <typename Q, typename Z>
+[[nodiscard]] inline auto ceil(Absolute<Q, Z> x) noexcept
+{
+    return Absolute<Q, Z>( std::ceil( x.count_internal() ) );
+}
+
+template <typename Q, typename Z>
+[[nodiscard]] inline auto floor(Absolute<Q, Z> x) noexcept
+{
+    return Absolute<Q, Z>( std::floor( x.count_internal() ) );
+}
+
+template <typename Q, typename Z>
+[[nodiscard]] inline auto trunc(Absolute<Q, Z> x) noexcept
+{
+    return Absolute<Q, Z>( std::trunc( x.count_internal() ) );
+}
+
+template <typename Q, typename Z>
+[[nodiscard]] inline auto round(Absolute<Q, Z> x) noexcept
+{
+    return Absolute<Q, Z>( std::round( x.count_internal() ) );
 }
 
 //==================================================================================================
