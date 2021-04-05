@@ -1017,6 +1017,7 @@ using Gigahertz         = ScaledQuantity<Conversion<Ratio<1000>>, Megahertz>;
 
 using MetersPerSecond   = decltype(Meters{} / Seconds{});
 using KilometersPerHour = decltype(Kilometers{} / Hours{});
+using MilesPerHour      = decltype(Miles{} / Hours{});
 
 //------------------------------------------------------------------------------
 // Acceleration
