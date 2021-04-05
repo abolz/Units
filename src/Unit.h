@@ -721,27 +721,27 @@ private:
 public:
     constexpr Absolute() noexcept = default;
 
-    constexpr explicit Absolute(scalar_type count) noexcept
-        : _relative(count)
+    constexpr explicit Absolute(scalar_type c) noexcept
+        : _relative(c)
     {
     }
 
     template <typename C2, typename Z2>
     constexpr explicit Absolute(Absolute<Quantity<Unit<C2, kind>>, Z2> a) noexcept
-        : _relative( convert<Direction::forward, conversion, zero, C2, Z2>( a.count_internal() ) )
+        : _relative(convert<Direction::forward, conversion, zero, C2, Z2>(a.count_internal()))
     {
     }
 
     template <typename C2>
     constexpr explicit Absolute(Quantity<Unit<C2, kind>> r) noexcept
-        : _relative( convert<Direction::forward, conversion, zero, C2, Ratio<0>>( r.count_internal() ) )
+        : _relative(convert<Direction::forward, conversion, zero, C2, Ratio<0>>( r.count_internal()))
     {
     }
 
     template <typename C2>
     [[nodiscard]] constexpr explicit operator Quantity<Unit<C2, kind>>() const noexcept
     {
-        return Quantity<Unit<C2, kind>>( convert<Direction::backward, conversion, zero, C2, Ratio<0>>( count_internal() ) );
+        return Quantity<Unit<C2, kind>>(convert<Direction::backward, conversion, zero, C2, Ratio<0>>(count_internal()));
     }
 
     [[nodiscard]] constexpr scalar_type count_internal() const noexcept
