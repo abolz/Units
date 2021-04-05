@@ -658,12 +658,12 @@ using TaggedQuantity // a.k.a. Change-Kind
 // Absolute
 //==================================================================================================
 
-template <typename Relative, typename RelativeOffset = Ratio<0>>
+template <typename RelativeType, typename RelativeOffset = Ratio<0>>
 class Absolute final
 {
 public:
     using type          = Absolute;
-    using relative_type = Relative;
+    using relative_type = RelativeType;
     using scalar_type   = typename relative_type::scalar_type;
     using unit          = typename relative_type::unit;
     using conversion    = typename relative_type::conversion;
@@ -747,33 +747,33 @@ public:
         return T(*this).count_internal();
     }
 
-    [[nodiscard]] constexpr friend Absolute operator+(Absolute lhs, Relative rhs) noexcept
+    [[nodiscard]] constexpr friend Absolute operator+(Absolute lhs, relative_type rhs) noexcept
     {
         return Absolute(lhs.count_internal() + rhs.count_internal());
     }
 
-    [[nodiscard]] constexpr friend Absolute operator+(Relative lhs, Absolute rhs) noexcept
+    [[nodiscard]] constexpr friend Absolute operator+(relative_type lhs, Absolute rhs) noexcept
     {
         return Absolute(lhs.count_internal() + rhs.count_internal());
     }
 
-    [[nodiscard]] constexpr friend Relative operator-(Absolute lhs, Absolute rhs) noexcept
+    [[nodiscard]] constexpr friend relative_type operator-(Absolute lhs, Absolute rhs) noexcept
     {
-        return Relative(lhs.count_internal() - rhs.count_internal());
+        return relative_type(lhs.count_internal() - rhs.count_internal());
     }
 
-    [[nodiscard]] constexpr friend Absolute operator-(Absolute lhs, Relative rhs) noexcept
+    [[nodiscard]] constexpr friend Absolute operator-(Absolute lhs, relative_type rhs) noexcept
     {
         return Absolute(lhs.count_internal() - rhs.count_internal());
     }
 
-    friend Absolute& operator+=(Absolute& lhs, Relative rhs) noexcept
+    friend Absolute& operator+=(Absolute& lhs, relative_type rhs) noexcept
     {
         lhs._count += rhs.count_internal();
         return lhs;
     }
 
-    friend Absolute& operator-=(Absolute& lhs, Relative rhs) noexcept
+    friend Absolute& operator-=(Absolute& lhs, relative_type rhs) noexcept
     {
         lhs._count -= rhs.count_internal();
         return lhs;
