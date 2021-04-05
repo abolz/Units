@@ -53,22 +53,25 @@ static constexpr auto integrate(Meters a, Meters b, int n)
 {
     const auto h = (b - a) / n;
 
-    return f_prime(a) / (2 * h)
-         + integrate_step(a + h, h, n - 1) / h
-         + f_prime(b) / (2 * h);
+    return f_prime(a) * (h / 2)
+         + integrate_step(a + h, h, n - 1) * h
+         + f_prime(b) * (h / 2);
 }
 
 static constexpr void testIntegrate()
 {
-    constexpr auto i1 = integrate(0_m, 2_m, 1);
-    constexpr auto i2 = integrate(0_m, 2_m, 2);
+    //constexpr SquareMeters i1 = integrate(0_m, 2_m, 1);
+    constexpr SquareMeters i2 = integrate(0_m, 2_m, 2);
+    static_assert(i2.count_internal() == 4.0);
 
-    constexpr auto i3 = integrate(1_m, 2_m, 3);
-    constexpr auto i4 = integrate(1_m, 2_m, 4);
+    //constexpr SquareMeters i3 = integrate(1_m, 2_m, 3);
+    constexpr SquareMeters i4 = integrate(1_m, 2_m, 4);
+    static_assert(i4.count_internal() == 3.0);
 
-    constexpr auto i5 = integrate(2_m, 3_m, 5);
-    constexpr auto i6 = integrate(2_m, 3_m, 6);
-    constexpr auto i7 = integrate(2_m, 3_m, 7);
-    constexpr auto i8 = integrate(2_m, 3_m, 8);
-    constexpr auto i9 = integrate(2_m, 3_m, 9);
+    //constexpr SquareMeters i5 = integrate(2_m, 3_m, 5);
+    //constexpr SquareMeters i6 = integrate(2_m, 3_m, 6);
+    //constexpr SquareMeters i7 = integrate(2_m, 3_m, 7);
+    //constexpr SquareMeters i8 = integrate(2_m, 3_m, 8);
+    constexpr SquareMeters i9 = integrate(2_m, 3_m, 9);
+    static_assert(i9.count_internal() == 5.0);
 }
