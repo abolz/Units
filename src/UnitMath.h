@@ -15,11 +15,8 @@ namespace uom {
 //
 //==================================================================================================
 
-namespace impl {
-
-    inline constexpr double kPi    = 3.14159265358979323846264338328;
-    inline constexpr double kTwoPi = 6.28318530717958647692528676656;
-
+namespace impl
+{
     constexpr bool MulOverflows(const int64_t x, const int64_t y) noexcept
     {
         UNITS_ASSERT(x >= 0);
@@ -659,6 +656,9 @@ template <typename Q, typename Z>
 
 namespace impl
 {
+    inline constexpr double kPi    = 3.14159265358979323846264338328;
+    inline constexpr double kTwoPi = 6.28318530717958647692528676656;
+
     inline double Clamp(double x, double lo, double hi)
     {
         if (x < lo)
