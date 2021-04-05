@@ -716,25 +716,25 @@ private:
     }
 
 private:
-    relative_type _relative;
+    scalar_type _count;
 
 public:
     constexpr Absolute() noexcept = default;
 
     constexpr explicit Absolute(scalar_type c) noexcept
-        : _relative(c)
+        : _count(c)
     {
     }
 
     template <typename C2, typename Z2>
     constexpr explicit Absolute(Absolute<Quantity<Unit<C2, kind>>, Z2> a) noexcept
-        : _relative(convert<Direction::forward, conversion, zero, C2, Z2>(a.count_internal()))
+        : _count(convert<Direction::forward, conversion, zero, C2, Z2>(a.count_internal()))
     {
     }
 
     template <typename C2>
     constexpr explicit Absolute(Quantity<Unit<C2, kind>> r) noexcept
-        : _relative(convert<Direction::forward, conversion, zero, C2, Ratio<0>>( r.count_internal()))
+        : _count(convert<Direction::forward, conversion, zero, C2, Ratio<0>>(r.count_internal()))
     {
     }
 
@@ -746,7 +746,7 @@ public:
 
     [[nodiscard]] constexpr scalar_type count_internal() const noexcept
     {
-        return _relative.count_internal();
+        return _count;
     }
 
     template <typename T, std::enable_if_t<std::is_constructible_v<T, Absolute>, int> = 0>
@@ -767,7 +767,7 @@ public:
 
     [[nodiscard]] constexpr friend relative_type operator-(Absolute lhs, Absolute rhs) noexcept
     {
-        return lhs._relative - rhs._relative;
+        return relative_type(lhs.count_internal() - rhs.count_internal());
     }
 
     [[nodiscard]] constexpr friend Absolute operator-(Absolute lhs, relative_type rhs) noexcept
@@ -777,44 +777,44 @@ public:
 
     friend Absolute& operator+=(Absolute& lhs, relative_type rhs) noexcept
     {
-        lhs._relative += rhs;
+        lhs._count += rhs.count_internal();
         return lhs;
     }
 
     friend Absolute& operator-=(Absolute& lhs, relative_type rhs) noexcept
     {
-        lhs._relative -= rhs;
+        lhs._count -= rhs.count_internal();
         return lhs;
     }
 
     [[nodiscard]] constexpr friend bool operator==(Absolute lhs, Absolute rhs) noexcept
     {
-        return lhs._relative == rhs._relative;
+        return lhs.count_internal() == rhs.count_internal();
     }
 
     [[nodiscard]] constexpr friend bool operator!=(Absolute lhs, Absolute rhs) noexcept
     {
-        return lhs._relative != rhs._relative;
+        return lhs.count_internal() != rhs.count_internal();
     }
 
     [[nodiscard]] constexpr friend bool operator<(Absolute lhs, Absolute rhs) noexcept
     {
-        return lhs._relative < rhs._relative;
+        return lhs.count_internal() < rhs.count_internal();
     }
 
     [[nodiscard]] constexpr friend bool operator>(Absolute lhs, Absolute rhs) noexcept
     {
-        return lhs._relative > rhs._relative;
+        return lhs.count_internal() > rhs.count_internal();
     }
 
     [[nodiscard]] constexpr friend bool operator<=(Absolute lhs, Absolute rhs) noexcept
     {
-        return lhs._relative <= rhs._relative;
+        return lhs.count_internal() <= rhs.count_internal();
     }
 
     [[nodiscard]] constexpr friend bool operator>=(Absolute lhs, Absolute rhs) noexcept
     {
-        return lhs._relative >= rhs._relative;
+        return lhs.count_internal() >= rhs.count_internal();
     }
 };
 
