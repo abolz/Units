@@ -421,6 +421,10 @@ namespace units
 template <typename U>
 class Quantity final
 {
+    // Represents a linear transformation y(x),
+    //      y = Cx
+    // where C is a fixed scaling factor.
+
 public:
     using type        = Quantity;
     using scalar_type = double;
@@ -658,23 +662,27 @@ using TaggedQuantity // a.k.a. Change-Kind
 // Absolute
 //==================================================================================================
 
-template <typename RelativeType, typename RelativeOffset = Ratio<0>>
+template <typename Q, typename Z = Ratio<0>>
 class Absolute final
 {
+    // Represents an affine transformation y(x),
+    //      y = C(x + Z) = Cx + Z'
+    // where C is a fixed (rational) scaling factor, and Z is a fixed (rational) offset.
+
 public:
     using type          = Absolute;
-    using relative_type = RelativeType;
+    using relative_type = Q;
     using scalar_type   = typename relative_type::scalar_type;
     using unit          = typename relative_type::unit;
     using conversion    = typename relative_type::conversion;
     using kind          = typename relative_type::kind;
     using dimension     = typename relative_type::dimension;
     using tag           = typename relative_type::tag;
-    using zero          = RelativeOffset;
+    using zero          = Z;
 
 private:
     // Forward:
-    //  convert from (C1,Z1) to (C2,Z2)
+    //  convert from C1(x + Z1) to C2(y + Z2)
     //
     //  y = (C1 / C2)( x + Z1 ) - Z2
     //    = (C1 / C2)( x + Z1 - Z2 * (C2 / C1) )
@@ -682,7 +690,7 @@ private:
     //    = a x + b
     //
     // Backward:
-    //  convert from (C2,Z2) to (C1,Z1)
+    //  convert from C2(y + Z2) to C1(x + Z1)
     //
     //  x = (y - b) / a
 
