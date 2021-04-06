@@ -718,6 +718,8 @@ private:
 
 public:
     constexpr Absolute() noexcept = default;
+    constexpr Absolute(const Absolute&) noexcept = default;
+    constexpr Absolute& operator=(const Absolute&) noexcept = default;
 
     constexpr explicit Absolute(scalar_type c) noexcept
         : _count(c)
