@@ -24,10 +24,10 @@ struct Position {
 
 static SphericalDistance spherical_distance(Position pos1, Position pos2)
 {
-    const Radians lat1(pos1.lat);
-    const Radians lat2(pos2.lat);
-    const Radians lon1(pos1.lon);
-    const Radians lon2(pos2.lon);
+    const Radians lat1 = convert_to<Radians>(pos1.lat);
+    const Radians lat2 = convert_to<Radians>(pos2.lat);
+    const Radians lon1 = convert_to<Radians>(pos1.lon);
+    const Radians lon2 = convert_to<Radians>(pos2.lon);
 
     if (1)
     {

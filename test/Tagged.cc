@@ -11,7 +11,7 @@ static void test()
     using Height = TaggedQuantity<Centimeters, struct _height>;
 
     Width  w(1.0);
-    Height h(2.0_cm);
+    Height h = convert_to<Height>(2.0_cm);
 
 #if 0
     w = h; // will not compile
@@ -23,7 +23,7 @@ static void test()
     h = area / w; // works
     const auto value = area.count<SquareCentimeters>();
 
-    const auto a = SquareMillimeters(area); // explicit cast works
+    const auto a = convert_to<SquareMillimeters>(area); // explicit cast works
 }
 
 //static void test2()

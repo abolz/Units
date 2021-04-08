@@ -19,12 +19,12 @@ static constexpr auto R = 6371_km;
 static constexpr auto Rsq = R * R;
 
 static constexpr Years answer
-    = Years(
+    = convert_to<Years>(
         1 / ((Gigabirds(300.0) / (PI4 * Rsq))
-                * ((Poops(1_ent) / Birds(1_ent)) / 1_h)
+                * ((Poops(1) / Birds(1)) / 1_h)
                 * (16_h / 1_d)
-                * (Mouths(1_ent) / Poops(1_ent))
-                * (15_cm2 / Mouths(1_ent))));
+                * (Mouths(1) / Poops(1))
+                * (15_cm2 / Mouths(1))));
 
 static_assert(answer.count_internal() == 193.9538756997824294);
 //static_assert(constexpr_math::ieee754_round(answer.count_internal()) == 194);
