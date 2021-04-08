@@ -415,6 +415,38 @@ namespace units
 }
 
 //==================================================================================================
+//
+//==================================================================================================
+
+template <typename U>
+class Quantity;
+
+template <typename Q, typename Z = Ratio<0>>
+class Absolute;
+
+template <typename T>
+inline constexpr bool IsQuantity = false;
+
+template <typename U>
+inline constexpr bool IsQuantity<Quantity<U>> = true;
+
+template <typename T>
+inline constexpr bool IsAbsolute = false;
+
+template <typename Q, typename Z>
+inline constexpr bool IsAbsolute<Absolute<Q, Z>> = true;
+
+// Quantity -> Quantity
+// Quantity -> Absolute
+template <typename Target, typename SourceUnit>
+constexpr Target cast(Quantity<SourceUnit> q) noexcept;
+
+// Absolute -> Absolute
+// Absolute -> Quantity
+template <typename Target, typename SourceQuantity, typename SourceZero>
+constexpr Target cast(Absolute<SourceQuantity, SourceZero> a) noexcept;
+
+//==================================================================================================
 // Quantity (value + compile-time unit)
 //==================================================================================================
 
@@ -449,11 +481,6 @@ private:
     template <typename C1, typename C2, typename T = void>
     using EnableImplicitConversion = std::enable_if_t<impl::ConversionDivides<C1, C2>::value, T>;
 
-    // symmetric
-    template <typename K1, typename K2, typename T = void>
-    using EnableExplicitConversion
-        = std::enable_if_t<std::is_same_v<typename K1::dimension, typename K2::dimension>, T>; // (ratio_equal?)
-
 public:
     constexpr Quantity() noexcept = default;
     constexpr Quantity(const Quantity&) noexcept = default;
@@ -470,12 +497,6 @@ public:
     {
     }
 
-    template <typename C2, typename K2, EnableExplicitConversion<kind, K2, int> = 0>
-    constexpr explicit Quantity(Quantity<Unit<C2, K2>> q) noexcept
-        : _count(DivConversions<C2, conversion>{}(q.count_internal()))
-    {
-    }
-
     [[nodiscard]] constexpr simplified_type simplify() const noexcept
     {
         return simplified_type(_count);
@@ -486,10 +507,10 @@ public:
         return _count;
     }
 
-    template <typename T, std::enable_if_t<std::is_constructible_v<T, Quantity>, int> = 0>
+    template <typename T, std::enable_if_t<std::is_same_v<dimension, typename T::dimension>, int> = 0>
     [[nodiscard]] constexpr auto count() const noexcept
     {
-        return T(*this).count_internal();
+        return cast<T>(*this).count_internal();
     }
 
     [[nodiscard]] constexpr friend Quantity operator+(Quantity q) noexcept
@@ -662,11 +683,11 @@ using TaggedQuantity // a.k.a. Change-Kind
 // Absolute
 //==================================================================================================
 
-template <typename Q, typename Z = Ratio<0>>
+template <typename Q, typename Z>
 class Absolute final
 {
     // Represents an affine transformation y(x),
-    //      y = C(x + Z) = Cx + Z'
+    //      y = C(x - Z) = Cx - Z'
     // where C is a fixed (rational) scaling factor, and Z is a fixed (rational) offset.
 
 public:
@@ -681,47 +702,6 @@ public:
     using zero          = Z;
 
 private:
-    // Forward:
-    //  convert from C1(x + Z1) to C2(y + Z2)
-    //
-    //  y = (C1 / C2)( x + Z1 ) - Z2
-    //    = (C1 / C2)( x + Z1 - Z2 * (C2 / C1) )
-    //    = (C1 / C2)( x ) + (Z1 * (C1 / C2) - Z2)
-    //    = a x + b
-    //
-    // Backward:
-    //  convert from C2(y + Z2) to C1(x + Z1)
-    //
-    //  x = (y - b) / a
-
-    enum class Direction {
-        forward,
-        backward,
-    };
-
-    template <Direction Dir, typename C1, typename Z1, typename C2, typename Z2>
-    static constexpr double convert(double x) noexcept
-    {
-        static_assert(C1::exp == 0,
-            "sorry, not supported (yet)");
-        static_assert(C2::exp == 0,
-            "sorry, not supported (yet)");
-
-        using R1 = std::ratio_divide<typename C1::ratio, typename C2::ratio>;
-        using R2 = std::ratio_subtract<std::ratio_multiply<Z1, R1>, Z2>;
-        static_assert(R1::den != 0);
-        static_assert(R2::den != 0);
-
-        constexpr double a = static_cast<double>(R1::num) / static_cast<double>(R1::den);
-        constexpr double b = static_cast<double>(R2::num) / static_cast<double>(R2::den);
-
-        if constexpr (Dir == Direction::forward)
-            return a * x + b;
-        else
-            return (x - b) / a;
-    }
-
-private:
     scalar_type _count;
 
 public:
@@ -734,22 +714,10 @@ public:
     {
     }
 
-    template <typename C2, typename Z2>
-    constexpr explicit Absolute(Absolute<Quantity<Unit<C2, kind>>, Z2> a) noexcept
-        : _count(convert<Direction::forward, C2, Z2, conversion, zero>(a.count_internal()))
-    {
-    }
-
     template <typename C2>
     constexpr explicit Absolute(Quantity<Unit<C2, kind>> r) noexcept
-        : _count(convert<Direction::forward, C2, Ratio<0>, conversion, zero>(r.count_internal()))
+        : _count( relative_type(r).count_internal() )
     {
-    }
-
-    template <typename C2>
-    [[nodiscard]] constexpr explicit operator Quantity<Unit<C2, kind>>() const noexcept
-    {
-        return Quantity<Unit<C2, kind>>(convert<Direction::backward, C2, Ratio<0>, conversion, zero>(count_internal()));
     }
 
     [[nodiscard]] constexpr scalar_type count_internal() const noexcept
@@ -757,14 +725,10 @@ public:
         return _count;
     }
 
-    template <typename T, std::enable_if_t<std::is_constructible_v<T, Absolute>, int> = 0>
+    template <typename T, std::enable_if_t<std::is_same_v<typename T::kind, kind>, int> = 0>
     [[nodiscard]] constexpr auto count() const noexcept
     {
-#if 1
-        return T(*this).count_internal();
-#else
-        return convert<Direction::backward, typename T::conversion, typename T::zero, conversion, zero>(count_internal());
-#endif
+        return cast<T>(*this).count_internal();
     }
 
     [[nodiscard]] constexpr friend Absolute operator+(Absolute lhs, relative_type rhs) noexcept
@@ -840,6 +804,103 @@ public:
         return lhs.count_internal() >= rhs.count_internal();
     }
 };
+
+//==================================================================================================
+// cast
+//==================================================================================================
+
+namespace impl
+{
+    // Forward:
+    //  convert from C1(x - Z1) to C2(y - Z2)
+    //
+    //  y = (C1 / C2)( x + Z1 ) - Z2
+    //    = (C1 / C2)( x + Z1 - Z2 * (C2 / C1) )
+    //    = (C1 / C2)( x ) + (Z1 * (C1 / C2) - Z2)
+    //    = a x + b
+    //
+    // Backward:
+    //  convert from C2(y + Z2) to C1(x + Z1)
+    //
+    //  x = (y - b) / a
+
+    enum class Direction {
+        forward,
+        backward,
+    };
+
+    template <Direction Dir, typename C1, typename Z1, typename C2, typename Z2>
+    static constexpr double convert(double x) noexcept
+    {
+        static_assert(C1::exp == C2::exp,
+            "sorry, not supported (yet)");
+
+        using R1 = std::ratio_divide<typename C1::ratio, typename C2::ratio>;
+        using R2 = std::ratio_subtract<std::ratio_multiply<Z1, R1>, Z2>;
+        static_assert(R1::den != 0);
+        static_assert(R2::den != 0);
+
+        constexpr double a = static_cast<double>(R1::num) / static_cast<double>(R1::den);
+        constexpr double b = static_cast<double>(R2::num) / static_cast<double>(R2::den);
+
+        if constexpr (Dir == Direction::forward)
+            return a * x + b;
+        else
+            return (x - b) / a;
+    }
+}
+
+template <typename Target, typename SourceUnit>
+constexpr Target cast(Quantity<SourceUnit> q) noexcept
+{
+    static_assert(std::is_same_v<typename Target::dimension, typename SourceUnit::dimension>,
+        "incompatible dimensions");
+
+    using Source = Quantity<SourceUnit>;
+
+    if constexpr (IsQuantity<Target>) 
+    {
+        // Quantity -> Quantity
+        return Target(
+            // (backward)
+            DivConversions<typename Source::conversion, typename Target::conversion>{}(q.count_internal()));
+
+    }
+    else
+    {
+        // Quantity -> Absolute
+        return Target(
+            impl::convert<impl::Direction::forward,
+                typename Source::conversion, typename Source::zero,
+                typename Target::conversion, typename Target::zero>(q.count_internal()));
+    }
+}
+
+template <typename Target, typename SourceQuantity, typename SourceZero>
+constexpr Target cast(Absolute<SourceQuantity, SourceZero> a) noexcept
+{
+    static_assert(std::is_same_v<typename Target::dimension, typename SourceQuantity::dimension>,
+        "incompatible dimensions");
+
+    using Source = Absolute<SourceQuantity, SourceZero>;
+
+    if constexpr (IsQuantity<Target>)
+    {
+        // Absolute -> Quantity
+        return Target(
+            impl::convert<impl::Direction::backward,
+                typename Target::conversion, typename Target::zero,
+                typename Source::conversion, typename Source::zero>(a.count_internal()));
+    }
+    else
+    {
+        // Absolute -> Absolute
+        return Target(
+            impl::convert<impl::Direction::forward,
+                typename Source::conversion, typename Source::zero,
+                typename Target::conversion, typename Target::zero>(a.count_internal()));
+    }
+}
 
 //==================================================================================================
 // SI
