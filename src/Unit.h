@@ -811,19 +811,6 @@ public:
 
 namespace impl
 {
-    // Forward:
-    //  convert from C1(x - Z1) to C2(y - Z2)
-    //
-    //  y = (C1 / C2)( x + Z1 ) - Z2
-    //    = (C1 / C2)( x + Z1 - Z2 * (C2 / C1) )
-    //    = (C1 / C2)( x ) + (Z1 * (C1 / C2) - Z2)
-    //    = a x + b
-    //
-    // Backward:
-    //  convert from C2(y + Z2) to C1(x + Z1)
-    //
-    //  x = (y - b) / a
-
     enum class Direction {
         forward,
         backward,
@@ -834,6 +821,19 @@ namespace impl
     {
         static_assert(C1::exp == C2::exp,
             "sorry, not supported (yet)");
+
+        // Forward:
+        //  convert from C1(x - Z1) to C2(y - Z2)
+        //
+        //  y = (C1 / C2)( x + Z1 ) - Z2
+        //    = (C1 / C2)( x + Z1 - Z2 * (C2 / C1) )
+        //    = (C1 / C2)( x ) + (Z1 * (C1 / C2) - Z2)
+        //    = a x + b
+        //
+        // Backward:
+        //  convert from C2(y + Z2) to C1(x + Z1)
+        //
+        //  x = (y - b) / a
 
         using R1 = std::ratio_divide<typename C1::ratio, typename C2::ratio>;
         using R2 = std::ratio_subtract<std::ratio_multiply<Z1, R1>, Z2>;
@@ -860,19 +860,20 @@ constexpr Target convert_to(Quantity<SourceUnit> q) noexcept
     static_assert(std::is_same_v<typename Target::dimension, typename Source::dimension>,
         "incompatible dimensions");
 
+    using CS = typename Source::conversion;
+    using CT = typename Target::conversion;
+
     if constexpr (IsQuantity<Target>)
     {
-        return Target(
-            // (backward)
-            DivConversions<typename Source::conversion, typename Target::conversion>{}(q.count_internal()));
+        // (backward)
+        return Target(DivConversions<CS, CT>{}(q.count_internal()));
 
     }
     else
     {
-        return Target(
-            impl::convert<impl::Direction::forward,
-                typename Source::conversion, typename Source::zero,
-                typename Target::conversion, typename Target::zero>(q.count_internal()));
+        using ZS = typename Source::zero;
+        using ZT = typename Target::zero;
+        return Target(impl::convert<impl::Direction::forward, CS, ZS, CT, ZT>(q.count_internal()));
     }
 }
 
@@ -886,19 +887,18 @@ constexpr Target convert_to(Absolute<SourceQuantity, SourceZero> a) noexcept
     static_assert(std::is_same_v<typename Target::dimension, typename Source::dimension>,
         "incompatible dimensions");
 
+    using CS = typename Source::conversion;
+    using ZS = typename Source::zero;
+    using CT = typename Target::conversion;
+    using ZT = typename Target::zero;
+
     if constexpr (IsQuantity<Target>)
     {
-        return Target(
-            impl::convert<impl::Direction::backward,
-                typename Target::conversion, typename Target::zero,
-                typename Source::conversion, typename Source::zero>(a.count_internal()));
+        return Target(impl::convert<impl::Direction::backward, CT, ZT, CS, ZS>(a.count_internal()));
     }
     else
     {
-        return Target(
-            impl::convert<impl::Direction::forward,
-                typename Source::conversion, typename Source::zero,
-                typename Target::conversion, typename Target::zero>(a.count_internal()));
+        return Target(impl::convert<impl::Direction::forward, CS, ZS, CT, ZT>(a.count_internal()));
     }
 }
 
