@@ -853,10 +853,12 @@ namespace impl
 template <typename Target, typename SourceUnit>
 constexpr Target convert_to(Quantity<SourceUnit> q) noexcept
 {
-    static_assert(std::is_same_v<typename Target::dimension, typename SourceUnit::dimension>,
-        "incompatible dimensions");
-
     using Source = Quantity<SourceUnit>;
+
+    static_assert(IsQuantity<Target> || IsAbsolute<Target>,
+        "convert_to can only be used to convert to Quantity's or Absolute's");
+    static_assert(std::is_same_v<typename Target::dimension, typename Source::dimension>,
+        "incompatible dimensions");
 
     if constexpr (IsQuantity<Target>)
     {
@@ -877,10 +879,12 @@ constexpr Target convert_to(Quantity<SourceUnit> q) noexcept
 template <typename Target, typename SourceQuantity, typename SourceZero>
 constexpr Target convert_to(Absolute<SourceQuantity, SourceZero> a) noexcept
 {
-    static_assert(std::is_same_v<typename Target::dimension, typename SourceQuantity::dimension>,
-        "incompatible dimensions");
-
     using Source = Absolute<SourceQuantity, SourceZero>;
+
+    static_assert(IsQuantity<Target> || IsAbsolute<Target>,
+        "convert_to can only be used to convert to Quantity's or Absolute's");
+    static_assert(std::is_same_v<typename Target::dimension, typename Source::dimension>,
+        "incompatible dimensions");
 
     if constexpr (IsQuantity<Target>)
     {
