@@ -192,34 +192,14 @@ static void test()
 
 static void test2()
 {
-    using HeightAboveSeaLevel = Absolute<Meters>;
-    using HeightLocal = Absolute<Meters, Ratio<200>>;
+    using GlobalHeight = Meters; // Absolute<Meters>;
+    using LocalHeight = Absolute<Meters, Ratio<200>>;
 
-#if 0
-
-    //
-    // AAARRGH
-    //
-
-    constexpr HeightLocal h1(123_m);
-    static_assert(h1.count_internal() == -77.0);
-//  static_assert(h1.count_internal() == 123.0);
-//  static_assert(h1.count<HeightAboveSeaLevel>() == 323.0);
-
-    constexpr HeightAboveSeaLevel h2(h1);
-    static_assert(h2.count_internal() == 123.0);
-//  static_assert(h2.count_internal() == 323.0);
-//  static_assert(h2.count<HeightLocal>() == 123.0);
-
-#else
-
-    constexpr HeightLocal h1(123_m);
+    constexpr LocalHeight h1(123.0);
     static_assert(h1.count_internal() == 123.0);
-    static_assert(h1.count<HeightAboveSeaLevel>() == 323.0);
+    static_assert(h1.count<GlobalHeight>() == 323.0);
 
-    constexpr HeightAboveSeaLevel h2 = convert_to<HeightAboveSeaLevel>(h1);
+    constexpr GlobalHeight h2 = convert_to<GlobalHeight>(h1);
     static_assert(h2.count_internal() == 323.0);
-    static_assert(h2.count<HeightLocal>() == 123.0);
-
-#endif
+    static_assert(h2.count<LocalHeight>() == 123.0);
 }
