@@ -19,7 +19,7 @@ static constexpr auto R = 6371_km;
 static constexpr auto Rsq = R * R;
 
 static constexpr Years answer
-    = cast<Years>(
+    = convert_to<Years>(
         1 / ((Gigabirds(300.0) / (PI4 * Rsq))
                 * ((Poops(1) / Birds(1)) / 1_h)
                 * (16_h / 1_d)

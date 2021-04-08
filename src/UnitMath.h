@@ -544,12 +544,12 @@ namespace impl
         if constexpr (IsRatio<Scale>)
         {
             using T = ScaledQuantity<Conversion<Scale>, Quantity<U>>;
-            return cast<Quantity<U>>( T( fn( cast<T>(x).count_internal() ) ) );
+            return convert_to<Quantity<U>>( T( fn( convert_to<T>(x).count_internal() ) ) );
         }
         else // if constexpr (IsQuantity<Scale>)
         {
             using T = Scale;
-            return T( fn( cast<T>(x).count_internal() ) );
+            return T( fn( convert_to<T>(x).count_internal() ) );
         }
     }
 

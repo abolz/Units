@@ -439,12 +439,12 @@ inline constexpr bool IsAbsolute<Absolute<Q, Z>> = true;
 // Quantity -> Quantity
 // Quantity -> Absolute
 template <typename Target, typename SourceUnit>
-constexpr Target cast(Quantity<SourceUnit> q) noexcept;
+constexpr Target convert_to(Quantity<SourceUnit> q) noexcept;
 
 // Absolute -> Absolute
 // Absolute -> Quantity
 template <typename Target, typename SourceQuantity, typename SourceZero>
-constexpr Target cast(Absolute<SourceQuantity, SourceZero> a) noexcept;
+constexpr Target convert_to(Absolute<SourceQuantity, SourceZero> a) noexcept;
 
 //==================================================================================================
 // Quantity (value + compile-time unit)
@@ -510,7 +510,7 @@ public:
     template <typename T, std::enable_if_t<std::is_same_v<dimension, typename T::dimension>, int> = 0>
     [[nodiscard]] constexpr auto count() const noexcept
     {
-        return cast<T>(*this).count_internal();
+        return convert_to<T>(*this).count_internal();
     }
 
     [[nodiscard]] constexpr friend Quantity operator+(Quantity q) noexcept
@@ -728,7 +728,7 @@ public:
     template <typename T, std::enable_if_t<std::is_same_v<typename T::kind, kind>, int> = 0>
     [[nodiscard]] constexpr auto count() const noexcept
     {
-        return cast<T>(*this).count_internal();
+        return convert_to<T>(*this).count_internal();
     }
 
     [[nodiscard]] constexpr friend Absolute operator+(Absolute lhs, relative_type rhs) noexcept
@@ -806,7 +806,7 @@ public:
 };
 
 //==================================================================================================
-// cast
+// convert_to
 //==================================================================================================
 
 namespace impl
@@ -851,16 +851,15 @@ namespace impl
 }
 
 template <typename Target, typename SourceUnit>
-constexpr Target cast(Quantity<SourceUnit> q) noexcept
+constexpr Target convert_to(Quantity<SourceUnit> q) noexcept
 {
     static_assert(std::is_same_v<typename Target::dimension, typename SourceUnit::dimension>,
         "incompatible dimensions");
 
     using Source = Quantity<SourceUnit>;
 
-    if constexpr (IsQuantity<Target>) 
+    if constexpr (IsQuantity<Target>)
     {
-        // Quantity -> Quantity
         return Target(
             // (backward)
             DivConversions<typename Source::conversion, typename Target::conversion>{}(q.count_internal()));
@@ -868,7 +867,6 @@ constexpr Target cast(Quantity<SourceUnit> q) noexcept
     }
     else
     {
-        // Quantity -> Absolute
         return Target(
             impl::convert<impl::Direction::forward,
                 typename Source::conversion, typename Source::zero,
@@ -877,7 +875,7 @@ constexpr Target cast(Quantity<SourceUnit> q) noexcept
 }
 
 template <typename Target, typename SourceQuantity, typename SourceZero>
-constexpr Target cast(Absolute<SourceQuantity, SourceZero> a) noexcept
+constexpr Target convert_to(Absolute<SourceQuantity, SourceZero> a) noexcept
 {
     static_assert(std::is_same_v<typename Target::dimension, typename SourceQuantity::dimension>,
         "incompatible dimensions");
@@ -886,7 +884,6 @@ constexpr Target cast(Absolute<SourceQuantity, SourceZero> a) noexcept
 
     if constexpr (IsQuantity<Target>)
     {
-        // Absolute -> Quantity
         return Target(
             impl::convert<impl::Direction::backward,
                 typename Target::conversion, typename Target::zero,
@@ -894,7 +891,6 @@ constexpr Target cast(Absolute<SourceQuantity, SourceZero> a) noexcept
     }
     else
     {
-        // Absolute -> Absolute
         return Target(
             impl::convert<impl::Direction::forward,
                 typename Source::conversion, typename Source::zero,
