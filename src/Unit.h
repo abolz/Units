@@ -714,14 +714,6 @@ public:
     {
     }
 
-#if 0 // Ambiguous...
-    template <typename C2, EnableImplicitConversion<conversion, C2, int> = 0>
-    constexpr Absolute(Quantity<Unit<C2, kind>> r) noexcept
-        : _count(DivConversions<C2, conversion>{}(r.count_internal()))
-    {
-    }
-#endif
-
     [[nodiscard]] constexpr scalar_type count_internal() const noexcept
     {
         return _count;
