@@ -813,6 +813,21 @@ public:
 
 namespace impl
 {
+    template <typename T>
+    static constexpr double as_double() noexcept
+    {
+        if constexpr (IsRatio<T>)
+        {
+            static_assert(T::den != 0);
+            return static_cast<double>(T::num) / static_cast<double>(T::den);
+        }
+        else
+        {
+            // return static_cast<double>(T::value);
+            return static_cast<double>(T{}());
+        }
+    }
+
     enum class Direction {
         forward,
         backward,
@@ -837,18 +852,33 @@ namespace impl
         //
         //  x = (y - b) / a
 
-        using R1 = std::ratio_divide<typename C1::ratio, typename C2::ratio>;
-        using R2 = std::ratio_subtract<std::ratio_multiply<Z1, R1>, Z2>;
-        static_assert(R1::den != 0);
-        static_assert(R2::den != 0);
+        if constexpr (IsRatio<Z1> && IsRatio<Z2>)
+        {
+            using R1 = std::ratio_divide<typename C1::ratio, typename C2::ratio>;
+            using R2 = std::ratio_subtract<std::ratio_multiply<Z1, R1>, Z2>;
 
-        constexpr double a = static_cast<double>(R1::num) / static_cast<double>(R1::den);
-        constexpr double b = static_cast<double>(R2::num) / static_cast<double>(R2::den);
+            constexpr double a = as_double<R1>();
+            constexpr double b = as_double<R2>();
 
-        if constexpr (Dir == Direction::forward)
-            return a * x + b;
+            if constexpr (Dir == Direction::forward)
+                return a * x + b;
+            else
+                return (x - b) / a;
+        }
         else
-            return (x - b) / a;
+        {
+            // XXX:
+            // Use same expression as above?!
+
+            constexpr double a  = as_double<std::ratio_divide<typename C1::ratio, typename C2::ratio>>();
+            constexpr double z1 = as_double<Z1>();
+            constexpr double z2 = as_double<Z2>();
+
+            if constexpr (Dir == Direction::forward)
+                return (x + z1) * a - z2;
+            else
+                return (x + z2) / a - z1;
+        }
     }
 }
 

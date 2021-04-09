@@ -189,17 +189,3 @@ static void test()
         static_assert(x03 == v03);
     }
 }
-
-static void test2()
-{
-    using GlobalHeight = Meters; // Absolute<Meters>;
-    using LocalHeight = Absolute<Meters, Ratio<200>>;
-
-    constexpr LocalHeight h1(123.0);
-    static_assert(h1.count_internal() == 123.0);
-    static_assert(h1.count<GlobalHeight>() == 323.0);
-
-    constexpr GlobalHeight h2 = convert_to<GlobalHeight>(h1);
-    static_assert(h2.count_internal() == 323.0);
-    static_assert(h2.count<LocalHeight>() == 123.0);
-}
