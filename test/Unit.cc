@@ -237,9 +237,9 @@ static constexpr void test()
         constexpr auto tx = convert_to<Centimeters>(1_in);
         static_assert(tx.count_internal() == 2.54);
 
-        static_assert(compare(1_m, 1_m) == 0);
-        static_assert(compare(1_in, 1_cm) > 0);
-        static_assert(compare(1_mm, 1_ft) < 0);
+        //static_assert(compare(1_m, 1_m) == 0);
+        //static_assert(compare(1_in, 1_cm) > 0);
+        //static_assert(compare(1_mm, 1_ft) < 0);
 
         constexpr auto s0 = 1_yd;
         static_assert(s0.count_internal() == 1.0);

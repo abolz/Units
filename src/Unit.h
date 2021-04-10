@@ -585,18 +585,6 @@ public:
     }
 
     template <typename C2, typename Q = CommonQuantity<C2>>
-    [[nodiscard]] constexpr friend int compare(Quantity lhs, Quantity<Unit<C2, kind>> rhs) noexcept
-    {
-        const auto x = Q(lhs).count_internal();
-        const auto y = Q(rhs).count_internal();
-        if (x < y)
-            return -1;
-        if (x > y)
-            return +1;
-        return 0;
-    }
-
-    template <typename C2, typename Q = CommonQuantity<C2>>
     [[nodiscard]] constexpr friend bool operator==(Quantity lhs, Quantity<Unit<C2, kind>> rhs) noexcept
     {
         return Q(lhs).count_internal() == Q(rhs).count_internal();
@@ -717,17 +705,6 @@ public:
     {
         lhs._count -= rhs.count_internal();
         return lhs;
-    }
-
-    [[nodiscard]] constexpr friend int compare(Absolute lhs, Absolute rhs) noexcept
-    {
-        const auto x = lhs.count_internal();
-        const auto y = rhs.count_internal();
-        if (x < y)
-            return -1;
-        if (x > y)
-            return +1;
-        return 0;
     }
 
     [[nodiscard]] constexpr friend bool operator==(Absolute lhs, Absolute rhs) noexcept
