@@ -21,7 +21,7 @@ static void test()
     const auto area = w * h; // (some kind of "area")
     w = area / h; // works
     h = area / w; // works
-    const auto value = area.count<SquareCentimeters>();
+    const auto value = count_as<SquareCentimeters>(area);
 
     const auto a = convert_to<SquareMillimeters>(area); // explicit cast works
 }

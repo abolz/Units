@@ -31,14 +31,14 @@ static void test1()
 
     constexpr LocalHeight1 h1(123.0);
     static_assert(h1.count_internal() == 123.0);
-    static_assert(h1.count<GlobalHeight>() == 323.0);
+    static_assert(count_as<GlobalHeight>(h1) == 323.0);
 
     constexpr LocalHeight2 h2 = convert_to<LocalHeight2>(h1);
     static_assert(h2.count_internal() == 223.0);
-    static_assert(h2.count<GlobalHeight>() == 323.0);
+    static_assert(count_as<GlobalHeight>(h2) == 323.0);
 
     constexpr GlobalHeight hg = convert_to<GlobalHeight>(h1);
     static_assert(hg.count_internal() == 323.0);
-    static_assert(hg.count<LocalHeight1>() == 123.0);
-    static_assert(hg.count<LocalHeight2>() == 223.0);
+    static_assert(count_as<LocalHeight1>(hg) == 123.0);
+    static_assert(count_as<LocalHeight2>(hg) == 223.0);
 }

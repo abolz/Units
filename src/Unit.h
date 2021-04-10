@@ -415,38 +415,6 @@ namespace units
 }
 
 //==================================================================================================
-//
-//==================================================================================================
-
-template <typename U>
-class Quantity;
-
-template <typename Q, typename Z = Ratio<0>>
-class Absolute;
-
-template <typename T>
-inline constexpr bool IsQuantity = false;
-
-template <typename U>
-inline constexpr bool IsQuantity<Quantity<U>> = true;
-
-template <typename T>
-inline constexpr bool IsAbsolute = false;
-
-template <typename Q, typename Z>
-inline constexpr bool IsAbsolute<Absolute<Q, Z>> = true;
-
-// Quantity -> Quantity
-// Quantity -> Absolute
-template <typename Target, typename SourceUnit>
-constexpr Target convert_to(Quantity<SourceUnit> q) noexcept;
-
-// Absolute -> Absolute
-// Absolute -> Quantity
-template <typename Target, typename SourceQuantity, typename SourceZero>
-constexpr Target convert_to(Absolute<SourceQuantity, SourceZero> a) noexcept;
-
-//==================================================================================================
 // Quantity (value + compile-time unit)
 //==================================================================================================
 
@@ -500,12 +468,6 @@ public:
     [[nodiscard]] constexpr scalar_type count_internal() const noexcept
     {
         return _count;
-    }
-
-    template <typename T, std::enable_if_t<std::is_same_v<dimension, typename T::dimension>, int> = 0>
-    [[nodiscard]] constexpr auto count() const noexcept
-    {
-        return convert_to<T>(*this).count_internal();
     }
 
     [[nodiscard]] constexpr simplified_type simplify() const noexcept
@@ -671,6 +633,12 @@ public:
     }
 };
 
+template <typename T>
+inline constexpr bool IsQuantity = false;
+
+template <typename U>
+inline constexpr bool IsQuantity<Quantity<U>> = true;
+
 template <typename Conv, typename Q>
 using ScaledQuantity
     = Quantity<Unit<MulConversions<Conv, typename Q::conversion>, typename Q::kind>>;
@@ -683,11 +651,11 @@ using TaggedQuantity // a.k.a. Change-Kind
 // Absolute
 //==================================================================================================
 
-template <typename Q, typename Z>
+template <typename Q, typename Z = Ratio<0>>
 class Absolute final
 {
     // Represents an affine transformation y(x),
-    //      y = C(x - Z) = Cx - Z'
+    //      y = C(x + Z) = Cx + Z'
     // where C is a fixed (rational) scaling factor, and Z is a fixed (rational) offset.
 
 public:
@@ -717,12 +685,6 @@ public:
     [[nodiscard]] constexpr scalar_type count_internal() const noexcept
     {
         return _count;
-    }
-
-    template <typename T, std::enable_if_t<std::is_same_v<typename T::kind, kind>, int> = 0>
-    [[nodiscard]] constexpr auto count() const noexcept
-    {
-        return convert_to<T>(*this).count_internal();
     }
 
     [[nodiscard]] constexpr friend Absolute operator+(Absolute lhs, relative_type rhs) noexcept
@@ -799,6 +761,12 @@ public:
     }
 };
 
+template <typename T>
+inline constexpr bool IsAbsolute = false;
+
+template <typename Q, typename Z>
+inline constexpr bool IsAbsolute<Absolute<Q, Z>> = true;
+
 //==================================================================================================
 // convert_to
 //==================================================================================================
@@ -832,7 +800,7 @@ namespace impl
             "sorry, not supported (yet)");
 
         // Forward:
-        //  convert from C1(x - Z1) to C2(y - Z2)
+        //  convert from C1(x + Z1) to C2(y + Z2)
         //
         //  y = (C1 / C2)( x + Z1 ) - Z2
         //    = (C1 / C2)( x + Z1 - Z2 * (C2 / C1) )
@@ -924,6 +892,22 @@ constexpr Target convert_to(Absolute<SourceQuantity, SourceZero> a) noexcept
     {
         return Target(impl::convert<impl::Direction::forward, CS, ZS, CT, ZT>(a.count_internal()));
     }
+}
+
+//==================================================================================================
+// count_as
+//==================================================================================================
+
+template <typename T, typename U>
+constexpr double count_as(Quantity<U> q) noexcept
+{
+    return convert_to<T>(q).count_internal();
+}
+
+template <typename T, typename Q, typename Z>
+constexpr double count_as(Absolute<Q, Z> q) noexcept
+{
+    return convert_to<T>(q).count_internal();
 }
 
 //==================================================================================================
