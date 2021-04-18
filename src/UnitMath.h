@@ -162,13 +162,13 @@ namespace impl
 //==================================================================================================
 
 template <typename U>
-[[nodiscard]] inline Quantity<U> abs(Quantity<U> q) noexcept
+[[nodiscard]] Quantity<U> abs(Quantity<U> q) noexcept
 {
     return Quantity<U>(std::abs(q.count_internal()));
 }
 
 template <typename U>
-[[nodiscard]] inline Quantity<U> fabs(Quantity<U> q) noexcept
+[[nodiscard]] Quantity<U> fabs(Quantity<U> q) noexcept
 {
     return Quantity<U>(std::fabs(q.count_internal()));
 }
@@ -178,13 +178,13 @@ template <typename U>
 //--------------------------------------------------------------------------------------------------
 
 template <typename Q, typename Z>
-[[nodiscard]] inline Absolute<Q, Z> abs(Absolute<Q, Z> q) noexcept
+[[nodiscard]] Absolute<Q, Z> abs(Absolute<Q, Z> q) noexcept
 {
     return Absolute<Q, Z>(std::abs(q.count_internal()));
 }
 
 template <typename Q, typename Z>
-[[nodiscard]] inline Absolute<Q, Z> fabs(Absolute<Q, Z> q) noexcept
+[[nodiscard]] Absolute<Q, Z> fabs(Absolute<Q, Z> q) noexcept
 {
     return Absolute<Q, Z>(std::fabs(q.count_internal()));
 }
@@ -194,27 +194,27 @@ template <typename Q, typename Z>
 //==================================================================================================
 
 template <typename U>
-[[nodiscard]] inline constexpr Quantity<U> min(Quantity<U> x, Quantity<U> y) noexcept
+[[nodiscard]] constexpr Quantity<U> min(Quantity<U> x, Quantity<U> y) noexcept
 {
     // std::min
     return y.count_internal() < x.count_internal() ? y : x;
 }
 
 template <typename U>
-[[nodiscard]] inline constexpr Quantity<U> max(Quantity<U> x, Quantity<U> y) noexcept
+[[nodiscard]] constexpr Quantity<U> max(Quantity<U> x, Quantity<U> y) noexcept
 {
     // std::max
     return y.count_internal() < x.count_internal() ? x : y;
 }
 
 template <typename U>
-[[nodiscard]] inline Quantity<U> fmin(Quantity<U> x, Quantity<U> y) noexcept
+[[nodiscard]] Quantity<U> fmin(Quantity<U> x, Quantity<U> y) noexcept
 {
     return Quantity<U>(std::fmin(x.count_internal(), y.count_internal()));
 }
 
 template <typename U>
-[[nodiscard]] inline Quantity<U> fmax(Quantity<U> x, Quantity<U> y) noexcept
+[[nodiscard]] Quantity<U> fmax(Quantity<U> x, Quantity<U> y) noexcept
 {
     return Quantity<U>(std::fmax(x.count_internal(), y.count_internal()));
 }
@@ -224,27 +224,27 @@ template <typename U>
 //--------------------------------------------------------------------------------------------------
 
 template <typename Q, typename Z>
-[[nodiscard]] inline constexpr Absolute<Q, Z> min(Absolute<Q, Z> x, Absolute<Q, Z> y) noexcept
+[[nodiscard]] constexpr Absolute<Q, Z> min(Absolute<Q, Z> x, Absolute<Q, Z> y) noexcept
 {
     // std::min
     return y.count_internal() < x.count_internal() ? y : x;
 }
 
 template <typename Q, typename Z>
-[[nodiscard]] inline constexpr Absolute<Q, Z> max(Absolute<Q, Z> x, Absolute<Q, Z> y) noexcept
+[[nodiscard]] constexpr Absolute<Q, Z> max(Absolute<Q, Z> x, Absolute<Q, Z> y) noexcept
 {
     // std::max
     return y.count_internal() < x.count_internal() ? x : y;
 }
 
 template <typename Q, typename Z>
-[[nodiscard]] inline Absolute<Q, Z> fmin(Absolute<Q, Z> x, Absolute<Q, Z> y) noexcept
+[[nodiscard]] Absolute<Q, Z> fmin(Absolute<Q, Z> x, Absolute<Q, Z> y) noexcept
 {
     return Absolute<Q, Z>(std::fmin(x.count_internal(), y.count_internal()));
 }
 
 template <typename Q, typename Z>
-[[nodiscard]] inline Absolute<Q, Z> fmax(Absolute<Q, Z> x, Absolute<Q, Z> y) noexcept
+[[nodiscard]] Absolute<Q, Z> fmax(Absolute<Q, Z> x, Absolute<Q, Z> y) noexcept
 {
     return Absolute<Q, Z>(std::fmax(x.count_internal(), y.count_internal()));
 }
@@ -255,7 +255,7 @@ template <typename Q, typename Z>
 
 // q^N
 template <int64_t N, typename U>
-[[nodiscard]] inline auto pow(Quantity<U> q)
+[[nodiscard]] auto pow(Quantity<U> q)
 {
     using conversion    = typename U::conversion;   // Conversion<Ratio, exp>
     using kind          = typename U::kind;         // Kind<dimension, Tag>
@@ -294,7 +294,7 @@ template <int64_t N, typename U>
 
 // q^2
 template <typename U>
-[[nodiscard]] inline auto square(Quantity<U> q)
+[[nodiscard]] auto square(Quantity<U> q)
 {
     return uom::pow<2>(q);
 }
@@ -305,7 +305,7 @@ template <typename U>
 
 // q^(1/N)
 template <int64_t N, typename U>
-[[nodiscard]] inline auto nth_root(Quantity<U> q)
+[[nodiscard]] auto nth_root(Quantity<U> q)
 {
     using conversion    = typename U::conversion;   // Conversion<Ratio, exp>
     using kind          = typename U::kind;         // Kind<dimension, Tag>
@@ -355,14 +355,14 @@ template <int64_t N, typename U>
 
 // q^(1/2)
 template <typename U>
-[[nodiscard]] inline auto sqrt(Quantity<U> q)
+[[nodiscard]] auto sqrt(Quantity<U> q)
 {
     return uom::nth_root<2>(q);
 }
 
 // q^(1/3)
 template <typename U>
-[[nodiscard]] inline auto cbrt(Quantity<U> q)
+[[nodiscard]] auto cbrt(Quantity<U> q)
 {
     return uom::nth_root<3>(q);
 }
@@ -372,13 +372,13 @@ template <typename U>
 //==================================================================================================
 
 template <typename U>
-[[nodiscard]] inline Quantity<U> hypot(Quantity<U> x, Quantity<U> y) noexcept
+[[nodiscard]] Quantity<U> hypot(Quantity<U> x, Quantity<U> y) noexcept
 {
     return Quantity<U>(std::hypot(x.count_internal(), y.count_internal()));
 }
 
 template <typename U>
-[[nodiscard]] inline Quantity<U> hypot(Quantity<U> x, Quantity<U> y, Quantity<U> z) noexcept
+[[nodiscard]] Quantity<U> hypot(Quantity<U> x, Quantity<U> y, Quantity<U> z) noexcept
 {
     return Quantity<U>(std::hypot(x.count_internal(), y.count_internal(), z.count_internal()));
 }
@@ -443,7 +443,7 @@ template <typename U>
 }
 #else
 template <typename U>
-[[nodiscard]] inline Dimensionless sin(Quantity<U> x) noexcept
+[[nodiscard]] Dimensionless sin(Quantity<U> x) noexcept
 {
     static_assert(typename U::dimension == dims::PlaneAngle,
         "operation not supported");
@@ -452,7 +452,7 @@ template <typename U>
 }
 
 template <typename U>
-[[nodiscard]] inline Dimensionless cos(Quantity<U> x) noexcept
+[[nodiscard]] Dimensionless cos(Quantity<U> x) noexcept
 {
     static_assert(typename U::dimension == dims::PlaneAngle,
         "operation not supported");
@@ -461,7 +461,7 @@ template <typename U>
 }
 
 template <typename U>
-[[nodiscard]] inline Dimensionless tan(Quantity<U> x) noexcept
+[[nodiscard]] Dimensionless tan(Quantity<U> x) noexcept
 {
     static_assert(typename U::dimension == dims::PlaneAngle,
         "operation not supported");
@@ -487,7 +487,7 @@ template <typename U>
 
 #if 1
 template <typename C1, typename C2, typename K>
-[[nodiscard]] inline Radians atan2(Quantity<Unit<C1, K>> y, Quantity<Unit<C2, K>> x) noexcept
+[[nodiscard]] Radians atan2(Quantity<Unit<C1, K>> y, Quantity<Unit<C2, K>> x) noexcept
 {
     using Q = Quantity<Unit<CommonConversion<C1, C2>, kinds::Simple>>;
     return Radians(std::atan2(Q(y).count_internal(), Q(x).count_internal()));
@@ -539,7 +539,7 @@ template <typename C1, typename C2, typename K>
 namespace impl
 {
     template <typename Scale, typename U, typename Fn>
-    inline auto ToInt(Quantity<U> x, Fn fn) noexcept
+    auto ToInt(Quantity<U> x, Fn fn) noexcept
     {
         if constexpr (IsRatio<Scale>)
         {
@@ -554,7 +554,7 @@ namespace impl
     }
 
     template <typename Scale, typename Q, typename Z, typename Fn>
-    inline auto ToInt(Absolute<Q, Z> x, Fn fn) noexcept
+    auto ToInt(Absolute<Q, Z> x, Fn fn) noexcept
     {
         return Absolute<Q, Z>( ToInt<Scale>( Q(x.count_internal()) ).count_internal() );
     }
@@ -565,25 +565,25 @@ namespace impl
 //--------------------------------------------------------------------------------------------------
 
 template <typename Scale = Ratio<1>, typename U>
-[[nodiscard]] inline auto ceil(Quantity<U> x) noexcept
+[[nodiscard]] Quantity<U> ceil(Quantity<U> x) noexcept
 {
     return impl::ToInt<Scale>(x, [](const double t) { return std::ceil(t); } );
 }
 
 template <typename Scale = Ratio<1>, typename U>
-[[nodiscard]] inline auto floor(Quantity<U> x) noexcept
+[[nodiscard]] Quantity<U> floor(Quantity<U> x) noexcept
 {
     return impl::ToInt<Scale>(x, [](const double t) { return std::floor(t); } );
 }
 
 template <typename Scale = Ratio<1>, typename U>
-[[nodiscard]] inline auto trunc(Quantity<U> x) noexcept
+[[nodiscard]] Quantity<U> trunc(Quantity<U> x) noexcept
 {
     return impl::ToInt<Scale>(x, [](const double t) { return std::trunc(t); } );
 }
 
 template <typename Scale = Ratio<1>, typename U>
-[[nodiscard]] inline auto round(Quantity<U> x) noexcept
+[[nodiscard]] Quantity<U> round(Quantity<U> x) noexcept
 {
     return impl::ToInt<Scale>(x, [](const double t) { return std::round(t); } );
 }
@@ -593,25 +593,25 @@ template <typename Scale = Ratio<1>, typename U>
 //--------------------------------------------------------------------------------------------------
 
 template <typename Scale = Ratio<1>, typename Q, typename Z>
-[[nodiscard]] inline auto ceil(Absolute<Q, Z> x) noexcept
+[[nodiscard]] Absolute<Q, Z> ceil(Absolute<Q, Z> x) noexcept
 {
     return impl::ToInt<Scale>(x, [](const double t) { return std::ceil(t); } );
 }
 
 template <typename Scale = Ratio<1>, typename Q, typename Z>
-[[nodiscard]] inline auto floor(Absolute<Q, Z> x) noexcept
+[[nodiscard]] Absolute<Q, Z> floor(Absolute<Q, Z> x) noexcept
 {
     return impl::ToInt<Scale>(x, [](const double t) { return std::floor(t); } );
 }
 
 template <typename Scale = Ratio<1>, typename Q, typename Z>
-[[nodiscard]] inline auto trunc(Absolute<Q, Z> x) noexcept
+[[nodiscard]] Absolute<Q, Z> trunc(Absolute<Q, Z> x) noexcept
 {
     return impl::ToInt<Scale>(x, [](const double t) { return std::trunc(t); } );
 }
 
 template <typename Scale = Ratio<1>, typename Q, typename Z>
-[[nodiscard]] inline auto round(Absolute<Q, Z> x) noexcept
+[[nodiscard]] Absolute<Q, Z> round(Absolute<Q, Z> x) noexcept
 {
     return impl::ToInt<Scale>(x, [](const double t) { return std::round(t); } );
 }
@@ -621,7 +621,7 @@ template <typename Scale = Ratio<1>, typename Q, typename Z>
 //==================================================================================================
 
 template <typename U, typename U2, std::enable_if_t<std::is_same_v<MulUnits<U, U>, U2>, int> = 0>
-[[nodiscard]] inline auto fma(Quantity<U> x, Quantity<U> y, Quantity<U2> z)
+[[nodiscard]] auto fma(Quantity<U> x, Quantity<U> y, Quantity<U2> z)
 {
     // The function signature is more restrictive than (x * y + z).
     // This is to avoid any implicit conversion taking place, which would defeat the purpose
@@ -635,7 +635,7 @@ template <typename U, typename U2, std::enable_if_t<std::is_same_v<MulUnits<U, U
 //==================================================================================================
 
 template <typename U>
-[[nodiscard]] inline Quantity<U> midpoint(Quantity<U> x, Quantity<U> y) noexcept
+[[nodiscard]] Quantity<U> midpoint(Quantity<U> x, Quantity<U> y) noexcept
 {
     return Quantity<U>(x.count_internal() / 2 + y.count_internal() / 2);
 }
@@ -645,7 +645,7 @@ template <typename U>
 //--------------------------------------------------------------------------------------------------
 
 template <typename Q, typename Z>
-[[nodiscard]] inline Absolute<Q, Z> midpoint(Absolute<Q, Z> x, Absolute<Q, Z> y) noexcept
+[[nodiscard]] Absolute<Q, Z> midpoint(Absolute<Q, Z> x, Absolute<Q, Z> y) noexcept
 {
     return Absolute<Q, Z>(x.count_internal() / 2 + y.count_internal() / 2);
 }
@@ -655,7 +655,7 @@ template <typename Q, typename Z>
 //==================================================================================================
 
 template <typename U>
-[[nodiscard]] inline Quantity<U> lerp(Quantity<U> x, Quantity<U> y, double t) noexcept
+[[nodiscard]] Quantity<U> lerp(Quantity<U> x, Quantity<U> y, double t) noexcept
 {
     return Quantity<U>((1 - t) * x.count_internal() + t * y.count_internal());
 }
@@ -665,7 +665,7 @@ template <typename U>
 //--------------------------------------------------------------------------------------------------
 
 template <typename Q, typename Z>
-[[nodiscard]] inline Absolute<Q, Z> lerp(Absolute<Q, Z> x, Absolute<Q, Z> y, double t) noexcept
+[[nodiscard]] Absolute<Q, Z> lerp(Absolute<Q, Z> x, Absolute<Q, Z> y, double t) noexcept
 {
     return Absolute<Q, Z>((1 - t) * x.count_internal() + t * y.count_internal());
 }
@@ -744,49 +744,49 @@ namespace impl
 } // namespace impl
 
 // Reduce x to [0, 2pi)
-inline Radians normalize_positive(Radians x) noexcept
+[[nodiscard]] inline Radians normalize_positive(Radians x) noexcept
 {
     return Radians(impl::NormalizePositive(x.count_internal(), impl::kTwoPi));
 }
 
 // Reduce x to [-pi, pi)
-inline Radians normalize_symmetric(Radians x) noexcept
+[[nodiscard]] inline Radians normalize_symmetric(Radians x) noexcept
 {
     return Radians(impl::NormalizeSymmetric(x.count_internal(), impl::kTwoPi));
 }
 
 // Reduce x to [0, 360)
-inline Degrees normalize_positive(Degrees x) noexcept
+[[nodiscard]] inline Degrees normalize_positive(Degrees x) noexcept
 {
     return Degrees(impl::NormalizePositive(x.count_internal(), 360.0));
 }
 
 // Reduce x to [-180, 180)
-inline Degrees normalize_symmetric(Degrees x) noexcept
+[[nodiscard]] inline Degrees normalize_symmetric(Degrees x) noexcept
 {
     return Degrees(impl::NormalizeSymmetric(x.count_internal(), 360.0));
 }
 
 // Reduce x to [0, 400)
-inline Gons normalize_positive(Gons x) noexcept
+[[nodiscard]] inline Gons normalize_positive(Gons x) noexcept
 {
     return Gons(impl::NormalizePositive(x.count_internal(), 400.0));
 }
 
 // Reduce x to [-200, 200)
-inline Gons normalize_symmetric(Gons x) noexcept
+[[nodiscard]] inline Gons normalize_symmetric(Gons x) noexcept
 {
     return Gons(impl::NormalizeSymmetric(x.count_internal(), 400.0));
 }
 
 // Reduce x to [0, 1)
-inline Revolutions normalize_positive(Revolutions x) noexcept
+[[nodiscard]] inline Revolutions normalize_positive(Revolutions x) noexcept
 {
     return Revolutions(impl::NormalizePositive(x.count_internal(), 1.0));
 }
 
 // Reduce x to [-1/2, 1/2)
-inline Revolutions normalize_symmetric(Revolutions x) noexcept
+[[nodiscard]] inline Revolutions normalize_symmetric(Revolutions x) noexcept
 {
     return Revolutions(impl::NormalizeSymmetric(x.count_internal(), 1.0));
 }
