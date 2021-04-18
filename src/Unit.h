@@ -751,7 +751,7 @@ inline constexpr bool IsAbsolute<Absolute<Q, Z>> = true;
 namespace impl
 {
     template <typename T>
-    static constexpr double as_double() noexcept
+    constexpr double as_double() noexcept
     {
         if constexpr (IsRatio<T>)
         {
@@ -771,7 +771,7 @@ namespace impl
     };
 
     template <Direction Dir, typename C1, typename Z1, typename C2, typename Z2>
-    static constexpr double convert(double x) noexcept
+    constexpr double convert(double x) noexcept
     {
         static_assert(C1::exp == C2::exp,
             "sorry, not supported (yet)");
@@ -836,7 +836,6 @@ constexpr Target convert_to(Quantity<SourceUnit> q) noexcept
     {
         // (backward)
         return Target(DivConversions<CS, CT>{}(q.count_internal()));
-
     }
     else
     {
