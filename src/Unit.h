@@ -449,6 +449,11 @@ private:
     template <typename C1, typename C2, typename T = void>
     using EnableImplicitConversion = std::enable_if_t<impl::ConversionDivides<C1, C2>::value, T>;
 
+    // symmetric
+    template <typename K1, typename K2, typename T = void>
+    using EnableExplicitConversion
+        = std::enable_if_t<std::is_same_v<typename K1::dimension, typename K2::dimension>, T>;
+
 public:
     constexpr Quantity() noexcept = default;
     constexpr Quantity(const Quantity&) noexcept = default;
@@ -461,6 +466,12 @@ public:
 
     template <typename C2, EnableImplicitConversion<conversion, C2, int> = 0>
     constexpr Quantity(Quantity<Unit<C2, kind>> q) noexcept
+        : _count(DivConversions<C2, conversion>{}(q.count_internal()))
+    {
+    }
+
+    template <typename C2, typename K2, EnableExplicitConversion<kind, K2, int> = 0>
+    constexpr explicit Quantity(Quantity<Unit<C2, K2>> q) noexcept
         : _count(DivConversions<C2, conversion>{}(q.count_internal()))
     {
     }
