@@ -762,7 +762,7 @@ inline constexpr bool IsAbsolute<Absolute<Q, Z>> = true;
 namespace impl
 {
     template <typename T>
-    constexpr double as_double() noexcept
+    constexpr double AsDouble() noexcept
     {
         if constexpr (IsRatio<T>)
         {
@@ -782,7 +782,7 @@ namespace impl
     };
 
     template <Direction Dir, typename C1, typename Z1, typename C2, typename Z2>
-    constexpr double convert(double x) noexcept
+    constexpr double Convert(double x) noexcept
     {
         static_assert(C1::exp == C2::exp,
             "sorry, not supported (yet)");
@@ -805,8 +805,8 @@ namespace impl
             using R1 = std::ratio_divide<typename C1::ratio, typename C2::ratio>;
             using R2 = std::ratio_subtract<std::ratio_multiply<Z1, R1>, Z2>;
 
-            constexpr double a = as_double<R1>();
-            constexpr double b = as_double<R2>();
+            constexpr double a = AsDouble<R1>();
+            constexpr double b = AsDouble<R2>();
 
             if constexpr (Dir == Direction::forward)
                 return a * x + b;
@@ -818,9 +818,9 @@ namespace impl
             // XXX:
             // Use same expression as above?!
 
-            constexpr double a  = as_double<std::ratio_divide<typename C1::ratio, typename C2::ratio>>();
-            constexpr double z1 = as_double<Z1>();
-            constexpr double z2 = as_double<Z2>();
+            constexpr double a  = AsDouble<std::ratio_divide<typename C1::ratio, typename C2::ratio>>();
+            constexpr double z1 = AsDouble<Z1>();
+            constexpr double z2 = AsDouble<Z2>();
 
             if constexpr (Dir == Direction::forward)
                 return (x + z1) * a - z2;
@@ -852,7 +852,7 @@ constexpr Target convert_to(Quantity<SourceUnit> q) noexcept
     {
         using ZS = typename Source::zero;
         using ZT = typename Target::zero;
-        return Target(impl::convert<impl::Direction::forward, CS, ZS, CT, ZT>(q.count_internal()));
+        return Target(impl::Convert<impl::Direction::forward, CS, ZS, CT, ZT>(q.count_internal()));
     }
 }
 
@@ -873,11 +873,11 @@ constexpr Target convert_to(Absolute<SourceQuantity, SourceZero> a) noexcept
 
     if constexpr (IsQuantity<Target>)
     {
-        return Target(impl::convert<impl::Direction::backward, CT, ZT, CS, ZS>(a.count_internal()));
+        return Target(impl::Convert<impl::Direction::backward, CT, ZT, CS, ZS>(a.count_internal()));
     }
     else
     {
-        return Target(impl::convert<impl::Direction::forward, CS, ZS, CT, ZT>(a.count_internal()));
+        return Target(impl::Convert<impl::Direction::forward, CS, ZS, CT, ZT>(a.count_internal()));
     }
 }
 
