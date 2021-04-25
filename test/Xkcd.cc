@@ -1,3 +1,5 @@
+#include "doctest.h"
+
 #include "Unit.h"
 #include "UnitLiterals.h"
 #include "UnitMath.h"
@@ -18,22 +20,19 @@ static constexpr auto PI4 = 4 * 3.1415;
 static constexpr auto R = 6371_km;
 static constexpr auto Rsq = R * R;
 
-static constexpr Years answer
-    = convert_to<Years>(
-        1 / ((Gigabirds(300.0) / (PI4 * Rsq))
-                * ((Poops(1) / Birds(1)) / 1_h)
-                * (16_h / 1_d)
-                * (Mouths(1) / Poops(1))
-                * (15_cm2 / Mouths(1))));
+TEST_CASE("Xkcd")
+{
+    constexpr Years answer
+        = Years(
+            1 / ((Gigabirds(300.0) / (PI4 * Rsq))
+                    * ((Poops(1) / Birds(1)) / 1_h)
+                    * (16_h / 1_d)
+                    * (Mouths(1) / Poops(1))
+                    * (15_cm2 / Mouths(1))));
 
-static_assert(answer.count_internal() == 193.9538756997824294);
-//static_assert(constexpr_math::ieee754_round(answer.count_internal()) == 194);
-//static_assert(round(answer).count_internal() == 194);
+    static_assert(answer.count_internal() == 193.9538756997824294);
 
-//int main()
-//{
-//    const auto y1 = round<Ratio<5>>(answer); // round to 5-years
-//    const auto y2 = round<Weeks>(answer);
-//    const auto y3 = round(Weeks(answer));
-//    return 0;
-//}
+    CHECK(round<Ratio<5>>(answer) == Years(195));
+    CHECK(round<Weeks>(answer) == Weeks(10120));
+    CHECK(round(Weeks(answer)) == Weeks(10120));
+}
