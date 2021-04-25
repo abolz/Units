@@ -38,12 +38,6 @@ using MulDimensions = typename std::ratio_multiply<D1, D2>::type;
 template <typename D1, typename D2>
 using DivDimensions = typename std::ratio_divide<D1, D2>::type;
 
-namespace dims
-{
-    using One = Dimension<1>;
-
-} // namespace dim
-
 //==================================================================================================
 // Kind
 //==================================================================================================
@@ -75,7 +69,7 @@ namespace kinds
     };
 
     // Dimensionless [1]
-    using One = Kind<dims::One, Simple>;
+    using One = Kind<Dimension<1>, Simple>;
 }
 
 namespace kinds::impl
@@ -901,40 +895,24 @@ constexpr double count_as(Absolute<Q, Z> q) noexcept
 // SI
 //==================================================================================================
 
-namespace dims
+namespace kinds
 {
     // Some prime numbers:
     // 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, ...
     //                         ~~  ^^  ^^  ^^  ^^
 
-    using Length            = Dimension< 2>; // Meter m
-    using Mass              = Dimension< 3>; // Kilogram kg
-    using Time              = Dimension< 5>; // Second s
-    using ElectricCurrent   = Dimension< 7>; // Ampere A
-    using Temperature       = Dimension<11>; // Kelvin K
-    using AmountOfSubstance = Dimension<13>; // Mole mol
-    using LuminousIntensity = Dimension<17>; // Candela cd
-    using PlaneAngle        = Dimension<19>; // Radian rad
-    using Bit               = Dimension<23>;
-    using Entity            = Dimension<29>;
-    using Event             = Dimension<31>;
-    using Cycle             = Dimension<37>;
-}
-
-namespace kinds
-{
-    using Length            = Kind< dims::Length,            Simple >;
-    using Mass              = Kind< dims::Mass,              Simple >;
-    using Time              = Kind< dims::Time,              Simple >;
-    using ElectricCurrent   = Kind< dims::ElectricCurrent,   Simple >;
-    using Temperature       = Kind< dims::Temperature,       Simple >;
-    using AmountOfSubstance = Kind< dims::AmountOfSubstance, Simple >;
-    using LuminousIntensity = Kind< dims::LuminousIntensity, Simple >;
-    using PlaneAngle        = Kind< dims::PlaneAngle,        Simple >;
-    using Bit               = Kind< dims::Bit,               Simple >;
-    using Entity            = Kind< dims::Entity,            Simple >;
-    using Event             = Kind< dims::Event,             Simple >;
-    using Cycle             = Kind< dims::Cycle,             Simple >;
+    using Length            = Kind< Dimension< 2>, Simple >;
+    using Mass              = Kind< Dimension< 3>, Simple >;
+    using Time              = Kind< Dimension< 5>, Simple >;
+    using ElectricCurrent   = Kind< Dimension< 7>, Simple >;
+    using Temperature       = Kind< Dimension<11>, Simple >;
+    using AmountOfSubstance = Kind< Dimension<13>, Simple >;
+    using LuminousIntensity = Kind< Dimension<17>, Simple >;
+    using PlaneAngle        = Kind< Dimension<19>, Simple >;
+    using Bit               = Kind< Dimension<23>, Simple >;
+    using Entity            = Kind< Dimension<29>, Simple >;
+    using Event             = Kind< Dimension<31>, Simple >;
+    using Cycle             = Kind< Dimension<37>, Simple >;
 }
 
 namespace units
