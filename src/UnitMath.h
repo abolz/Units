@@ -559,7 +559,10 @@ namespace impl
     template <typename Scale, typename Q, typename Z, typename Fn>
     auto ToInt(Absolute<Q, Z> x, Fn fn) noexcept
     {
-        return Absolute<Q, Z>( ToInt<Scale>( Q(x.count_internal()) ).count_internal() );
+        static_assert(IsRatio<Scale>,
+            "operation not supported");
+
+        return Absolute<Q, Z>( ToInt<Scale>( Q(x.count_internal()), fn ).count_internal() );
     }
 }
 

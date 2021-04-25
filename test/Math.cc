@@ -61,3 +61,20 @@ TEST_CASE("Math - trigonometric")
 #endif
     }
 }
+
+TEST_CASE("Math - round absolute")
+{
+    constexpr auto t00 = convert_to<DegCelsius>(0_mK);
+    constexpr auto x00 = t00.count_internal();
+    constexpr auto v00 = -273.15;
+    static_assert(x00 == v00);
+
+    const DegCelsius r00 = round(t00);
+    CHECK(r00.count_internal() == -273.0);
+
+    const DegCelsius r01 = round<Ratio<10>>(t00);
+    CHECK(r01.count_internal() == -270.0);
+
+    const DegCelsius r02 = round<Ratio<1,10>>(t00);
+    CHECK(r02.count_internal() == -273.2);
+}
