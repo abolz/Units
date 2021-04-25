@@ -189,3 +189,37 @@ static void test()
         static_assert(x03 == v03);
     }
 }
+
+template <typename R, typename A>
+using ScaledAbsolute
+    = Absolute<ScaledQuantity<Conversion<R>, typename A::relative_type>, std::ratio_divide<typename A::zero, R>>;
+
+static void test2()
+{
+    using MilliDegCelsius = ScaledAbsolute<Ratio<1, 1000>, DegCelsius>;
+    // using MilliDegCelsius = Absolute<Millikelvin, Ratio<27315000, 100>>;
+
+    {
+        constexpr auto t00 = convert_to<DegCelsius>(0_mK);
+        constexpr auto x00 = t00.count_internal();
+        constexpr auto v00 = -273.15;
+        static_assert(x00 == v00);
+
+        constexpr auto t01 = convert_to<MilliDegCelsius>(t00);
+        constexpr auto x01 = t01.count_internal();
+        constexpr auto v01 = -273150.0;
+        static_assert(x01 == v01);
+    }
+    {
+        constexpr auto t00 = convert_to<DegCelsius>(MilliDegCelsius(1000.0));
+        constexpr auto x00 = t00.count_internal();
+        constexpr auto v00 = 1.0;
+        static_assert(x00 == v00);
+    }
+    {
+        constexpr auto t00 = convert_to<MilliDegCelsius>(1_degC);
+        constexpr auto x00 = t00.count_internal();
+        constexpr auto v00 = 1000.0;
+        static_assert(x00 == v00);
+    }
+}
