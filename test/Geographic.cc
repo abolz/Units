@@ -101,6 +101,12 @@ static DMS DmsFromDegrees(Degrees deg)
     return {d, m, deg - d - m};
 }
 
+static Degrees DegreesFromDms(DMS dms)
+{
+//  return Degrees(dms.d + dms.m + dms.s);
+    return Degrees(dms.s + dms.m + dms.d);
+}
+
 TEST_CASE("DMS")
 {
     {
@@ -114,7 +120,7 @@ TEST_CASE("DMS")
         const ArcSeconds secs = dms.d + dms.m + dms.s;
         CHECK(secs == degs);
 
-        const Degrees degs2(secs);
+        const Degrees degs2 = DegreesFromDms(dms);
         CHECK(degs2 == degs);
     }
     {
@@ -128,7 +134,21 @@ TEST_CASE("DMS")
         const ArcSeconds secs = dms.d + dms.m + dms.s;
         CHECK(secs == degs);
 
-        const Degrees degs2(secs);
+        const Degrees degs2 = DegreesFromDms(dms);
+        CHECK(degs2 == degs);
+    }
+    {
+        const Degrees degs(-32.84555);
+
+        const DMS dms = DmsFromDegrees(degs);
+        CHECK(dms.d == Degrees(-32));
+        CHECK(dms.m == ArcMinutes(-50));
+        CHECK(dms.s == ArcSeconds(-43.980000000010477));
+
+        const ArcSeconds secs = dms.d + dms.m + dms.s;
+        CHECK(secs == degs);
+
+        const Degrees degs2 = DegreesFromDms(dms);
         CHECK(degs2 == degs);
     }
 }
