@@ -565,25 +565,25 @@ namespace impl
 //--------------------------------------------------------------------------------------------------
 
 template <typename Scale = Ratio<1>, typename U>
-[[nodiscard]] Quantity<U> ceil(Quantity<U> x) noexcept
+[[nodiscard]] auto ceil(Quantity<U> x) noexcept
 {
     return impl::ToInt<Scale>(x, [](const double t) { return std::ceil(t); } );
 }
 
 template <typename Scale = Ratio<1>, typename U>
-[[nodiscard]] Quantity<U> floor(Quantity<U> x) noexcept
+[[nodiscard]] auto floor(Quantity<U> x) noexcept
 {
     return impl::ToInt<Scale>(x, [](const double t) { return std::floor(t); } );
 }
 
 template <typename Scale = Ratio<1>, typename U>
-[[nodiscard]] Quantity<U> trunc(Quantity<U> x) noexcept
+[[nodiscard]] auto trunc(Quantity<U> x) noexcept
 {
     return impl::ToInt<Scale>(x, [](const double t) { return std::trunc(t); } );
 }
 
 template <typename Scale = Ratio<1>, typename U>
-[[nodiscard]] Quantity<U> round(Quantity<U> x) noexcept
+[[nodiscard]] auto round(Quantity<U> x) noexcept
 {
     return impl::ToInt<Scale>(x, [](const double t) { return std::round(t); } );
 }
