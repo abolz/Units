@@ -981,7 +981,11 @@ using CubicMeters       = decltype(SquareMeters{} * Meters{});
 //------------------------------------------------------------------------------
 // Plane angle
 
+#if 1
+using Radians           = TaggedQuantity<Dimensionless, class _radians>;
+#else
 using Radians           = Quantity<units::Radian>;
+#endif
 using Degrees           = ScaledQuantity<Conversion<Ratio<1, 180>, /* pi^ */ 1>, Radians>;
 using Gons              = ScaledQuantity<Conversion<Ratio<1, 200>, /* pi^ */ 1>, Radians>;
 using Revolutions       = ScaledQuantity<Conversion<Ratio<2,   1>, /* pi^ */ 1>, Radians>;
