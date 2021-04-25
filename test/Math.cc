@@ -1,0 +1,63 @@
+#include "doctest.h"
+
+#include "Unit.h"
+#include "UnitLiterals.h"
+#include "UnitMath.h"
+
+#include "FloatCompare.h"
+
+using namespace uom;
+using namespace uom::literals;
+
+TEST_CASE("Math - sqrt")
+{
+    const SquareMeters m2 = 1_m2 + 1_m * 1_m;
+    const Meters m = sqrt(m2);
+    CHECK(count_as<Meters>(m) == 1.4142135623730951);
+
+    const SquareCentimeters cm2 = m2;
+    const Centimeters cm = sqrt(cm2);
+    CHECK(count_as<Centimeters>(cm) == 141.42135623730951);
+
+    CHECK(count_as<Meters>(cm) == 1.4142135623730951);
+}
+
+TEST_CASE("Math - trigonometric")
+{
+    {
+        const auto x = Radians(0.0);
+        const auto sin_x = sin(x);
+        const auto cos_x = cos(x);
+        const auto tan_x = tan(x);
+        CHECK(sin_x.count_internal() == 0.0);
+        CHECK(cos_x.count_internal() == 1.0);
+        CHECK(tan_x.count_internal() == 0.0);
+    }
+    {
+        const auto x = Revolutions(1.0);
+        const auto sin_x = sin(Radians(x));
+        const auto cos_x = cos(Radians(x));
+        const auto tan_x = tan(Radians(x));
+        CHECK(almost_equal(sin_x.count_internal(), 0.0));
+        CHECK(almost_equal(cos_x.count_internal(), 1.0));
+        CHECK(almost_equal(tan_x.count_internal(), 0.0));
+    }
+    {
+        const auto x = Radians(1.0);
+        const auto sin_x = sin(x);
+        const auto cos_x = cos(x);
+        const auto tan_x = tan(x);
+        CHECK(sin_x.count_internal() == 0.84147098480789650);
+        CHECK(cos_x.count_internal() == 0.54030230586813977);
+        CHECK(tan_x.count_internal() == 1.5574077246549023);
+    }
+    {
+        const auto x = Degrees(Radians(1.0));
+        CHECK(x.count_internal() == 57.295779513082323);
+#if 0
+        const auto sin_x = sin(x);
+        const auto cos_x = cos(x);
+        const auto tan_x = tan(x);
+#endif
+    }
+}
