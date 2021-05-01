@@ -544,12 +544,15 @@ namespace impl
     template <typename Scale, typename U, typename Fn>
     auto ToInt(Quantity<U> x, Fn fn) noexcept
     {
+        static_assert(IsRatio<Scale> || IsQuantity<Scale>,
+            "operation not supported");
+
         if constexpr (IsRatio<Scale>)
         {
             using T = ScaledQuantity<Conversion<Scale>, Quantity<U>>;
             return convert_to<Quantity<U>>( T( fn( convert_to<T>(x).count_internal() ) ) );
         }
-        else // if constexpr (IsQuantity<Scale>)
+        else
         {
             using T = Scale;
             return T( fn( convert_to<T>(x).count_internal() ) );
