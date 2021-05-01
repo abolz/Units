@@ -426,7 +426,6 @@ template <typename U>
 // Trigonometric
 //==================================================================================================
 
-#if 1
 [[nodiscard]] inline Dimensionless sin(Radians x) noexcept
 {
     return Dimensionless(std::sin(x.count_internal()));
@@ -441,34 +440,6 @@ template <typename U>
 {
     return Dimensionless(std::tan(x.count_internal()));
 }
-#else
-template <typename U>
-[[nodiscard]] Dimensionless sin(Quantity<U> x) noexcept
-{
-    static_assert(typename U::dimension == dims::PlaneAngle,
-        "operation not supported");
-
-    return Dimensionless(std::sin(x.template count<Radians>()));
-}
-
-template <typename U>
-[[nodiscard]] Dimensionless cos(Quantity<U> x) noexcept
-{
-    static_assert(typename U::dimension == dims::PlaneAngle,
-        "operation not supported");
-
-    return Dimensionless(std::cos(x.template count<Radians>()));
-}
-
-template <typename U>
-[[nodiscard]] Dimensionless tan(Quantity<U> x) noexcept
-{
-    static_assert(typename U::dimension == dims::PlaneAngle,
-        "operation not supported");
-
-    return Dimensionless(std::tan(x.template count<Radians>()));
-}
-#endif
 
 [[nodiscard]] inline Radians asin(Dimensionless x) noexcept
 {
@@ -485,22 +456,12 @@ template <typename U>
     return Radians(std::atan(x.count_internal()));
 }
 
-#if 1
 template <typename C1, typename C2, typename K>
 [[nodiscard]] Radians atan2(Quantity<Unit<C1, K>> y, Quantity<Unit<C2, K>> x) noexcept
 {
     using Q = Quantity<Unit<CommonConversion<C1, C2>, Kind<typename K::dimension, kinds::Simple>>>;
-
-    const double cy = convert_to<Q>(y).count_internal();
-    const double cx = convert_to<Q>(x).count_internal();
-    return Radians(std::atan2(cy, cx));
+    return Radians(std::atan2(y.count_as<Q>(), x.count_as<Q>()));
 }
-#else
-[[nodiscard]] inline Radians atan2(Dimensionless y, Dimensionless x) noexcept
-{
-    return Radians(std::atan2(y.count_internal(), x.count_internal()));
-}
-#endif
 
 [[nodiscard]] inline Dimensionless sinh(Dimensionless x) noexcept
 {
