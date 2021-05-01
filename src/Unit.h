@@ -475,7 +475,7 @@ public:
         return _count;
     }
 
-    [[nodiscard]] constexpr simplified_type simplify() const noexcept
+    [[nodiscard]] constexpr simplified_type value() const noexcept
     {
         return simplified_type(_count);
     }

@@ -264,7 +264,7 @@ template <int64_t N, typename U>
     static_assert(N >= 1,
         "only positive exponents allowed");
     static_assert(std::is_same<typename kind::tag, kinds::Simple>::value,
-        "operation not supported - instead of 'pow<N>(q)' you must use 'pow<N>(q.simplify())'");
+        "operation not supported - instead of 'pow<N>(q)' you must use 'pow<N>(q.value())'");
     //
     // TODO:
     // Complex-tags?
@@ -314,7 +314,7 @@ template <int64_t N, typename U>
     static_assert(N >= 1,
         "only positive exponents allowed");
     static_assert(std::is_same<typename kind::tag, kinds::Simple>::value,
-        "operation not supported - instead of 'nth_root<N>(q)' you must use 'nth_root<N>(q.simplify())'");
+        "operation not supported - instead of 'nth_root<N>(q)' you must use 'nth_root<N>(q.value())'");
     //
     // TODO:
     // Complex-tags?
