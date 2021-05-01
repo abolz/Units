@@ -480,6 +480,12 @@ public:
         return simplified_type(_count);
     }
 
+    template <typename T>
+    [[nodiscard]] constexpr auto convert_to() const noexcept;
+
+    template <typename T>
+    [[nodiscard]] constexpr auto count_as() const noexcept;
+
     [[nodiscard]] constexpr friend Quantity operator+(Quantity q) noexcept
     {
         return q;
@@ -680,6 +686,12 @@ public:
         return _count;
     }
 
+    template <typename T>
+    [[nodiscard]] constexpr auto convert_to() const noexcept;
+
+    template <typename T>
+    [[nodiscard]] constexpr auto count_as() const noexcept;
+
     [[nodiscard]] constexpr friend Absolute operator+(Absolute lhs, relative_type rhs) noexcept
     {
         return Absolute(lhs.count_internal() + rhs.count_internal());
@@ -750,7 +762,7 @@ template <typename Q, typename Z>
 inline constexpr bool IsAbsolute<Absolute<Q, Z>> = true;
 
 //==================================================================================================
-// convert_to
+// convert_to / count_as
 //==================================================================================================
 
 namespace impl
@@ -824,6 +836,10 @@ namespace impl
     }
 }
 
+//--------------------------------------------------------------------------------------------------
+//
+//--------------------------------------------------------------------------------------------------
+
 template <typename Target, typename SourceUnit>
 constexpr Target convert_to(Quantity<SourceUnit> q) noexcept
 {
@@ -850,6 +866,30 @@ constexpr Target convert_to(Quantity<SourceUnit> q) noexcept
     }
 }
 
+template <typename T, typename U>
+constexpr double count_as(Quantity<U> q) noexcept
+{
+    return uom::convert_to<T>(q).count_internal();
+}
+
+template <typename U>
+template <typename T>
+constexpr auto Quantity<U>::convert_to() const noexcept
+{
+    return uom::convert_to<T>(*this);
+}
+
+template <typename U>
+template <typename T>
+constexpr auto Quantity<U>::count_as() const noexcept
+{
+    return uom::convert_to<T>(*this).count_internal();
+}
+
+//--------------------------------------------------------------------------------------------------
+//
+//--------------------------------------------------------------------------------------------------
+
 template <typename Target, typename SourceQuantity, typename SourceZero>
 constexpr Target convert_to(Absolute<SourceQuantity, SourceZero> a) noexcept
 {
@@ -875,20 +915,24 @@ constexpr Target convert_to(Absolute<SourceQuantity, SourceZero> a) noexcept
     }
 }
 
-//==================================================================================================
-// count_as
-//==================================================================================================
-
-template <typename T, typename U>
-constexpr double count_as(Quantity<U> q) noexcept
-{
-    return convert_to<T>(q).count_internal();
-}
-
 template <typename T, typename Q, typename Z>
 constexpr double count_as(Absolute<Q, Z> q) noexcept
 {
-    return convert_to<T>(q).count_internal();
+    return uom::convert_to<T>(q).count_internal();
+}
+
+template <typename Q, typename Z>
+template <typename T>
+constexpr auto Absolute<Q, Z>::convert_to() const noexcept
+{
+    return uom::convert_to<T>(*this);
+}
+
+template <typename Q, typename Z>
+template <typename T>
+constexpr auto Absolute<Q, Z>::count_as() const noexcept
+{
+    return uom::convert_to<T>(*this).count_internal();
 }
 
 //==================================================================================================

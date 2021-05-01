@@ -23,10 +23,10 @@ struct Position {
 
 static SphericalDistance spherical_distance_cosine(Position pos1, Position pos2)
 {
-    const Radians lat1 = convert_to<Radians>(pos1.lat);
-    const Radians lat2 = convert_to<Radians>(pos2.lat);
-    const Radians lon1 = convert_to<Radians>(pos1.lon);
-    const Radians lon2 = convert_to<Radians>(pos2.lon);
+    const Radians lat1 = pos1.lat.convert_to<Radians>();
+    const Radians lat2 = pos2.lat.convert_to<Radians>();
+    const Radians lon1 = pos1.lon.convert_to<Radians>();
+    const Radians lon2 = pos2.lon.convert_to<Radians>();
 
     // Spherical law of cosines
     const auto central_angle = acos(sin(lat1) * sin(lat2) + cos(lat1) * cos(lat2) * cos(lon2 - lon1));
@@ -51,10 +51,10 @@ static SphericalDistance spherical_distance_haversine(Position pos1, Position po
 
 TEST_CASE("Spherical distance - 1")
 {
-    const Latitude  lat1(Degrees( 50.94130));
-    const Longitude lon1(Degrees(  6.95828));
-    const Latitude  lat2(Degrees( 52.51664));
-    const Longitude lon2(Degrees( 13.37760));
+    const Latitude  lat1 = Degrees( 50.94130).convert_to<Latitude>();
+    const Longitude lon1 = Degrees(  6.95828).convert_to<Longitude>();
+    const Latitude  lat2 = Degrees( 52.51664).convert_to<Latitude>();
+    const Longitude lon2 = Degrees( 13.37760).convert_to<Longitude>();
 
     const Position pos1{lat1, lon1}; // Koelner Dom
     const Position pos2{lat2, lon2}; // Brandenbuger Tor
@@ -62,8 +62,8 @@ TEST_CASE("Spherical distance - 1")
     const SphericalDistance dist_1 = round(spherical_distance_cosine(pos1, pos2));
     const SphericalDistance dist_2 = round(spherical_distance_haversine(pos1, pos2));
 
-    const double km_1 = count_as<Kilometers>(dist_1);
-    const double km_2 = count_as<Kilometers>(dist_2);
+    const double km_1 = dist_1.count_as<Kilometers>();
+    const double km_2 = dist_2.count_as<Kilometers>();
     CHECK(km_1 == 475);
     CHECK(km_2 == 475);
 }

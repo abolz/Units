@@ -47,7 +47,7 @@ static void test()
         static_assert(x01 == v01);
 
         constexpr auto t02 = convert_to<DegRankine>(0_K);
-        constexpr auto x02 = count_as<Rankine>(t02);
+        constexpr auto x02 = t02.count_internal();
         constexpr auto v02 = 0.0;
         static_assert(x02 == v02);
 
