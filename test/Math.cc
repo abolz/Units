@@ -62,6 +62,34 @@ TEST_CASE("Math - trigonometric")
     }
 }
 
+TEST_CASE("Math - atan2")
+{
+    {
+        const auto x = 1_m;
+        const auto y = 1_m;
+        const auto phi = atan2(y, x);
+        CHECK(phi == convert_to<Radians>(Degrees(45.0)));
+    }
+    {
+        const auto x = -100_cm;
+        const auto y = -1_m;
+        const auto phi = atan2(y, x);
+        CHECK(phi == convert_to<Radians>(Degrees(-135.0)));
+    }
+    {
+        const auto x = 1_m;
+        const auto y = -100_cm;
+        const auto phi = atan2(y, x);
+        CHECK(phi == convert_to<Radians>(Degrees(-45.0)));
+    }
+    //{
+    //    const auto x = 1_kg;
+    //    const auto y = 100_cm;
+    //    const auto phi = atan2(y, x);
+    //    CHECK(phi == convert_to<Radians>(Degrees(45.0)));
+    //}
+}
+
 TEST_CASE("Math - round absolute")
 {
     constexpr auto t00 = convert_to<DegCelsius>(0_mK);
