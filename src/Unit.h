@@ -53,6 +53,12 @@ struct Kind
     using tag       = Tag;
 };
 
+template <typename T>
+inline constexpr bool IsKind = false;
+
+template <typename D, typename Tag>
+inline constexpr bool IsKind<Kind<D, Tag>> = true;
+
 namespace kinds
 {
     struct Simple {};
@@ -316,6 +322,12 @@ struct Conversion final
     }
 };
 
+template <typename T>
+inline constexpr bool IsConversion = false;
+
+template <typename R, int64_t E>
+inline constexpr bool IsConversion<Conversion<R, E>> = true;
+
 template <typename C1, typename C2 /* = C1 */>
 using MulConversions = Conversion<typename std::ratio_multiply<typename C1::ratio, typename C2::ratio>::type, C1::exp + C2::exp>;
 
@@ -387,12 +399,23 @@ using CommonConversion = typename impl::CommonConversionImpl<C1, C2>::type;
 template <typename C, typename K>
 struct Unit final
 {
+    static_assert(IsConversion<C>,
+        "C must be a Conversion");
+    static_assert(IsKind<K>,
+        "K must be a Kind");
+
     using type       = Unit;
     using conversion = C;
     using kind       = K;
     using dimension  = typename kind::dimension;
     using tag        = typename kind::tag;
 };
+
+template <typename T>
+inline constexpr bool IsUnit = false;
+
+template <typename C, typename K>
+inline constexpr bool IsUnit<Unit<C, K>> = true;
 
 template <typename U1, typename U2>
 using MulUnits = typename Unit< MulConversions<typename U1::conversion, typename U2::conversion>,
@@ -418,6 +441,9 @@ class Quantity final
     // Represents a linear transformation y(x),
     //      y = Cx
     // where C is a fixed scaling factor.
+
+    static_assert(IsUnit<U>,
+        "U must be a Unit");
 
 public:
     using type        = Quantity;
@@ -656,6 +682,9 @@ class Absolute final
     // Represents an affine transformation y(x),
     //      y = C(x + Z) = Cx + Z'
     // where C is a fixed (rational) scaling factor, and Z is a fixed (rational) offset.
+
+    static_assert(IsQuantity<Q>,
+        "Q must be a Quantity");
 
 public:
     using type          = Absolute;
