@@ -62,8 +62,8 @@ TEST_CASE("Spherical distance - 1")
     const SphericalDistance dist_1 = round(spherical_distance_cosine(pos1, pos2));
     const SphericalDistance dist_2 = round(spherical_distance_haversine(pos1, pos2));
 
-    const double km_1 = dist_1.count_as<Kilometers>();
-    const double km_2 = dist_2.count_as<Kilometers>();
+    const double km_1 = (dist_1 / 1_rad).count_as<Kilometers>();
+    const double km_2 = (dist_2 / 1_rad).count_as<Kilometers>();
     CHECK(km_1 == 475);
     CHECK(km_2 == 475);
 }
@@ -81,8 +81,8 @@ TEST_CASE("Spherical distance - 2")
     const SphericalDistance dist_1 = round(spherical_distance_cosine(pos1, pos2));
     const SphericalDistance dist_2 = round(spherical_distance_haversine(pos1, pos2));
 
-    const double km_1 = count_as<Kilometers>(dist_1);
-    const double km_2 = count_as<Kilometers>(dist_2);
+    const double km_1 = count_as<Kilometers>(dist_1 / 1_rad);
+    const double km_2 = count_as<Kilometers>(dist_2 / 1_rad);
     CHECK(km_1 == 10250);
     CHECK(km_2 == 10250);
 }

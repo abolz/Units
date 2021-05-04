@@ -13,6 +13,8 @@
 #define UNITS_ASSERT(X) assert(X)
 #endif
 
+#define UNITS_DIMENSIONLESS_PLANE_ANGLE() 1
+
 namespace uom {
 
 //==================================================================================================
@@ -1054,7 +1056,7 @@ using CubicMeters       = decltype(SquareMeters{} * Meters{});
 //------------------------------------------------------------------------------
 // Plane angle
 
-#if 1
+#if UNITS_DIMENSIONLESS_PLANE_ANGLE()
 using Radians           = TaggedQuantity<Dimensionless, class _radians>;
 #else
 using Radians           = Quantity<units::Radian>;
@@ -1156,11 +1158,11 @@ using Kilojoules        = ScaledQuantity<Conversion<Ratio<1000>>, Joules>;
 using Watts             = decltype(Joules{} / Seconds{});
 using Kilowatts         = ScaledQuantity<Conversion<Ratio<1000>>, Watts>;
 
-// using Vars              = TaggedQuantity<Watts, class _reactive_power>;
-// using Kilovars          = ScaledQuantity<Conversion<Ratio<1000>>, Vars>;
+//using Vars              = TaggedQuantity<Watts, class _reactive_power>;
+//using Kilovars          = ScaledQuantity<Conversion<Ratio<1000>>, Vars>;
 
-// using VoltAmperes       = TaggedQuantity<Watts, class _apparent_power>;
-// using KiloVoltAmperes   = ScaledQuantity<Conversion<Ratio<1000>>, VoltAmperes>;
+//using VoltAmperes       = TaggedQuantity<Watts, class _apparent_power>;
+//using KiloVoltAmperes   = ScaledQuantity<Conversion<Ratio<1000>>, VoltAmperes>;
 
 //------------------------------------------------------------------------------
 // Action
