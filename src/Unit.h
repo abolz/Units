@@ -544,45 +544,13 @@ public:
     template <typename U2>
     [[nodiscard]] constexpr friend auto operator*(Quantity lhs, Quantity<U2> rhs) noexcept
     {
-        using Q1 = Quantity;
-        using Q2 = Quantity<U2>;
-
-        if constexpr (std::is_convertible_v<Q2, Q1>)
-        {
-            // return lhs * Q1(rhs);
-            return Quantity<MulUnits<unit, unit>>(lhs.count_internal() * Q1(rhs).count_internal());
-        }
-        else if constexpr (std::is_convertible_v<Q1, Q2>)
-        {
-            // return Q2(lhs) * rhs;
-            return Quantity<MulUnits<U2, U2>>(Q2(lhs).count_internal() * rhs.count_internal());
-        }
-        else
-        {
-            return Quantity<MulUnits<unit, U2>>(lhs.count_internal() * rhs.count_internal());
-        }
+        return Quantity<MulUnits<unit, U2>>(lhs.count_internal() * rhs.count_internal());
     }
 
     template <typename U2>
     [[nodiscard]] constexpr friend auto operator/(Quantity lhs, Quantity<U2> rhs) noexcept
     {
-        using Q1 = Quantity;
-        using Q2 = Quantity<U2>;
-
-        if constexpr (std::is_convertible_v<Q2, Q1>)
-        {
-            // return lhs / Q1(rhs);
-            return Quantity<DivUnits<unit, unit>>(lhs.count_internal() / Q1(rhs).count_internal());
-        }
-        else if constexpr (std::is_convertible_v<Q1, Q2>)
-        {
-            // return Q2(lhs) / rhs;
-            return Quantity<DivUnits<U2, U2>>(Q2(lhs).count_internal() / rhs.count_internal());
-        }
-        else
-        {
-            return Quantity<DivUnits<unit, U2>>(lhs.count_internal() / rhs.count_internal());
-        }
+        return Quantity<DivUnits<unit, U2>>(lhs.count_internal() / rhs.count_internal());
     }
 
     [[nodiscard]] constexpr friend Quantity operator*(Quantity lhs, scalar_type rhs) noexcept
