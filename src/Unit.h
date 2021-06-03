@@ -132,21 +132,21 @@ namespace kinds::impl
         }
         else
         {
-            using H1 = decltype(Head(lhs));
-            using H2 = decltype(Head(rhs));
+            using H1 = decltype(impl::Head(lhs));
+            using H2 = decltype(impl::Head(rhs));
 
             using T1 = typename H1::tag;
             using T2 = typename H2::tag;
 
-            constexpr uint64_t h1 = TypeId<T1>();
-            constexpr uint64_t h2 = TypeId<T2>();
+            constexpr uint64_t h1 = impl::TypeId<T1>();
+            constexpr uint64_t h2 = impl::TypeId<T2>();
             if constexpr (h1 < h2)
             {
-                return Concat(Complex<H1>{}, Merge(Tail(lhs), rhs));
+                return impl::Concat(Complex<H1>{}, impl::Merge(impl::Tail(lhs), rhs));
             }
             else if constexpr (h1 > h2)
             {
-                return Concat(Complex<H2>{}, Merge(lhs, Tail(rhs)));
+                return impl::Concat(Complex<H2>{}, impl::Merge(lhs, impl::Tail(rhs)));
             }
             else
             {
@@ -160,11 +160,11 @@ namespace kinds::impl
                 if constexpr (e != 0)
                 {
                     using F = Factor<T1, e>;
-                    return Concat(Complex<F>{}, Merge(Tail(lhs), Tail(rhs)));
+                    return impl::Concat(Complex<F>{}, impl::Merge(impl::Tail(lhs), impl::Tail(rhs)));
                 }
                 else
                 {
-                    return Merge(Tail(lhs), Tail(rhs));
+                    return impl::Merge(impl::Tail(lhs), impl::Tail(rhs));
                 }
             }
         }
@@ -179,7 +179,7 @@ namespace kinds::impl
     template <typename ...Fs>
     constexpr auto Rcp(Complex<Fs...>) noexcept
     {
-        return Complex<decltype(Rcp(Fs{}))...>{};
+        return Complex<decltype(impl::Rcp(Fs{}))...>{};
     }
 
     template <typename T>
