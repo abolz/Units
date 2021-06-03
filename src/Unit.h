@@ -102,29 +102,24 @@ namespace kinds::impl
     }
 
     template <typename T, typename ...Ts>
-    constexpr T Head(Complex<T, Ts...>) noexcept
+    constexpr auto Head(Complex<T, Ts...>) noexcept
     {
-        return {};
+        return T{};
     }
 
     template <typename T, typename ...Ts>
-    constexpr Complex<Ts...> Tail(Complex<T, Ts...>) noexcept
+    constexpr auto Tail(Complex<T, Ts...>) noexcept
     {
-        return {};
+        return Complex<Ts...>{};
     }
 
     template <typename ...Ts, typename ...Us>
-    constexpr Complex<Ts..., Us...> operator+(Complex<Ts...>, Complex<Us...>) noexcept
+    constexpr auto Concat(Complex<Ts...>, Complex<Us...>) noexcept
     {
-        return {};
+        return Complex<Ts..., Us...>{};
     }
 
-    enum class MergeType {
-        mul,
-        div,
-    };
-
-    template <MergeType MT, typename ...Fs1, typename ...Fs2>
+    template <typename ...Fs1, typename ...Fs2>
     constexpr auto Merge([[maybe_unused]] Complex<Fs1...> lhs, [[maybe_unused]] Complex<Fs2...> rhs) noexcept
     {
         if constexpr (sizeof...(Fs1) == 0)
@@ -137,21 +132,21 @@ namespace kinds::impl
         }
         else
         {
-            using H1 = decltype(impl::Head(lhs));
-            using H2 = decltype(impl::Head(rhs));
+            using H1 = decltype(Head(lhs));
+            using H2 = decltype(Head(rhs));
 
             using T1 = typename H1::tag;
             using T2 = typename H2::tag;
 
-            constexpr uint64_t h1 = impl::TypeId<T1>();
-            constexpr uint64_t h2 = impl::TypeId<T2>();
+            constexpr uint64_t h1 = TypeId<T1>();
+            constexpr uint64_t h2 = TypeId<T2>();
             if constexpr (h1 < h2)
             {
-                return Complex<H1>{} + impl::Merge<MT>(impl::Tail(lhs), rhs);
+                return Concat(Complex<H1>{}, Merge(Tail(lhs), rhs));
             }
             else if constexpr (h1 > h2)
             {
-                return Complex<H2>{} + impl::Merge<MT>(lhs, impl::Tail(rhs));
+                return Concat(Complex<H2>{}, Merge(lhs, Tail(rhs)));
             }
             else
             {
@@ -159,20 +154,32 @@ namespace kinds::impl
                     "collision detected - please try changing the tag name");
 
                 constexpr int64_t e1 = H1::exponent;
-                constexpr int64_t e2 = MT == MergeType::mul ? H2::exponent : -H2::exponent;
-
+                constexpr int64_t e2 = H2::exponent;
                 constexpr int64_t e = (e1 + e2 == 0) ? 0 : (std::is_same_v<Simple, T1> ? 1 : (e1 + e2));
+
                 if constexpr (e != 0)
                 {
                     using F = Factor<T1, e>;
-                    return Complex<F>{} + impl::Merge<MT>(impl::Tail(lhs), impl::Tail(rhs));
+                    return Concat(Complex<F>{}, Merge(Tail(lhs), Tail(rhs)));
                 }
                 else
                 {
-                    return impl::Merge<MT>(impl::Tail(lhs), impl::Tail(rhs));
+                    return Merge(Tail(lhs), Tail(rhs));
                 }
             }
         }
+    }
+
+    template <typename Tag, int64_t Exponent>
+    constexpr auto Rcp(Factor<Tag, Exponent>) noexcept
+    {
+        return Factor<Tag, -Exponent>{};
+    }
+
+    template <typename ...Fs>
+    constexpr auto Rcp(Complex<Fs...>) noexcept
+    {
+        return Complex<decltype(Rcp(Fs{}))...>{};
     }
 
     template <typename T>
@@ -195,7 +202,7 @@ namespace kinds::impl
     {
         using W1 = typename Wrap<T1>::type;
         using W2 = typename Wrap<T2>::type;
-        using WR = decltype( impl::Merge<impl::MergeType::mul>(W1{}, W2{}) );
+        using WR = decltype( impl::Merge(W1{}, W2{}) );
 
         using type = typename Unwrap<WR>::type;
     };
@@ -205,7 +212,7 @@ namespace kinds::impl
     {
         using W1 = typename Wrap<T1>::type;
         using W2 = typename Wrap<T2>::type;
-        using WR = decltype( impl::Merge<impl::MergeType::div>(W1{}, W2{}) );
+        using WR = decltype( impl::Merge(W1{}, impl::Rcp(W2{})) );
 
         using type = typename Unwrap<WR>::type;
     };
