@@ -13,7 +13,9 @@
 #define UNITS_ASSERT(X) assert(X)
 #endif
 
-#define UNITS_DIMENSIONLESS_PLANE_ANGLE() 1
+#define UNITS_COMMON_QUANTITY()                 0
+#define UNITS_COMPARE_COMMON_QUANTITY()         0
+#define UNITS_DIMENSIONLESS_SCALAR_ARITHMETIC() 1
 
 namespace uom {
 
@@ -21,11 +23,19 @@ namespace uom {
 //
 //==================================================================================================
 
+template <typename R>
+inline constexpr bool IsReducedRatio = std::ratio_equal_v<R, typename R::type>;
+
 template <typename T>
 inline constexpr bool IsRatio = false;
 
+#if 1
+template <int64_t Num, int64_t Den>
+inline constexpr bool IsRatio<std::ratio<Num, Den>> = IsReducedRatio<std::ratio<Num, Den>>;
+#else
 template <int64_t Num, int64_t Den>
 inline constexpr bool IsRatio<std::ratio<Num, Den>> = true;
+#endif
 
 //==================================================================================================
 // Dimension
@@ -48,7 +58,7 @@ template <typename D, typename Tag>
 struct Kind
 {
     static_assert(IsRatio<D>,
-        "dimension must be a std::ratio");
+        "dimension must be a (reduced) std::ratio");
 
     using type      = Kind;
     using dimension = D;
@@ -77,7 +87,8 @@ namespace kinds
     };
 
     // Dimensionless [1]
-    using One = Kind<Dimension<1>, Simple>;
+//  using One           = Kind<Dimension<1>, Simple>;
+    using Dimensionless = Kind<Dimension<1>, Simple>;
 }
 
 namespace kinds::impl
@@ -86,7 +97,7 @@ namespace kinds::impl
     {
         uint64_t hash = 14695981039346656037u;
         for ( ; *str != '\0'; ++str)
-            hash = (hash ^ *str) * 1099511628211u;
+            hash = (hash ^ static_cast<unsigned char>(*str)) * 1099511628211u;
 
         return hash;
     }
@@ -255,7 +266,7 @@ template <typename R, int64_t PiExp = 0>
 struct Conversion final
 {
     static_assert(IsRatio<R>,
-        "R must be a std::ratio");
+        "R must be a (reduced) std::ratio");
 
     using type = Conversion;
     using ratio = typename R::type;
@@ -266,7 +277,7 @@ struct Conversion final
     // All integers <= 2^53 are exactly representable as 'double'
     static constexpr int64_t Two53 = 9007199254740992; // == 2^53
 
-    static_assert(num >= -Two53,
+    static_assert(num > 0,
         "invalid argument");
     static_assert(num <= Two53,
         "invalid argument");
@@ -288,54 +299,62 @@ struct Conversion final
     // Returns: (x * num / den)
     [[nodiscard]] static constexpr double applyRatio(double x) noexcept
     {
+//      static_assert(__builtin_is_constant_evaluated());
+        static_assert(num >= 1);
+        static_assert(den >= 1);
+        static_assert(den == 1 || num % den != 0);
+
+        if constexpr (num == 1 && den == 1)
+            return x;
+
+        if constexpr (num == 1)
+            return x / den;
+
         if constexpr (den == 1)
-        {
-            if constexpr (num == 1)
-                return x;
-            else if constexpr (num == -1)
-                return -x;
-            else
-                return x * num;
-        }
+            return x * num;
+
+#if 1
+        if constexpr (num >= den)
+            return x * (static_cast<double>(num) / static_cast<double>(den));
         else
-        {
-            if constexpr (num == 1)
-                return x / den;
-            else if constexpr (num == -1)
-                return -x / den;
-            else
-                return x * (static_cast<double>(num) / static_cast<double>(den));
-                //return (x * static_cast<double>(num)) / static_cast<double>(den);
-        }
+            return x / (static_cast<double>(den) / static_cast<double>(num));
+#else
+#if 0
+        return (x * num) / den;
+#else
+        return x * (static_cast<double>(num) / static_cast<double>(den));
+#endif
+#endif
     }
 
     // Returns (x * pi^exp)
     [[nodiscard]] static constexpr double applyPi(double x) noexcept
     {
         constexpr double Powers[] = {
-            0.010265982254684336, // pi^-4
-            0.03225153443319949,  // pi^-3
-            0.10132118364233778,  // pi^-2
-            0.3183098861837907,   // pi^-1
-            1,                    // pi^ 0
-            3.141592653589793,    // pi^ 1
-            9.869604401089358,    // pi^ 2
-            31.00627668029982,    // pi^ 3
-            97.40909103400244,    // pi^ 4
+            1.0,                // pi^0
+            3.141592653589793,  // pi^1
+            9.869604401089358,  // pi^2
+            31.00627668029982,  // pi^3
+            97.40909103400244,  // pi^4
         };
 
         if constexpr (exp == 0)
             return x;
+        else if constexpr (exp > 0)
+            return x * Powers[ exp];
         else
-            return x * Powers[exp + 4];
+            return x / Powers[-exp];
     }
+
+    static constexpr double ratio_value = applyRatio(1);
+    static constexpr double value = applyPi(ratio_value);
 };
 
 template <typename T>
 inline constexpr bool IsConversion = false;
 
 template <typename R, int64_t E>
-inline constexpr bool IsConversion<Conversion<R, E>> = true;
+inline constexpr bool IsConversion<Conversion<R, E>> = true; // IsRatio<R>;
 
 template <typename C1, typename C2 /* = C1 */>
 using MulConversions = Conversion<typename std::ratio_multiply<typename C1::ratio, typename C2::ratio>::type, C1::exp + C2::exp>;
@@ -345,12 +364,18 @@ using DivConversions = Conversion<typename std::ratio_divide<typename C1::ratio,
 
 namespace impl
 {
+#if 0
+    template <typename C1>
+    using IsIntegralConversion = std::bool_constant<(C1::den == 1 && C1::exp >= 0)>;
+#else
     template <typename C1>
     using IsIntegralConversion = std::bool_constant<(C1::den == 1 && C1::exp == 0)>;
+#endif
 
     template <typename C1, typename C2> // (C1 | C2)?
     using ConversionDivides = IsIntegralConversion<DivConversions<C2, C1>>;
 
+#if UNITS_COMMON_QUANTITY()
     // <numeric> std::gcd ?
     constexpr int64_t Gcd(int64_t x, int64_t y) noexcept
     {
@@ -392,14 +417,19 @@ namespace impl
         static constexpr bool enabled = true;
         using type = Conversion<Ratio<num, den>, CommonPiExp>;
     };
+#endif
 
 } // namespace impl
+
+#if UNITS_COMMON_QUANTITY()
 
 template <typename C1, typename C2>
 inline constexpr bool HasCommonConversion = impl::CommonConversionImpl<C1, C2>::enabled;
 
 template <typename C1, typename C2>
 using CommonConversion = typename impl::CommonConversionImpl<C1, C2>::type;
+
+#endif
 
 //==================================================================================================
 // Unit
@@ -436,9 +466,15 @@ using DivUnits = typename Unit< DivConversions<typename U1::conversion, typename
 
 namespace units
 {
-    using One               = Unit<Conversion<Ratio<1>>, kinds::One>;
-    using Dimensionless     = Unit<Conversion<Ratio<1>>, kinds::One>;
+//  using One               = Unit<Conversion<Ratio<1>>, kinds::One>;
+    using Dimensionless     = Unit<Conversion<Ratio<1>>, kinds::Dimensionless>;
 }
+
+template <typename U>
+inline constexpr bool IsDimensionlessUnit = false;
+
+template <>
+inline constexpr bool IsDimensionlessUnit<units::Dimensionless> = true;
 
 //==================================================================================================
 // Quantity (value + compile-time unit)
@@ -471,8 +507,10 @@ private:
     scalar_type _count = 0;
 
 private:
+#if UNITS_COMMON_QUANTITY()
     template <typename C2>
     using CommonQuantity = Quantity<Unit<CommonConversion<conversion, C2>, kind>>;
+#endif
 
     // asymmetric
     template <typename C1, typename C2, typename T = void>
@@ -516,10 +554,13 @@ public:
     }
 
     template <typename T>
-    [[nodiscard]] constexpr auto convert_to() const noexcept;
+    [[nodiscard]] constexpr bool is_convertible_to() const noexcept;
 
     template <typename T>
-    [[nodiscard]] constexpr auto count_as() const noexcept;
+    [[nodiscard]] constexpr T convert_to() const noexcept;
+
+    template <typename T>
+    [[nodiscard]] constexpr scalar_type count_as() const noexcept;
 
     [[nodiscard]] constexpr friend Quantity operator+(Quantity q) noexcept
     {
@@ -536,10 +577,38 @@ public:
         return Quantity(lhs.count_internal() + rhs.count_internal());
     }
 
+#if UNITS_DIMENSIONLESS_SCALAR_ARITHMETIC()
+    template <typename _ = unit, std::enable_if_t<IsDimensionlessUnit<_>, int> = 0>
+    [[nodiscard]] constexpr friend Quantity operator+(Quantity lhs, scalar_type rhs) noexcept
+    {
+        return Quantity(lhs.count_internal() + rhs);
+    }
+
+    template <typename _ = unit, std::enable_if_t<IsDimensionlessUnit<_>, int> = 0>
+    [[nodiscard]] constexpr friend Quantity operator+(scalar_type lhs, Quantity rhs) noexcept
+    {
+        return Quantity(lhs + rhs.count_internal());
+    }
+#endif
+
     [[nodiscard]] constexpr friend Quantity operator-(Quantity lhs, Quantity rhs) noexcept
     {
         return Quantity(lhs.count_internal() - rhs.count_internal());
     }
+
+#if UNITS_DIMENSIONLESS_SCALAR_ARITHMETIC()
+    template <typename _ = unit, std::enable_if_t<IsDimensionlessUnit<_>, int> = 0>
+    [[nodiscard]] constexpr friend Quantity operator-(Quantity lhs, scalar_type rhs) noexcept
+    {
+        return Quantity(lhs.count_internal() - rhs);
+    }
+
+    template <typename _ = unit, std::enable_if_t<IsDimensionlessUnit<_>, int> = 0>
+    [[nodiscard]] constexpr friend Quantity operator-(scalar_type lhs, Quantity rhs) noexcept
+    {
+        return Quantity(lhs - rhs.count_internal());
+    }
+#endif
 
     template <typename U2>
     [[nodiscard]] constexpr friend auto operator*(Quantity lhs, Quantity<U2> rhs) noexcept
@@ -570,8 +639,7 @@ public:
 
     [[nodiscard]] constexpr friend auto operator/(scalar_type lhs, Quantity rhs) noexcept
     {
-        using _1 = Unit<Conversion<Ratio<1>>, kinds::One>;
-        return Quantity<_1>(lhs) / rhs;
+        return Quantity<units::Dimensionless>(lhs) / rhs;
     }
 
     constexpr friend Quantity& operator+=(Quantity& lhs, Quantity rhs) noexcept
@@ -580,11 +648,29 @@ public:
         return lhs;
     }
 
+#if UNITS_DIMENSIONLESS_SCALAR_ARITHMETIC()
+    template <typename _ = unit, std::enable_if_t<IsDimensionlessUnit<_>, int> = 0>
+    constexpr friend Quantity& operator+=(Quantity& lhs, scalar_type rhs) noexcept
+    {
+        lhs._count += rhs;
+        return lhs;
+    }
+#endif
+
     constexpr friend Quantity& operator-=(Quantity& lhs, Quantity rhs) noexcept
     {
         lhs._count -= rhs.count_internal();
         return lhs;
     }
+
+#if UNITS_DIMENSIONLESS_SCALAR_ARITHMETIC()
+    template <typename _ = unit, std::enable_if_t<IsDimensionlessUnit<_>, int> = 0>
+    constexpr friend Quantity& operator-=(Quantity& lhs, scalar_type rhs) noexcept
+    {
+        lhs._count -= rhs;
+        return lhs;
+    }
+#endif
 
     constexpr friend Quantity& operator*=(Quantity& lhs, scalar_type rhs) noexcept
     {
@@ -598,6 +684,23 @@ public:
         return lhs;
     }
 
+//#if UNITS_DIMENSIONLESS_SCALAR_ARITHMETIC()
+    template <typename _ = unit, std::enable_if_t<IsDimensionlessUnit<_>, int> = 0>
+    constexpr friend Quantity& operator*=(Quantity& lhs, Quantity rhs) noexcept
+    {
+        lhs._count *= rhs.count_internal();
+        return lhs;
+    }
+
+    template <typename _ = unit, std::enable_if_t<IsDimensionlessUnit<_>, int> = 0>
+    constexpr friend Quantity& operator/=(Quantity& lhs, Quantity rhs) noexcept
+    {
+        lhs._count /= rhs.count_internal();
+        return lhs;
+    }
+//#endif
+
+#if UNITS_COMMON_QUANTITY() && UNITS_COMPARE_COMMON_QUANTITY()
     template <typename C2, typename Q = CommonQuantity<C2>>
     [[nodiscard]] constexpr friend bool operator==(Quantity lhs, Quantity<Unit<C2, kind>> rhs) noexcept
     {
@@ -633,6 +736,37 @@ public:
     {
         return Q(lhs).count_internal() >= Q(rhs).count_internal();
     }
+#else
+    [[nodiscard]] constexpr friend bool operator==(Quantity lhs, Quantity rhs) noexcept
+    {
+        return lhs.count_internal() == rhs.count_internal();
+    }
+
+    [[nodiscard]] constexpr friend bool operator!=(Quantity lhs, Quantity rhs) noexcept
+    {
+        return lhs.count_internal() != rhs.count_internal();
+    }
+
+    [[nodiscard]] constexpr friend bool operator<(Quantity lhs, Quantity rhs) noexcept
+    {
+        return lhs.count_internal() < rhs.count_internal();
+    }
+
+    [[nodiscard]] constexpr friend bool operator>(Quantity lhs, Quantity rhs) noexcept
+    {
+        return lhs.count_internal() > rhs.count_internal();
+    }
+
+    [[nodiscard]] constexpr friend bool operator<=(Quantity lhs, Quantity rhs) noexcept
+    {
+        return lhs.count_internal() <= rhs.count_internal();
+    }
+
+    [[nodiscard]] constexpr friend bool operator>=(Quantity lhs, Quantity rhs) noexcept
+    {
+        return lhs.count_internal() >= rhs.count_internal();
+    }
+#endif
 };
 
 template <typename T>
@@ -693,10 +827,13 @@ public:
     }
 
     template <typename T>
-    [[nodiscard]] constexpr auto convert_to() const noexcept;
+    [[nodiscard]] constexpr bool is_convertible_to() const noexcept;
 
     template <typename T>
-    [[nodiscard]] constexpr auto count_as() const noexcept;
+    [[nodiscard]] constexpr T convert_to() const noexcept;
+
+    template <typename T>
+    [[nodiscard]] constexpr scalar_type count_as() const noexcept;
 
     [[nodiscard]] constexpr friend Absolute operator+(Absolute lhs, relative_type rhs) noexcept
     {
@@ -851,10 +988,8 @@ constexpr Target convert_to(Quantity<SourceUnit> q) noexcept
 {
     using Source = Quantity<SourceUnit>;
 
-    static_assert(IsQuantity<Target> || IsAbsolute<Target>,
-        "convert_to can only be used to convert to Quantity's or Absolute's");
-    static_assert(std::is_same_v<typename Target::dimension, typename Source::dimension>,
-        "incompatible dimensions");
+    static_assert(q.is_convertible_to<Target>(),
+        "invalid conversion between unrelated quantities");
 
     using CS = typename Source::conversion;
     using CT = typename Target::conversion;
@@ -880,14 +1015,27 @@ constexpr double count_as(Quantity<U> q) noexcept
 
 template <typename U>
 template <typename T>
-constexpr auto Quantity<U>::convert_to() const noexcept
+constexpr bool Quantity<U>::is_convertible_to() const noexcept
+{
+    using Target = T;
+    using Source = Quantity<U>;
+
+    if constexpr (IsQuantity<Target> || IsAbsolute<Target>)
+        return std::is_same_v<typename Target::dimension, typename Source::dimension>;
+    else
+        return false;
+}
+
+template <typename U>
+template <typename T>
+constexpr T Quantity<U>::convert_to() const noexcept
 {
     return uom::convert_to<T>(*this);
 }
 
 template <typename U>
 template <typename T>
-constexpr auto Quantity<U>::count_as() const noexcept
+constexpr typename Quantity<U>::scalar_type Quantity<U>::count_as() const noexcept
 {
     return uom::convert_to<T>(*this).count_internal();
 }
@@ -901,10 +1049,8 @@ constexpr Target convert_to(Absolute<SourceQuantity, SourceZero> a) noexcept
 {
     using Source = Absolute<SourceQuantity, SourceZero>;
 
-    static_assert(IsQuantity<Target> || IsAbsolute<Target>,
-        "convert_to can only be used to convert to Quantity's or Absolute's");
-    static_assert(std::is_same_v<typename Target::dimension, typename Source::dimension>,
-        "incompatible dimensions");
+    static_assert(a.is_convertible_to<Target>(),
+        "invalid conversion between unrelated quantities");
 
     using CS = typename Source::conversion;
     using ZS = typename Source::zero;
@@ -929,14 +1075,27 @@ constexpr double count_as(Absolute<Q, Z> q) noexcept
 
 template <typename Q, typename Z>
 template <typename T>
-constexpr auto Absolute<Q, Z>::convert_to() const noexcept
+constexpr bool Absolute<Q, Z>::is_convertible_to() const noexcept
+{
+    using Target = T;
+    using Source = Absolute<Q, Z>;
+
+    if constexpr (IsQuantity<Target> || IsAbsolute<Target>)
+        return std::is_same_v<typename Target::dimension, typename Source::dimension>;
+    else
+        return false;
+}
+
+template <typename Q, typename Z>
+template <typename T>
+constexpr T Absolute<Q, Z>::convert_to() const noexcept
 {
     return uom::convert_to<T>(*this);
 }
 
 template <typename Q, typename Z>
 template <typename T>
-constexpr auto Absolute<Q, Z>::count_as() const noexcept
+constexpr typename Absolute<Q, Z>::scalar_type Absolute<Q, Z>::count_as() const noexcept
 {
     return uom::convert_to<T>(*this).count_internal();
 }
@@ -963,6 +1122,20 @@ namespace kinds
     using Entity            = Kind< Dimension<29>, Simple >;
     using Event             = Kind< Dimension<31>, Simple >;
     using Cycle             = Kind< Dimension<37>, Simple >;
+
+//  using Reserved          = Kind< Dimension<41>, Simple >;
+//  using Reserved          = Kind< Dimension<43>, Simple >;
+//  using Reserved          = Kind< Dimension<47>, Simple >;
+//  using Reserved          = Kind< Dimension<53>, Simple >;
+//  using Reserved          = Kind< Dimension<59>, Simple >;
+//  using Reserved          = Kind< Dimension<61>, Simple >;
+//  using Reserved          = Kind< Dimension<67>, Simple >;
+//  using Reserved          = Kind< Dimension<71>, Simple >;
+//  using Reserved          = Kind< Dimension<73>, Simple >;
+//  using Reserved          = Kind< Dimension<79>, Simple >;
+//  using Reserved          = Kind< Dimension<83>, Simple >;
+//  using Reserved          = Kind< Dimension<89>, Simple >;
+//  using Reserved          = Kind< Dimension<97>, Simple >;
 }
 
 namespace units
@@ -979,6 +1152,15 @@ namespace units
     using Entity            = Unit<Conversion<Ratio<1>>, kinds::Entity>;
     using Event             = Unit<Conversion<Ratio<1>>, kinds::Event>;
     using Cycle             = Unit<Conversion<Ratio<1>>, kinds::Cycle>;
+}
+
+namespace tags
+{
+    class ApparentPower;
+    class AreaPerLength;
+    class Radians;
+    class ReactivePower;
+    class SolidAngle;
 }
 
 //------------------------------------------------------------------------------
@@ -1031,11 +1213,7 @@ using CubicMeters       = decltype(SquareMeters{} * Meters{});
 //------------------------------------------------------------------------------
 // Plane angle
 
-#if UNITS_DIMENSIONLESS_PLANE_ANGLE()
-using Radians           = TaggedQuantity<Dimensionless, class _radians>;
-#else
 using Radians           = Quantity<units::Radian>;
-#endif
 using Degrees           = ScaledQuantity<Conversion<Ratio<1, 180>, /* pi^ */ 1>, Radians>;
 using Gons              = ScaledQuantity<Conversion<Ratio<1, 200>, /* pi^ */ 1>, Radians>;
 using Revolutions       = ScaledQuantity<Conversion<Ratio<2,   1>, /* pi^ */ 1>, Radians>;
@@ -1048,8 +1226,13 @@ using ReciprocalRadians = decltype(Dimensionless{} / Radians{});
 //------------------------------------------------------------------------------
 // Solid angle
 
-using Steradians        = TaggedQuantity<decltype(Radians{} * Radians{}), class _solid_angle>;
-using SquareDegrees     = TaggedQuantity<decltype(Degrees{} * Degrees{}), class _solid_angle>;
+#if 1
+using Steradians        = decltype(Radians{} * Radians{});
+using SquareDegrees     = decltype(Degrees{} * Degrees{});
+#else
+using Steradians        = TaggedQuantity<decltype(Radians{} * Radians{}), tags::SolidAngle>;
+using SquareDegrees     = TaggedQuantity<decltype(Degrees{} * Degrees{}), tags::SolidAngle>;
+#endif
 
 //------------------------------------------------------------------------------
 // Mass
@@ -1065,8 +1248,8 @@ using Tons              = ScaledQuantity<Conversion<Ratio<1000>>, Kilograms>;
 using KilogramsPerCubicMeter = decltype(Kilograms{} / CubicMeters{});
 using TonsPerCubicMeters     = decltype(Tons{}      / CubicMeters{});
 
-using SquareCentimetersPerMeter = TaggedQuantity<decltype(SquareCentimeters{} / Meters{}), class _area_per_length>;
-using SquareMetersPerMeter      = TaggedQuantity<decltype(SquareMeters{}      / Meters{}), class _area_per_length>;
+using SquareCentimetersPerMeter = TaggedQuantity<decltype(SquareCentimeters{} / Meters{}), tags::AreaPerLength>;
+using SquareMetersPerMeter      = TaggedQuantity<decltype(SquareMeters{}      / Meters{}), tags::AreaPerLength>;
 
 //------------------------------------------------------------------------------
 // Time
@@ -1133,10 +1316,10 @@ using Kilojoules        = ScaledQuantity<Conversion<Ratio<1000>>, Joules>;
 using Watts             = decltype(Joules{} / Seconds{});
 using Kilowatts         = ScaledQuantity<Conversion<Ratio<1000>>, Watts>;
 
-//using Vars              = TaggedQuantity<Watts, class _reactive_power>;
+//using Vars              = TaggedQuantity<Watts, tags::ReactivePower>;
 //using Kilovars          = ScaledQuantity<Conversion<Ratio<1000>>, Vars>;
 
-//using VoltAmperes       = TaggedQuantity<Watts, class _apparent_power>;
+//using VoltAmperes       = TaggedQuantity<Watts, tags::ApparentPower>;
 //using KiloVoltAmperes   = ScaledQuantity<Conversion<Ratio<1000>>, VoltAmperes>;
 
 //------------------------------------------------------------------------------
@@ -1242,5 +1425,9 @@ using Lumens            = decltype(Candelas{} * Steradians{});
 // Illuminance
 
 using Luxs              = decltype(Lumens{} / SquareMeters{});
+
+//==================================================================================================
+//
+//==================================================================================================
 
 } // namespace uom

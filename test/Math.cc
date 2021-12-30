@@ -73,13 +73,13 @@ TEST_CASE("Math - atan2")
     {
         const auto x = -100_cm;
         const auto y = -1_m;
-        const auto phi = atan2(y, x);
+        const auto phi = atan2(y, Meters(x));
         CHECK(phi == convert_to<Radians>(Degrees(-135.0)));
     }
     {
         const auto x = 1_m;
         const auto y = -100_cm;
-        const auto phi = atan2(y, x);
+        const auto phi = atan2(y, Centimeters(x));
         CHECK(phi == convert_to<Radians>(Degrees(-45.0)));
     }
     //{

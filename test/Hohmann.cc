@@ -32,7 +32,7 @@ class HohmannTransfer
         const SquareMetersPerSquareSecond A2
             = mu / r_2;
         const Dimensionless B
-            = 1.0_q - sqrt(2 / (1.0_q + r_2 / r_1));
+            = 1 - sqrt(2 / (1 + r_2 / r_1));
 
         return sqrt(A2) * B;
     }
@@ -42,7 +42,7 @@ class HohmannTransfer
         const SquareMetersPerSquareSecond A2
             = mu / r_1;
         const Dimensionless B
-            = sqrt((2 * r_2 / r_1) / (1.0_q + r_2 / r_1)) - 1.0_q;
+            = sqrt((2 * r_2 / r_1) / (1 + r_2 / r_1)) - 1;
 
         return sqrt(A2) * B;
     }

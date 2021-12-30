@@ -162,9 +162,11 @@ namespace impl
 //==================================================================================================
 
 template <typename U>
-[[nodiscard]] Quantity<U> abs(Quantity<U> q) noexcept
+[[nodiscard]] constexpr Quantity<U> abs(Quantity<U> q) noexcept
 {
-    return Quantity<U>(std::abs(q.count_internal()));
+    // std::abs
+    const auto c = q.count_internal();
+    return Quantity<U>(c < 0 ? -c : c);
 }
 
 template <typename U>
@@ -178,9 +180,11 @@ template <typename U>
 //--------------------------------------------------------------------------------------------------
 
 template <typename Q, typename Z>
-[[nodiscard]] Absolute<Q, Z> abs(Absolute<Q, Z> q) noexcept
+[[nodiscard]] constexpr Absolute<Q, Z> abs(Absolute<Q, Z> q) noexcept
 {
-    return Absolute<Q, Z>(std::abs(q.count_internal()));
+    // std::abs
+    const auto c = q.count_internal();
+    return Absolute<Q, Z>(c < 0 ? -c : c);
 }
 
 template <typename Q, typename Z>
@@ -197,14 +201,18 @@ template <typename U>
 [[nodiscard]] constexpr Quantity<U> min(Quantity<U> x, Quantity<U> y) noexcept
 {
     // std::min
-    return y.count_internal() < x.count_internal() ? y : x;
+    const auto cx = x.count_internal();
+    const auto cy = y.count_internal();
+    return Quantity<U>(cx < cy ? cx : cy);
 }
 
 template <typename U>
 [[nodiscard]] constexpr Quantity<U> max(Quantity<U> x, Quantity<U> y) noexcept
 {
     // std::max
-    return y.count_internal() < x.count_internal() ? x : y;
+    const auto cx = x.count_internal();
+    const auto cy = y.count_internal();
+    return Quantity<U>(cx < cy ? cy : cx);
 }
 
 template <typename U>
@@ -227,14 +235,18 @@ template <typename Q, typename Z>
 [[nodiscard]] constexpr Absolute<Q, Z> min(Absolute<Q, Z> x, Absolute<Q, Z> y) noexcept
 {
     // std::min
-    return y.count_internal() < x.count_internal() ? y : x;
+    const auto cx = x.count_internal();
+    const auto cy = y.count_internal();
+    return Absolute<Q, Z>(cx < cy ? cx : cy);
 }
 
 template <typename Q, typename Z>
 [[nodiscard]] constexpr Absolute<Q, Z> max(Absolute<Q, Z> x, Absolute<Q, Z> y) noexcept
 {
     // std::max
-    return y.count_internal() < x.count_internal() ? x : y;
+    const auto cx = x.count_internal();
+    const auto cy = y.count_internal();
+    return Absolute<Q, Z>(cx < cy ? cy : cx);
 }
 
 template <typename Q, typename Z>
@@ -297,6 +309,13 @@ template <typename U>
 [[nodiscard]] auto square(Quantity<U> q)
 {
     return uom::pow<2>(q);
+}
+
+// q^3
+template <typename U>
+[[nodiscard]] auto cube(Quantity<U> q)
+{
+    return uom::pow<3>(q);
 }
 
 //==================================================================================================
@@ -426,6 +445,37 @@ template <typename U>
 // Trigonometric
 //==================================================================================================
 
+#if 0
+[[nodiscard]] inline Dimensionless sin(Dimensionless x) noexcept
+{
+    return Dimensionless(std::sin(x.count_internal()));
+}
+
+[[nodiscard]] inline Dimensionless cos(Dimensionless x) noexcept
+{
+    return Dimensionless(std::cos(x.count_internal()));
+}
+
+[[nodiscard]] inline Dimensionless tan(Dimensionless x) noexcept
+{
+    return Dimensionless(std::tan(x.count_internal()));
+}
+
+[[nodiscard]] inline Dimensionless asin(Dimensionless x) noexcept
+{
+    return Dimensionless(std::asin(x.count_internal()));
+}
+
+[[nodiscard]] inline Dimensionless acos(Dimensionless x) noexcept
+{
+    return Dimensionless(std::acos(x.count_internal()));
+}
+
+[[nodiscard]] inline Dimensionless atan(Dimensionless x) noexcept
+{
+    return Dimensionless(std::atan(x.count_internal()));
+}
+#else
 [[nodiscard]] inline Dimensionless sin(Radians x) noexcept
 {
     return Dimensionless(std::sin(x.count_internal()));
@@ -456,12 +506,21 @@ template <typename U>
     return Radians(std::atan(x.count_internal()));
 }
 
+#if UNITS_COMMON_QUANTITY()
 template <typename C1, typename C2, typename K>
 [[nodiscard]] Radians atan2(Quantity<Unit<C1, K>> y, Quantity<Unit<C2, K>> x) noexcept
 {
     using Q = Quantity<Unit<CommonConversion<C1, C2>, Kind<typename K::dimension, kinds::Simple>>>;
     return Radians(std::atan2(y.count_as<Q>(), x.count_as<Q>()));
 }
+#else
+template <typename U>
+[[nodiscard]] Radians atan2(Quantity<U> y, Quantity<U> x) noexcept
+{
+    return Radians(std::atan2(y.count_internal(), x.count_internal()));
+}
+#endif
+#endif
 
 [[nodiscard]] inline Dimensionless sinh(Dimensionless x) noexcept
 {
@@ -477,7 +536,7 @@ template <typename C1, typename C2, typename K>
 
 [[nodiscard]] inline Dimensionless tanh(Dimensionless x) noexcept
 {
-//  return sinh(x) / tanh(x);
+//  return sinh(x) / cosh(x);
     return Dimensionless(std::tanh(x.count_internal()));
 }
 
@@ -590,14 +649,14 @@ template <typename Scale = Ratio<1>, typename Q, typename Z>
 //
 //==================================================================================================
 
-template <typename U, typename U2, std::enable_if_t<std::is_same_v<MulUnits<U, U>, U2>, int> = 0>
-[[nodiscard]] auto fma(Quantity<U> x, Quantity<U> y, Quantity<U2> z)
+template <typename U1, typename U2, typename U3, std::enable_if_t<std::is_same_v<MulUnits<U1, U2>, U3>, int> = 0>
+[[nodiscard]] auto fma(Quantity<U1> x, Quantity<U2> y, Quantity<U3> z)
 {
     // The function signature is more restrictive than (x * y + z).
     // This is to avoid any implicit conversion taking place, which would defeat the purpose
     // the fma instruction.
 
-    return Quantity<MulUnits<U, U>>(std::fma(x.count_internal(), y.count_internal(), z.count_internal()));
+    return Quantity<U3>(std::fma(x.count_internal(), y.count_internal(), z.count_internal()));
 }
 
 //==================================================================================================
