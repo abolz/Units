@@ -309,18 +309,10 @@ struct Conversion final
         if constexpr (den == 1)
             return x * num;
 
-#if 1
         if constexpr (num >= den)
             return x * (static_cast<double>(num) / static_cast<double>(den));
         else
             return x / (static_cast<double>(den) / static_cast<double>(num));
-#else
-#if 0
-        return (x * num) / den;
-#else
-        return x * (static_cast<double>(num) / static_cast<double>(den));
-#endif
-#endif
     }
 
     // Returns (x * pi^exp)
@@ -341,9 +333,6 @@ struct Conversion final
         else
             return x / Powers[-exp];
     }
-
-    static constexpr double ratio_value = applyRatio(1);
-    static constexpr double value = applyPi(ratio_value);
 };
 
 template <typename T>
