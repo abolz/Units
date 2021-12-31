@@ -1023,20 +1023,6 @@ namespace kinds
     using Entity            = Kind< Dimension<29>, Simple >;
     using Event             = Kind< Dimension<31>, Simple >;
     using Cycle             = Kind< Dimension<37>, Simple >;
-
-//  using Reserved          = Kind< Dimension<41>, Simple >;
-//  using Reserved          = Kind< Dimension<43>, Simple >;
-//  using Reserved          = Kind< Dimension<47>, Simple >;
-//  using Reserved          = Kind< Dimension<53>, Simple >;
-//  using Reserved          = Kind< Dimension<59>, Simple >;
-//  using Reserved          = Kind< Dimension<61>, Simple >;
-//  using Reserved          = Kind< Dimension<67>, Simple >;
-//  using Reserved          = Kind< Dimension<71>, Simple >;
-//  using Reserved          = Kind< Dimension<73>, Simple >;
-//  using Reserved          = Kind< Dimension<79>, Simple >;
-//  using Reserved          = Kind< Dimension<83>, Simple >;
-//  using Reserved          = Kind< Dimension<89>, Simple >;
-//  using Reserved          = Kind< Dimension<97>, Simple >;
 }
 
 namespace units
