@@ -13,8 +13,6 @@
 #define UNITS_ASSERT(X) assert(X)
 #endif
 
-#define UNITS_COMMON_QUANTITY()                 0
-#define UNITS_COMPARE_COMMON_QUANTITY()         0
 #define UNITS_DIMENSIONLESS_SCALAR_ARITHMETIC() 1
 
 namespace uom {
@@ -375,61 +373,7 @@ namespace impl
     template <typename C1, typename C2> // (C1 | C2)?
     using ConversionDivides = IsIntegralConversion<DivConversions<C2, C1>>;
 
-#if UNITS_COMMON_QUANTITY()
-    // <numeric> std::gcd ?
-    constexpr int64_t Gcd(int64_t x, int64_t y) noexcept
-    {
-        UNITS_ASSERT(x >= 0);
-        UNITS_ASSERT(y >= 1);
-
-        while (y > 0) {
-            const auto r = x % y;
-            x = y;
-            y = r;
-        }
-        return x;
-    }
-
-    // <numeric> std::lcm ?
-    constexpr int64_t Lcm(int64_t x, int64_t y) noexcept
-    {
-        return (x / Gcd(x, y)) * y;
-    }
-
-    template <typename C1, typename C2>
-    struct CommonConversionImpl
-    {
-        // SFINAE:
-        // missing 'type' !!!
-
-        static constexpr bool enabled = false;
-    };
-
-    template <typename R1, typename R2, int64_t CommonPiExp>
-    struct CommonConversionImpl<Conversion<R1, CommonPiExp>, Conversion<R2, CommonPiExp>>
-    {
-        // = gcd(N1/D1, N2/D2)
-        //   = gcd(N1, N2) / lcm(D1, D2)
-        //
-        static constexpr int64_t num = impl::Gcd(R1::num, R2::num);
-        static constexpr int64_t den = impl::Lcm(R1::den, R2::den);
-
-        static constexpr bool enabled = true;
-        using type = Conversion<Ratio<num, den>, CommonPiExp>;
-    };
-#endif
-
 } // namespace impl
-
-#if UNITS_COMMON_QUANTITY()
-
-template <typename C1, typename C2>
-inline constexpr bool HasCommonConversion = impl::CommonConversionImpl<C1, C2>::enabled;
-
-template <typename C1, typename C2>
-using CommonConversion = typename impl::CommonConversionImpl<C1, C2>::type;
-
-#endif
 
 //==================================================================================================
 // Unit
@@ -507,11 +451,6 @@ private:
     scalar_type _count = 0;
 
 private:
-#if UNITS_COMMON_QUANTITY()
-    template <typename C2>
-    using CommonQuantity = Quantity<Unit<CommonConversion<conversion, C2>, kind>>;
-#endif
-
     // asymmetric
     template <typename C1, typename C2, typename T = void>
     using EnableImplicitConversion = std::enable_if_t<impl::ConversionDivides<C1, C2>::value, T>;
@@ -700,43 +639,6 @@ public:
     }
 //#endif
 
-#if UNITS_COMMON_QUANTITY() && UNITS_COMPARE_COMMON_QUANTITY()
-    template <typename C2, typename Q = CommonQuantity<C2>>
-    [[nodiscard]] constexpr friend bool operator==(Quantity lhs, Quantity<Unit<C2, kind>> rhs) noexcept
-    {
-        return Q(lhs).count_internal() == Q(rhs).count_internal();
-    }
-
-    template <typename C2, typename Q = CommonQuantity<C2>>
-    [[nodiscard]] constexpr friend bool operator!=(Quantity lhs, Quantity<Unit<C2, kind>> rhs) noexcept
-    {
-        return Q(lhs).count_internal() != Q(rhs).count_internal();
-    }
-
-    template <typename C2, typename Q = CommonQuantity<C2>>
-    [[nodiscard]] constexpr friend bool operator<(Quantity lhs, Quantity<Unit<C2, kind>> rhs) noexcept
-    {
-        return Q(lhs).count_internal() < Q(rhs).count_internal();
-    }
-
-    template <typename C2, typename Q = CommonQuantity<C2>>
-    [[nodiscard]] constexpr friend bool operator>(Quantity lhs, Quantity<Unit<C2, kind>> rhs) noexcept
-    {
-        return Q(lhs).count_internal() > Q(rhs).count_internal();
-    }
-
-    template <typename C2, typename Q = CommonQuantity<C2>>
-    [[nodiscard]] constexpr friend bool operator<=(Quantity lhs, Quantity<Unit<C2, kind>> rhs) noexcept
-    {
-        return Q(lhs).count_internal() <= Q(rhs).count_internal();
-    }
-
-    template <typename C2, typename Q = CommonQuantity<C2>>
-    [[nodiscard]] constexpr friend bool operator>=(Quantity lhs, Quantity<Unit<C2, kind>> rhs) noexcept
-    {
-        return Q(lhs).count_internal() >= Q(rhs).count_internal();
-    }
-#else
     [[nodiscard]] constexpr friend bool operator==(Quantity lhs, Quantity rhs) noexcept
     {
         return lhs.count_internal() == rhs.count_internal();
@@ -766,7 +668,6 @@ public:
     {
         return lhs.count_internal() >= rhs.count_internal();
     }
-#endif
 };
 
 template <typename T>

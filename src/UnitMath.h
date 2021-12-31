@@ -506,20 +506,11 @@ template <typename U>
     return Radians(std::atan(x.count_internal()));
 }
 
-#if UNITS_COMMON_QUANTITY()
-template <typename C1, typename C2, typename K>
-[[nodiscard]] Radians atan2(Quantity<Unit<C1, K>> y, Quantity<Unit<C2, K>> x) noexcept
-{
-    using Q = Quantity<Unit<CommonConversion<C1, C2>, Kind<typename K::dimension, kinds::Simple>>>;
-    return Radians(std::atan2(y.count_as<Q>(), x.count_as<Q>()));
-}
-#else
 template <typename U>
 [[nodiscard]] Radians atan2(Quantity<U> y, Quantity<U> x) noexcept
 {
     return Radians(std::atan2(y.count_internal(), x.count_internal()));
 }
-#endif
 #endif
 
 [[nodiscard]] inline Dimensionless sinh(Dimensionless x) noexcept
