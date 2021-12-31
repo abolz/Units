@@ -13,8 +13,6 @@
 #define UNITS_ASSERT(X) assert(X)
 #endif
 
-#define UNITS_DIMENSIONLESS_SCALAR_ARITHMETIC() 1
-
 namespace uom {
 
 //==================================================================================================
@@ -516,7 +514,6 @@ public:
         return Quantity(lhs.count_internal() + rhs.count_internal());
     }
 
-#if UNITS_DIMENSIONLESS_SCALAR_ARITHMETIC()
     template <typename _ = unit, std::enable_if_t<IsDimensionlessUnit<_>, int> = 0>
     [[nodiscard]] constexpr friend Quantity operator+(Quantity lhs, scalar_type rhs) noexcept
     {
@@ -528,14 +525,12 @@ public:
     {
         return Quantity(lhs + rhs.count_internal());
     }
-#endif
 
     [[nodiscard]] constexpr friend Quantity operator-(Quantity lhs, Quantity rhs) noexcept
     {
         return Quantity(lhs.count_internal() - rhs.count_internal());
     }
 
-#if UNITS_DIMENSIONLESS_SCALAR_ARITHMETIC()
     template <typename _ = unit, std::enable_if_t<IsDimensionlessUnit<_>, int> = 0>
     [[nodiscard]] constexpr friend Quantity operator-(Quantity lhs, scalar_type rhs) noexcept
     {
@@ -547,7 +542,6 @@ public:
     {
         return Quantity(lhs - rhs.count_internal());
     }
-#endif
 
     template <typename U2>
     [[nodiscard]] constexpr friend auto operator*(Quantity lhs, Quantity<U2> rhs) noexcept
@@ -587,14 +581,12 @@ public:
         return lhs;
     }
 
-#if UNITS_DIMENSIONLESS_SCALAR_ARITHMETIC()
     template <typename _ = unit, std::enable_if_t<IsDimensionlessUnit<_>, int> = 0>
     constexpr friend Quantity& operator+=(Quantity& lhs, scalar_type rhs) noexcept
     {
         lhs._count += rhs;
         return lhs;
     }
-#endif
 
     constexpr friend Quantity& operator-=(Quantity& lhs, Quantity rhs) noexcept
     {
@@ -602,14 +594,12 @@ public:
         return lhs;
     }
 
-#if UNITS_DIMENSIONLESS_SCALAR_ARITHMETIC()
     template <typename _ = unit, std::enable_if_t<IsDimensionlessUnit<_>, int> = 0>
     constexpr friend Quantity& operator-=(Quantity& lhs, scalar_type rhs) noexcept
     {
         lhs._count -= rhs;
         return lhs;
     }
-#endif
 
     constexpr friend Quantity& operator*=(Quantity& lhs, scalar_type rhs) noexcept
     {
@@ -623,7 +613,6 @@ public:
         return lhs;
     }
 
-//#if UNITS_DIMENSIONLESS_SCALAR_ARITHMETIC()
     template <typename _ = unit, std::enable_if_t<IsDimensionlessUnit<_>, int> = 0>
     constexpr friend Quantity& operator*=(Quantity& lhs, Quantity rhs) noexcept
     {
@@ -637,7 +626,6 @@ public:
         lhs._count /= rhs.count_internal();
         return lhs;
     }
-//#endif
 
     [[nodiscard]] constexpr friend bool operator==(Quantity lhs, Quantity rhs) noexcept
     {
