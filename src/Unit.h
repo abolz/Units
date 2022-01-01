@@ -72,13 +72,13 @@ namespace kinds
     struct Simple {};
 
     template <typename ...Factors>
-    struct Complex {};
+    struct Product {};
 
-    template <typename Tag, int64_t Exponent>
+    template <typename T, int64_t Exponent>
     struct Factor
     {
         using type = Factor;
-        using tag  = Tag;
+        using tag  = T;
         static constexpr int64_t exponent = Exponent;
     };
 
@@ -108,26 +108,48 @@ namespace kinds::impl
 #endif
     }
 
+    template <typename T1, typename T2>
+    constexpr int CompareTags() noexcept
+    {
+        constexpr uint64_t h1 = impl::TypeId<T1>();
+        constexpr uint64_t h2 = impl::TypeId<T2>();
+
+        if constexpr (h1 < h2)
+        {
+            return -1;
+        }
+        else if constexpr (h1 > h2)
+        {
+            return +1;
+        }
+        else
+        {
+            static_assert(std::is_same_v<T1, T2>,
+                "collision detected - please try changing the tag name");
+            return 0;
+        }
+    }
+
     template <typename T, typename ...Ts>
-    constexpr auto Head(Complex<T, Ts...>) noexcept
+    constexpr auto Head(Product<T, Ts...>) noexcept
     {
         return T{};
     }
 
     template <typename T, typename ...Ts>
-    constexpr auto Tail(Complex<T, Ts...>) noexcept
+    constexpr auto Tail(Product<T, Ts...>) noexcept
     {
-        return Complex<Ts...>{};
+        return Product<Ts...>{};
     }
 
     template <typename ...Ts, typename ...Us>
-    constexpr auto Concat(Complex<Ts...>, Complex<Us...>) noexcept
+    constexpr auto Concat(Product<Ts...>, Product<Us...>) noexcept
     {
-        return Complex<Ts..., Us...>{};
+        return Product<Ts..., Us...>{};
     }
 
     template <typename ...Fs1, typename ...Fs2>
-    constexpr auto Merge([[maybe_unused]] Complex<Fs1...> lhs, [[maybe_unused]] Complex<Fs2...> rhs) noexcept
+    constexpr auto Merge([[maybe_unused]] Product<Fs1...> lhs, [[maybe_unused]] Product<Fs2...> rhs) noexcept
     {
         if constexpr (sizeof...(Fs1) == 0)
         {
@@ -145,20 +167,18 @@ namespace kinds::impl
             using T1 = typename H1::tag;
             using T2 = typename H2::tag;
 
-            constexpr uint64_t h1 = impl::TypeId<T1>();
-            constexpr uint64_t h2 = impl::TypeId<T2>();
-            if constexpr (h1 < h2)
+            constexpr int cmp = impl::CompareTags<T1, T2>();
+            if constexpr (cmp < 0)
             {
-                return impl::Concat(Complex<H1>{}, impl::Merge(impl::Tail(lhs), rhs));
+                return impl::Concat(Product<H1>{}, impl::Merge(impl::Tail(lhs), rhs));
             }
-            else if constexpr (h1 > h2)
+            else if constexpr (cmp > 0)
             {
-                return impl::Concat(Complex<H2>{}, impl::Merge(lhs, impl::Tail(rhs)));
+                return impl::Concat(Product<H2>{}, impl::Merge(lhs, impl::Tail(rhs)));
             }
             else
             {
-                static_assert(std::is_same_v<T1, T2>,
-                    "collision detected - please try changing the tag name");
+                static_assert(std::is_same_v<T1, T2>);
 
                 constexpr int64_t e1 = H1::exponent;
                 constexpr int64_t e2 = H2::exponent;
@@ -167,7 +187,7 @@ namespace kinds::impl
                 if constexpr (e != 0)
                 {
                     using F = Factor<T1, e>;
-                    return impl::Concat(Complex<F>{}, impl::Merge(impl::Tail(lhs), impl::Tail(rhs)));
+                    return impl::Concat(Product<F>{}, impl::Merge(impl::Tail(lhs), impl::Tail(rhs)));
                 }
                 else
                 {
@@ -184,25 +204,25 @@ namespace kinds::impl
     }
 
     template <typename ...Fs>
-    constexpr auto Rcp(Complex<Fs...>) noexcept
+    constexpr auto Rcp(Product<Fs...>) noexcept
     {
-        return Complex<decltype(impl::Rcp(Fs{}))...>{};
+        return Product<decltype(impl::Rcp(Fs{}))...>{};
     }
 
     template <typename T>
-    struct Wrap { using type = Complex<Factor<T, 1>>; };
+    struct Wrap { using type = Product<Factor<T, 1>>; };
 
     template <typename ...Fs>
-    struct Wrap<Complex<Fs...>> { using type = Complex<Fs...>; };
+    struct Wrap<Product<Fs...>> { using type = Product<Fs...>; };
 
     template <typename T>
     struct Unwrap { using type = T; };
 
     template <>
-    struct Unwrap<Complex<>> { using type = Simple; };
+    struct Unwrap<Product<>> { using type = Simple; };
 
     template <typename T>
-    struct Unwrap<Complex<Factor<T, 1>>> { using type = T; };
+    struct Unwrap<Product<Factor<T, 1>>> { using type = T; };
 
     template <typename T1, typename T2>
     struct MulTags
@@ -273,14 +293,22 @@ struct Conversion final
     // All integers <= 2^53 are exactly representable as 'double'
     static constexpr int64_t Two53 = 9007199254740992; // == 2^53
 
+#if 1
+    static constexpr int64_t NumMax = Two53;
+    static constexpr int64_t DenMax = Two53;
+#else
+    static constexpr int64_t NumMax = INT64_MAX;
+    static constexpr int64_t DenMax = INT64_MAX;
+#endif
+
     static_assert(num > 0,
-        "invalid argument");
-    static_assert(num <= Two53,
-        "invalid argument");
+        "invalid argument - numerator must be positive");
+    static_assert(num <= NumMax,
+        "invalid argument - numerator too large");
     static_assert(den > 0,
-        "invalid argument");
-    static_assert(den <= Two53,
-        "invalid argument");
+        "invalid argument - denominator must be positive");
+    static_assert(den <= DenMax,
+        "invalid argument - denominator too large");
     static_assert(exp >= -4,
         "argument out of range (sorry, not implemented...)");
     static_assert(exp <= 4,
@@ -1056,6 +1084,9 @@ using Inches            = ScaledQuantity<Conversion<Ratio<254, 100>>, Centimeter
 using Feet              = ScaledQuantity<Conversion<Ratio<12>>, Inches>;            // (international)
 using Yards             = ScaledQuantity<Conversion<Ratio<3>>, Feet>;               // (international)
 using Miles             = ScaledQuantity<Conversion<Ratio<1760>>, Yards>;           // (international)
+
+//using AstronomicalUnits = ScaledQuantity<Conversion<Ratio<149597870700>>, Meters>;
+//using Parsecs           = ScaledQuantity<Conversion<Ratio<648000>, /*pi^*/ -1>, AstronomicalUnits>;
 
 //------------------------------------------------------------------------------
 // Area
