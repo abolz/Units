@@ -20,7 +20,7 @@ namespace uom {
 //==================================================================================================
 
 template <typename R>
-inline constexpr bool IsReducedRatio = std::ratio_equal_v<R, typename R::type>;
+inline constexpr bool IsReducedRatio = std::is_same_v<R, typename R::type>;
 
 template <typename T>
 inline constexpr bool IsRatio = false;
