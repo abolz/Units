@@ -294,20 +294,18 @@ struct Conversion final
     static constexpr int64_t Two53 = 9007199254740992; // == 2^53
 
 #if 1
-    static constexpr int64_t NumMax = Two53;
-    static constexpr int64_t DenMax = Two53;
+    static constexpr int64_t Max = Two53;
 #else
-    static constexpr int64_t NumMax = INT64_MAX;
-    static constexpr int64_t DenMax = INT64_MAX;
+    static constexpr int64_t Max = INT64_MAX;
 #endif
 
     static_assert(num > 0,
         "invalid argument - numerator must be positive");
-    static_assert(num <= NumMax,
+    static_assert(num <= Max,
         "invalid argument - numerator too large");
     static_assert(den > 0,
         "invalid argument - denominator must be positive");
-    static_assert(den <= DenMax,
+    static_assert(den <= Max,
         "invalid argument - denominator too large");
     static_assert(exp >= -4,
         "argument out of range (sorry, not implemented...)");
@@ -331,16 +329,19 @@ struct Conversion final
         if constexpr (num == 1 && den == 1)
             return x;
 
-        if constexpr (num == 1)
-            return x / den;
+        if constexpr (Max == Two53)
+        {
+            if constexpr (num == 1)
+                return x / den;
 
-        if constexpr (den == 1)
-            return x * num;
+            if constexpr (den == 1)
+                return x * num;
+        }
 
         if constexpr (num >= den)
-            return x * (static_cast<double>(num) / static_cast<double>(den));
+            return x * toFloatingPoint(num, den);
         else
-            return x / (static_cast<double>(den) / static_cast<double>(num));
+            return x / toFloatingPoint(den, num);
     }
 
     // Returns (x * pi^exp)
@@ -360,6 +361,11 @@ struct Conversion final
             return x * Powers[ exp];
         else
             return x / Powers[-exp];
+    }
+
+    [[nodiscard]] static constexpr double toFloatingPoint(int64_t num, int64_t den)
+    {
+        return static_cast<double>(num) / static_cast<double>(den);
     }
 };
 
