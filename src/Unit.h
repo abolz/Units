@@ -58,9 +58,9 @@ struct Kind
     static_assert(IsRatio<D>,
         "dimension must be a (reduced) std::ratio");
 
-    using type      = Kind;
-    using dimension = D;
+    using dimension = typename D::type;
     using tag       = Tag;
+    using type      = Kind<dimension, Tag>;
 };
 
 template <typename T>
@@ -265,12 +265,12 @@ template <typename T1, typename T2>
 using DivTags = typename kinds::impl::DivTags<T1, T2>::type;
 
 template <typename K1, typename K2>
-using MulKinds = Kind< MulDimensions<typename K1::dimension, typename K2::dimension>,
-                       MulTags<typename K1::tag, typename K2::tag> >;
+using MulKinds = typename Kind< MulDimensions<typename K1::dimension, typename K2::dimension>,
+                                MulTags<typename K1::tag, typename K2::tag> >::type;
 
 template <typename K1, typename K2>
-using DivKinds = Kind< DivDimensions<typename K1::dimension, typename K2::dimension>,
-                       DivTags<typename K1::tag, typename K2::tag> >;
+using DivKinds = typename Kind< DivDimensions<typename K1::dimension, typename K2::dimension>,
+                                DivTags<typename K1::tag, typename K2::tag> >::type;
 
 //==================================================================================================
 // Conversion
@@ -286,8 +286,9 @@ struct Conversion final
     static_assert(IsRatio<R>,
         "R must be a (reduced) std::ratio");
 
-    using type = Conversion;
     using ratio = typename R::type;
+    using type = Conversion<ratio, PiExp>;
+
     static constexpr int64_t num = ratio::num;
     static constexpr int64_t den = ratio::den;
     static constexpr int64_t exp = PiExp;
@@ -376,10 +377,10 @@ template <typename R, int64_t E>
 inline constexpr bool IsConversion<Conversion<R, E>> = true; // IsRatio<R>;
 
 template <typename C1, typename C2 /* = C1 */>
-using MulConversions = Conversion<typename std::ratio_multiply<typename C1::ratio, typename C2::ratio>::type, C1::exp + C2::exp>;
+using MulConversions = typename Conversion<typename std::ratio_multiply<typename C1::ratio, typename C2::ratio>::type, C1::exp + C2::exp>::type;
 
 template <typename C1, typename C2>
-using DivConversions = Conversion<typename std::ratio_divide<typename C1::ratio, typename C2::ratio>::type, C1::exp - C2::exp>;
+using DivConversions = typename Conversion<typename std::ratio_divide<typename C1::ratio, typename C2::ratio>::type, C1::exp - C2::exp>::type;
 
 namespace impl
 {
@@ -408,11 +409,11 @@ struct Unit final
     static_assert(IsKind<K>,
         "K must be a Kind");
 
-    using type       = Unit;
-    using conversion = C;
-    using kind       = K;
+    using conversion = typename C::type;
+    using kind       = typename K::type;
     using dimension  = typename kind::dimension;
     using tag        = typename kind::tag;
+    using type       = Unit<conversion, kind>;
 };
 
 template <typename T>
@@ -422,12 +423,12 @@ template <typename C, typename K>
 inline constexpr bool IsUnit<Unit<C, K>> = true;
 
 template <typename U1, typename U2>
-using MulUnits = typename Unit< MulConversions<typename U1::conversion, typename U2::conversion>,
-                                MulKinds<typename U1::kind, typename U2::kind> >::type;
+using MulUnits = typename Unit< typename MulConversions<typename U1::conversion, typename U2::conversion>::type,
+                                typename MulKinds<typename U1::kind, typename U2::kind>::type >::type;
 
 template <typename U1, typename U2>
-using DivUnits = typename Unit< DivConversions<typename U1::conversion, typename U2::conversion>,
-                                DivKinds<typename U1::kind, typename U2::kind> >::type;
+using DivUnits = typename Unit< typename DivConversions<typename U1::conversion, typename U2::conversion>::type,
+                                typename DivKinds<typename U1::kind, typename U2::kind>::type >::type;
 
 namespace units
 {
@@ -456,17 +457,17 @@ class Quantity final
         "U must be a Unit");
 
 public:
-    using type        = Quantity;
     using scalar_type = double;
-    using unit        = U;
-    using conversion  = typename U::conversion;
-    using kind        = typename U::kind;
-    using dimension   = typename U::dimension;
-    using tag         = typename U::tag;
+    using unit        = typename U::type;
+    using conversion  = typename unit::conversion;
+    using kind        = typename unit::kind;
+    using dimension   = typename unit::dimension;
+    using tag         = typename unit::tag;
     using zero        = Ratio<0>;
+    using type        = Quantity<unit>;
 
     using simplified_type
-        = Quantity<Unit<conversion, Kind<dimension, kinds::Simple>>>;
+        = typename Quantity<Unit<conversion, Kind<dimension, kinds::Simple>>>::type;
 
 private:
     scalar_type _count = 0;
@@ -569,13 +570,15 @@ public:
     template <typename U2>
     [[nodiscard]] constexpr friend auto operator*(Quantity lhs, Quantity<U2> rhs) noexcept
     {
-        return Quantity<MulUnits<unit, U2>>(lhs.count_internal() * rhs.count_internal());
+        using R = typename MulUnits<unit, U2>::type;
+        return Quantity<typename R::type>(lhs.count_internal() * rhs.count_internal());
     }
 
     template <typename U2>
     [[nodiscard]] constexpr friend auto operator/(Quantity lhs, Quantity<U2> rhs) noexcept
     {
-        return Quantity<DivUnits<unit, U2>>(lhs.count_internal() / rhs.count_internal());
+        using R = typename DivUnits<unit, U2>::type;
+        return Quantity<typename R::type>(lhs.count_internal() / rhs.count_internal());
     }
 
     [[nodiscard]] constexpr friend Quantity operator*(Quantity lhs, scalar_type rhs) noexcept
@@ -689,11 +692,17 @@ inline constexpr bool IsQuantity<Quantity<U>> = true;
 
 template <typename Conv, typename Q>
 using ScaledQuantity
-    = Quantity<Unit<MulConversions<Conv, typename Q::conversion>, typename Q::kind>>;
+    = typename Quantity<
+        typename Unit<
+          typename MulConversions<Conv, typename Q::conversion>::type,
+          typename Q::kind>::type>::type;
 
 template <typename Q, typename Tag>
 using TaggedQuantity // a.k.a. Change-Kind
-    = Quantity<Unit<typename Q::conversion, Kind<typename Q::dimension, Tag>>>;
+    = typename Quantity<
+        typename Unit<
+          typename Q::conversion,
+          typename Kind<typename Q::dimension, Tag>::type>::type>::type;
 
 //==================================================================================================
 // Absolute
@@ -710,8 +719,7 @@ class Absolute final
         "Q must be a Quantity");
 
 public:
-    using type          = Absolute;
-    using relative_type = Q;
+    using relative_type = typename Q::type;
     using scalar_type   = typename relative_type::scalar_type;
     using unit          = typename relative_type::unit;
     using conversion    = typename relative_type::conversion;
@@ -719,6 +727,7 @@ public:
     using dimension     = typename relative_type::dimension;
     using tag           = typename relative_type::tag;
     using zero          = Z;
+    using type          = Absolute<relative_type, Z>;
 
 private:
     scalar_type _count;
@@ -1101,7 +1110,7 @@ using SquareMillimeters = decltype(Millimeters{} * Millimeters{});
 using SquareCentimeters = decltype(Centimeters{} * Centimeters{});
 using SquareDecimeters  = decltype(Decimeters{} * Decimeters{});
 using SquareMeters      = decltype(Meters{} * Meters{});
-using SquareKilometers  = decltype(Kilometers{} * Kilometers{});
+using SquareKilometers  = Quantity<typename decltype(Kilometers{} * Kilometers{})::unit>;
 
 //------------------------------------------------------------------------------
 // Volume
