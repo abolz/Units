@@ -77,9 +77,9 @@ namespace kinds
     struct Product {};
 
     template <typename T, int64_t Exponent>
-    struct Factor
+    struct Pow
     {
-        using type = Factor;
+        using type = Pow;
         using tag  = T;
         static constexpr int64_t exponent = Exponent;
     };
@@ -188,7 +188,7 @@ namespace kinds::impl
 
                 if constexpr (e != 0)
                 {
-                    using F = Factor<T1, e>;
+                    using F = Pow<T1, e>;
                     return impl::Concat(Product<F>{}, impl::Merge(impl::Tail(lhs), impl::Tail(rhs)));
                 }
                 else
@@ -200,9 +200,9 @@ namespace kinds::impl
     }
 
     template <typename Tag, int64_t Exponent>
-    constexpr auto Rcp(Factor<Tag, Exponent>) noexcept
+    constexpr auto Rcp(Pow<Tag, Exponent>) noexcept
     {
-        return Factor<Tag, -Exponent>{};
+        return Pow<Tag, -Exponent>{};
     }
 
     template <typename ...Fs>
@@ -212,19 +212,31 @@ namespace kinds::impl
     }
 
     template <typename T>
-    struct Wrap { using type = Product<Factor<T, 1>>; };
+    struct WrapFactor { using type = Pow<T, 1>; };
+
+    template <typename T, int64_t Exponent>
+    struct WrapFactor<Pow<T, Exponent>> { using type = Pow<T, Exponent>; };
+
+    template <typename T>
+    struct Wrap { using type = Product<Pow<T, 1>>; };
 
     template <typename ...Fs>
-    struct Wrap<Product<Fs...>> { using type = Product<Fs...>; };
+    struct Wrap<Product<Fs...>> { using type = Product<typename WrapFactor<Fs>::type...>; };
 
     template <typename T>
     struct Unwrap { using type = T; };
+
+    template <typename T>
+    struct Unwrap<Pow<T, 1>> { using type = T; };
 
     template <>
     struct Unwrap<Product<>> { using type = Simple; };
 
     template <typename T>
-    struct Unwrap<Product<Factor<T, 1>>> { using type = T; };
+    struct Unwrap<Product<Pow<T, 1>>> { using type = T; };
+
+    template <typename ...Fs>
+    struct Unwrap<Product<Fs...>> { using type = Product<typename Unwrap<Fs>::type...>; };
 
     template <typename T1, typename T2>
     struct MulTags
@@ -265,11 +277,11 @@ template <typename T1, typename T2>
 using DivTags = typename kinds::impl::DivTags<T1, T2>::type;
 
 template <typename K1, typename K2>
-using MulKinds = typename Kind< MulDimensions<typename K1::dimension, typename K2::dimension>,
+using MulKinds = typename Kind< typename MulDimensions<typename K1::dimension, typename K2::dimension>::type,
                                 MulTags<typename K1::tag, typename K2::tag> >::type;
 
 template <typename K1, typename K2>
-using DivKinds = typename Kind< DivDimensions<typename K1::dimension, typename K2::dimension>,
+using DivKinds = typename Kind< typename DivDimensions<typename K1::dimension, typename K2::dimension>::type,
                                 DivTags<typename K1::tag, typename K2::tag> >::type;
 
 //==================================================================================================
@@ -406,8 +418,8 @@ struct Unit final
 {
     static_assert(IsConversion<C>,
         "C must be a Conversion");
-    static_assert(IsKind<K>,
-        "K must be a Kind");
+    //static_assert(IsKind<K>,
+    //    "K must be a Kind");
 
     using conversion = typename C::type;
     using kind       = typename K::type;
@@ -474,13 +486,26 @@ private:
 
 private:
     // asymmetric
-    template <typename C1, typename C2, typename T = void>
-    using EnableImplicitConversion = std::enable_if_t<impl::ConversionDivides<C1, C2>::value, T>;
+    // PRE: To::dimension == From::dimension
+    template <typename ConvTo, typename ConvFrom, typename T = void>
+    using EnableImplicitConversion = std::enable_if_t<impl::ConversionDivides<ConvTo, ConvFrom>::value, T>;
 
-    // symmetric
-    template <typename K1, typename K2, typename T = void>
+    // asymmetric
+    template <typename KindTo, typename KindFrom, typename T = void>
     using EnableExplicitConversion
-        = std::enable_if_t<std::is_same_v<typename K1::dimension, typename K2::dimension>, T>;
+        = std::enable_if_t<
+            std::conjunction_v<
+              // The dimensions must match!
+              std::is_same<typename KindTo::dimension, typename KindFrom::dimension>,
+              // And either
+              std::disjunction<
+                // the tags must be the same,
+                std::is_same<typename KindTo::tag, typename KindFrom::tag>,
+                // or the right hand side must be a "simple" type (untagged).
+                std::is_same<typename KindFrom::tag, kinds::Simple>
+              >
+            >,
+          T>;
 
 public:
     constexpr Quantity() noexcept = default;
@@ -570,15 +595,15 @@ public:
     template <typename U2>
     [[nodiscard]] constexpr friend auto operator*(Quantity lhs, Quantity<U2> rhs) noexcept
     {
-        using R = typename MulUnits<unit, U2>::type;
-        return Quantity<typename R::type>(lhs.count_internal() * rhs.count_internal());
+        using R = MulUnits<unit, U2>;
+        return Quantity<Unit<typename R::conversion, typename R::kind>>(lhs.count_internal() * rhs.count_internal());
     }
 
     template <typename U2>
     [[nodiscard]] constexpr friend auto operator/(Quantity lhs, Quantity<U2> rhs) noexcept
     {
-        using R = typename DivUnits<unit, U2>::type;
-        return Quantity<typename R::type>(lhs.count_internal() / rhs.count_internal());
+        using R = DivUnits<unit, U2>;
+        return Quantity<Unit<typename R::conversion, typename R::kind>>(lhs.count_internal() / rhs.count_internal());
     }
 
     [[nodiscard]] constexpr friend Quantity operator*(Quantity lhs, scalar_type rhs) noexcept
@@ -941,6 +966,10 @@ constexpr bool Quantity<U>::is_convertible_to() const noexcept
     using Target = T;
     using Source = Quantity<U>;
 
+    //
+    // FIXME:
+    // This is too lenient...
+    //
     if constexpr (IsQuantity<Target> || IsAbsolute<Target>)
         return std::is_same_v<typename Target::dimension, typename Source::dimension>;
     else
@@ -1001,6 +1030,10 @@ constexpr bool Absolute<Q, Z>::is_convertible_to() const noexcept
     using Target = T;
     using Source = Absolute<Q, Z>;
 
+    //
+    // FIXME:
+    // This is too lenient...
+    //
     if constexpr (IsQuantity<Target> || IsAbsolute<Target>)
         return std::is_same_v<typename Target::dimension, typename Source::dimension>;
     else
@@ -1031,18 +1064,34 @@ namespace kinds
     // 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, ...
     //                         ~~  ^^  ^^  ^^  ^^
 
-    using Length            = Kind< Dimension< 2>, Simple >;
-    using Mass              = Kind< Dimension< 3>, Simple >;
-    using Time              = Kind< Dimension< 5>, Simple >;
-    using ElectricCurrent   = Kind< Dimension< 7>, Simple >;
-    using Temperature       = Kind< Dimension<11>, Simple >;
-    using AmountOfSubstance = Kind< Dimension<13>, Simple >;
-    using LuminousIntensity = Kind< Dimension<17>, Simple >;
-    using PlaneAngle        = Kind< Dimension<19>, Simple >;
-    using Bit               = Kind< Dimension<23>, Simple >;
-    using Entity            = Kind< Dimension<29>, Simple >;
-    using Event             = Kind< Dimension<31>, Simple >;
-    using Cycle             = Kind< Dimension<37>, Simple >;
+    using Length            = Kind< Dimension<   2,    1>, Simple >;
+    using Mass              = Kind< Dimension<   3,    1>, Simple >;
+    using Time              = Kind< Dimension<   5,    1>, Simple >;
+    using ElectricCurrent   = Kind< Dimension<   7,    1>, Simple >;
+    using Temperature       = Kind< Dimension<  11,    1>, Simple >;
+    using AmountOfSubstance = Kind< Dimension<  13,    1>, Simple >;
+    using LuminousIntensity = Kind< Dimension<  17,    1>, Simple >;
+    using PlaneAngle        = Kind< Dimension<  19,    1>, Simple >;
+    using Bit               = Kind< Dimension<  23,    1>, Simple >;
+    using Entity            = Kind< Dimension<  29,    1>, Simple >;
+    using Event             = Kind< Dimension<  31,    1>, Simple >;
+    using Cycle             = Kind< Dimension<  37,    1>, Simple >;
+
+    using Area              = Kind< Dimension<   4,    1>, Simple >;
+    using Volume            = Kind< Dimension<   6,    1>, Simple >;
+    using SolidAngle        = Kind< Dimension< 361,    1>, Simple >;
+    using Density           = Kind< Dimension<   3,    8>, Simple >;
+    using Frequency         = Kind< Dimension<   1,    5>, Simple >;
+    using Velocity          = Kind< Dimension<   2,    5>, Simple >;
+    using Acceleration      = Kind< Dimension<   2,   25>, Simple >;
+    using Force             = Kind< Dimension<   6,   25>, Simple >;
+    using Pressure          = Kind< Dimension<   6,  100>, Simple >;
+    using Energy            = Kind< Dimension<  12,   25>, Simple >;
+    using Power             = Kind< Dimension<  12,  125>, Simple >;
+    using ElectricCharge    = Kind< Dimension<  35,    1>, Simple >;
+    using Luminance         = Kind< Dimension<  17,    4>, Simple >;
+    using LuminousFlux      = Kind< Dimension<6137,    1>, Simple >;
+    using Illuminance       = Kind< Dimension<6137,    4>, Simple >;
 }
 
 namespace units
