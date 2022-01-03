@@ -9,6 +9,8 @@
 #include <ratio>
 #include <type_traits>
 
+#include "_units_float_from_ratio.h"
+
 #ifndef UNITS_ASSERT
 #define UNITS_ASSERT(X) assert(X)
 #endif
@@ -291,9 +293,9 @@ struct Conversion final
     static constexpr int64_t exp = PiExp;
 
     // All integers <= 2^53 are exactly representable as 'double'
-    static constexpr int64_t Two53 = 9007199254740992; // == 2^53
+    static constexpr int64_t Two53 = 9007199254740992;
 
-#if 1
+#if 0
     static constexpr int64_t Max = Two53;
 #else
     static constexpr int64_t Max = INT64_MAX;
@@ -318,7 +320,7 @@ struct Conversion final
         return applyPi(applyRatio(x));
     }
 
-    // Returns: (x * num / den)
+    // Returns (x * num / den)
     [[nodiscard]] static constexpr double applyRatio(double x) noexcept
     {
 //      static_assert(__builtin_is_constant_evaluated());
@@ -329,19 +331,22 @@ struct Conversion final
         if constexpr (num == 1 && den == 1)
             return x;
 
-        if constexpr (Max == Two53)
-        {
-            if constexpr (num == 1)
-                return x / den;
+        if constexpr (num == 1 && den <= Two53)
+            return x / den;
 
-            if constexpr (den == 1)
-                return x * num;
-        }
+        if constexpr (den == 1 && num <= Two53)
+            return x * num;
 
         if constexpr (num >= den)
-            return x * toFloatingPoint(num, den);
+        {
+            constexpr double scale = impl::F64FromRatio(num, den);
+            return x * scale;
+        }
         else
-            return x / toFloatingPoint(den, num);
+        {
+            constexpr double scale = impl::F64FromRatio(den, num);
+            return x / scale;
+        }
     }
 
     // Returns (x * pi^exp)
@@ -349,10 +354,10 @@ struct Conversion final
     {
         constexpr double Powers[] = {
             1.0,                // pi^0
-            3.141592653589793,  // pi^1
-            9.869604401089358,  // pi^2
-            31.00627668029982,  // pi^3
-            97.40909103400244,  // pi^4
+            3.141592653589793,  // pi^1 ==  884279719003555 / 2^48 (IEEE double)
+            9.869604401089358,  // pi^2 == 2778046668940015 / 2^48 (IEEE double)
+            31.00627668029982,  // pi^3 == 2181872751617887 / 2^46 (IEEE double)
+            97.40909103400244,  // pi^4 == 3427277703775251 / 2^45 (IEEE double)
         };
 
         if constexpr (exp == 0)
@@ -361,11 +366,6 @@ struct Conversion final
             return x * Powers[ exp];
         else
             return x / Powers[-exp];
-    }
-
-    [[nodiscard]] static constexpr double toFloatingPoint(int64_t num, int64_t den)
-    {
-        return static_cast<double>(num) / static_cast<double>(den);
     }
 };
 
@@ -1091,8 +1091,8 @@ using Feet              = ScaledQuantity<Conversion<Ratio<12>>, Inches>;        
 using Yards             = ScaledQuantity<Conversion<Ratio<3>>, Feet>;               // (international)
 using Miles             = ScaledQuantity<Conversion<Ratio<1760>>, Yards>;           // (international)
 
-//using AstronomicalUnits = ScaledQuantity<Conversion<Ratio<149597870700>>, Meters>;
-//using Parsecs           = ScaledQuantity<Conversion<Ratio<648000>, /*pi^*/ -1>, AstronomicalUnits>;
+using AstronomicalUnits = ScaledQuantity<Conversion<Ratio<149597870700>>, Meters>;
+using Parsecs           = ScaledQuantity<Conversion<Ratio<648000>, /*pi^*/ -1>, AstronomicalUnits>;
 
 //------------------------------------------------------------------------------
 // Area
