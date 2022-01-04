@@ -170,7 +170,7 @@ namespace kinds::impl
             using T2 = typename H2::tag;
 
             constexpr int cmp = impl::CompareTags<T1, T2>();
-            if constexpr (cmp < 0)
+            if constexpr (0 > cmp)
             {
                 return impl::Concat(Product<H1>{}, impl::Merge(impl::Tail(lhs), rhs));
             }
