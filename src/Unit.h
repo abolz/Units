@@ -853,13 +853,25 @@ namespace impl
     {
         if constexpr (IsRatio<T>)
         {
-            static_assert(T::den != 0);
-            return static_cast<double>(T::num) / static_cast<double>(T::den);
+            if constexpr (0 > T::num)
+            {
+                constexpr double value = impl::F64FromRatio(-T::num, T::den);
+                return -value;
+            }
+            else if constexpr (T::num > 0)
+            {
+                constexpr double value = impl::F64FromRatio( T::num, T::den);
+                return value;
+            }
+            else
+            {
+                return 0;
+            }
         }
         else
         {
-            // return static_cast<double>(T::value);
-            return static_cast<double>(T{}());
+            T gen;
+            return static_cast<double>(gen());
         }
     }
 
@@ -905,7 +917,9 @@ namespace impl
             // XXX:
             // Use same expression as above?!
 
-            constexpr double a  = AsDouble<std::ratio_divide<typename C1::ratio, typename C2::ratio>>();
+            using R = std::ratio_divide<typename C1::ratio, typename C2::ratio>;
+
+            constexpr double a  = AsDouble<R>();
             constexpr double z1 = AsDouble<Z1>();
             constexpr double z2 = AsDouble<Z2>();
 
