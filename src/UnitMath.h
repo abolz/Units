@@ -275,7 +275,7 @@ template <int64_t N, typename U>
 
     static_assert(N >= 1,
         "only positive exponents allowed");
-    static_assert(std::is_same<typename kind::tag, kinds::Simple>::value,
+    static_assert(std::is_same<typename kind::tag, kinds::Untagged>::value,
         "operation not supported - instead of 'pow<N>(q)' you must use 'pow<N>(q.value())'");
     //
     // TODO:
@@ -285,22 +285,22 @@ template <int64_t N, typename U>
     using conversion_pow = impl::RationalPower<typename conversion::ratio, N>;
     using dimension_pow = impl::RationalPower<dimension, N>;
 
-    using C = Conversion<typename conversion_pow::ratio, conversion::exp * N>;
+    using C = typename Conversion<typename conversion_pow::ratio, conversion::exp * N>::type;
     using D = typename dimension_pow::ratio;
 
-    using K = Kind<D, kinds::Simple>;
+    using K = typename Kind<D, kinds::Untagged>::type;
 
     if constexpr (N == 1)
     {
-        return Quantity<Unit<C, K>>(q.count_internal());
+        return Quantity<typename Unit<C, K>::type>(q.count_internal());
     }
     else if constexpr (N == 2)
     {
-        return Quantity<Unit<C, K>>(q.count_internal() * q.count_internal());
+        return Quantity<typename Unit<C, K>::type>(q.count_internal() * q.count_internal());
     }
     else
     {
-        return Quantity<Unit<C, K>>(std::pow(q.count_internal(), static_cast<double>(N)));
+        return Quantity<typename Unit<C, K>::type>(std::pow(q.count_internal(), static_cast<double>(N)));
     }
 }
 
@@ -332,7 +332,7 @@ template <int64_t N, typename U>
 
     static_assert(N >= 1,
         "only positive exponents allowed");
-    static_assert(std::is_same<typename kind::tag, kinds::Simple>::value,
+    static_assert(std::is_same<typename kind::tag, kinds::Untagged>::value,
         "operation not supported - instead of 'nth_root<N>(q)' you must use 'nth_root<N>(q.value())'");
     //
     // TODO:
@@ -349,26 +349,26 @@ template <int64_t N, typename U>
     static_assert(dimension_root::is_exact,
         "rational roots are not supported");
 
-    using C = Conversion<typename conversion_root::ratio, conversion::exp / N>;
+    using C = typename Conversion<typename conversion_root::ratio, conversion::exp / N>::type;
     using D = typename dimension_root::ratio;
 
-    using K = Kind<D, kinds::Simple>;
+    using K = typename Kind<D, kinds::Untagged>::type;
 
     if constexpr (N == 1)
     {
-        return Quantity<Unit<C, K>>(q.count_internal());
+        return Quantity<typename Unit<C, K>::type>(q.count_internal());
     }
     else if constexpr (N == 2)
     {
-        return Quantity<Unit<C, K>>(std::sqrt(q.count_internal()));
+        return Quantity<typename Unit<C, K>::type>(std::sqrt(q.count_internal()));
     }
     else if constexpr (N == 3)
     {
-        return Quantity<Unit<C, K>>(std::cbrt(q.count_internal()));
+        return Quantity<typename Unit<C, K>::type>(std::cbrt(q.count_internal()));
     }
     else
     {
-        return Quantity<Unit<C, K>>(std::pow(q.count_internal(), 1.0 / static_cast<double>(N)));
+        return Quantity<typename Unit<C, K>::type>(std::pow(q.count_internal(), 1.0 / static_cast<double>(N)));
     }
 }
 

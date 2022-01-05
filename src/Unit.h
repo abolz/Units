@@ -63,7 +63,7 @@ inline constexpr bool IsKind<Kind<D, Tag>> = true;
 
 namespace kinds
 {
-    struct Simple {};
+    struct Untagged {};
 
     template <typename ...Factors>
     struct Product {};
@@ -77,8 +77,8 @@ namespace kinds
     };
 
     // Dimensionless [1]
-//  using One           = Kind<Dimension<1>, Simple>;
-    using Dimensionless = Kind<Dimension<1>, Simple>;
+//  using One           = Kind<Dimension<1>, Untagged>;
+    using Dimensionless = Kind<Dimension<1>, Untagged>;
 }
 
 namespace kinds::impl
@@ -176,7 +176,7 @@ namespace kinds::impl
 
                 constexpr int64_t e1 = H1::exponent;
                 constexpr int64_t e2 = H2::exponent;
-                constexpr int64_t e = (e1 + e2 == 0) ? 0 : (std::is_same_v<Simple, T1> ? 1 : (e1 + e2));
+                constexpr int64_t e = (e1 + e2 == 0) ? 0 : (std::is_same_v<Untagged, T1> ? 1 : (e1 + e2));
 
                 if constexpr (e != 0)
                 {
@@ -222,7 +222,7 @@ namespace kinds::impl
     struct Unwrap<Pow<T, 1>> { using type = T; };
 
     template <>
-    struct Unwrap<Product<>> { using type = Simple; };
+    struct Unwrap<Product<>> { using type = Untagged; };
 
     template <typename T>
     struct Unwrap<Product<Pow<T, 1>>> { using type = T; };
@@ -253,11 +253,11 @@ namespace kinds::impl
 #if 1
     // (reduce compile-time???)
     template <>
-    struct MulTags<Simple, Simple> { using type = Simple; };
+    struct MulTags<Untagged, Untagged> { using type = Untagged; };
 
    // (reduce compile-time???)
     template <>
-    struct DivTags<Simple, Simple> { using type = Simple; };
+    struct DivTags<Untagged, Untagged> { using type = Untagged; };
 #endif
 
 } // namespace kinds::impl
@@ -471,7 +471,7 @@ public:
     using type        = Quantity<unit>;
 
     using simplified_type
-        = typename Quantity<Unit<conversion, Kind<dimension, kinds::Simple>>>::type;
+        = typename Quantity<Unit<conversion, Kind<dimension, kinds::Untagged>>>::type;
 
 private:
     scalar_type _count = 0;
@@ -494,7 +494,7 @@ private:
                 // the tags must be the same,
                 std::is_same<typename KindTo::tag, typename KindFrom::tag>,
                 // or the right hand side must be a "simple" type (untagged).
-                std::is_same<typename KindFrom::tag, kinds::Simple>
+                std::is_same<typename KindFrom::tag, kinds::Untagged>
               >
             >,
           T>;
@@ -1056,34 +1056,34 @@ namespace kinds
     // 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, ...
     //                         ~~  ^^  ^^  ^^  ^^
 
-    using Length            = Kind< Dimension<   2,    1>, Simple >;
-    using Mass              = Kind< Dimension<   3,    1>, Simple >;
-    using Time              = Kind< Dimension<   5,    1>, Simple >;
-    using ElectricCurrent   = Kind< Dimension<   7,    1>, Simple >;
-    using Temperature       = Kind< Dimension<  11,    1>, Simple >;
-    using AmountOfSubstance = Kind< Dimension<  13,    1>, Simple >;
-    using LuminousIntensity = Kind< Dimension<  17,    1>, Simple >;
-    using PlaneAngle        = Kind< Dimension<  19,    1>, Simple >;
-    using Bit               = Kind< Dimension<  23,    1>, Simple >;
-    using Entity            = Kind< Dimension<  29,    1>, Simple >;
-    using Event             = Kind< Dimension<  31,    1>, Simple >;
-    using Cycle             = Kind< Dimension<  37,    1>, Simple >;
+    using Length            = Kind< Dimension<   2,    1>, Untagged >;
+    using Mass              = Kind< Dimension<   3,    1>, Untagged >;
+    using Time              = Kind< Dimension<   5,    1>, Untagged >;
+    using ElectricCurrent   = Kind< Dimension<   7,    1>, Untagged >;
+    using Temperature       = Kind< Dimension<  11,    1>, Untagged >;
+    using AmountOfSubstance = Kind< Dimension<  13,    1>, Untagged >;
+    using LuminousIntensity = Kind< Dimension<  17,    1>, Untagged >;
+    using PlaneAngle        = Kind< Dimension<  19,    1>, Untagged >;
+    using Bit               = Kind< Dimension<  23,    1>, Untagged >;
+    using Entity            = Kind< Dimension<  29,    1>, Untagged >;
+    using Event             = Kind< Dimension<  31,    1>, Untagged >;
+    using Cycle             = Kind< Dimension<  37,    1>, Untagged >;
 
-    using Area              = Kind< Dimension<   4,    1>, Simple >;
-    using Volume            = Kind< Dimension<   6,    1>, Simple >;
-    using SolidAngle        = Kind< Dimension< 361,    1>, Simple >;
-    using Density           = Kind< Dimension<   3,    8>, Simple >;
-    using Frequency         = Kind< Dimension<   1,    5>, Simple >;
-    using Velocity          = Kind< Dimension<   2,    5>, Simple >;
-    using Acceleration      = Kind< Dimension<   2,   25>, Simple >;
-    using Force             = Kind< Dimension<   6,   25>, Simple >;
-    using Pressure          = Kind< Dimension<   6,  100>, Simple >;
-    using Energy            = Kind< Dimension<  12,   25>, Simple >;
-    using Power             = Kind< Dimension<  12,  125>, Simple >;
-    using ElectricCharge    = Kind< Dimension<  35,    1>, Simple >;
-    using Luminance         = Kind< Dimension<  17,    4>, Simple >;
-    using LuminousFlux      = Kind< Dimension<6137,    1>, Simple >;
-    using Illuminance       = Kind< Dimension<6137,    4>, Simple >;
+    using Area              = Kind< Dimension<   4,    1>, Untagged >;
+    using Volume            = Kind< Dimension<   6,    1>, Untagged >;
+    using SolidAngle        = Kind< Dimension< 361,    1>, Untagged >;
+    using Density           = Kind< Dimension<   3,    8>, Untagged >;
+    using Frequency         = Kind< Dimension<   1,    5>, Untagged >;
+    using Velocity          = Kind< Dimension<   2,    5>, Untagged >;
+    using Acceleration      = Kind< Dimension<   2,   25>, Untagged >;
+    using Force             = Kind< Dimension<   6,   25>, Untagged >;
+    using Pressure          = Kind< Dimension<   6,  100>, Untagged >;
+    using Energy            = Kind< Dimension<  12,   25>, Untagged >;
+    using Power             = Kind< Dimension<  12,  125>, Untagged >;
+    using ElectricCharge    = Kind< Dimension<  35,    1>, Untagged >;
+    using Luminance         = Kind< Dimension<  17,    4>, Untagged >;
+    using LuminousFlux      = Kind< Dimension<6137,    1>, Untagged >;
+    using Illuminance       = Kind< Dimension<6137,    4>, Untagged >;
 }
 
 namespace units
