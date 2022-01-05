@@ -453,6 +453,13 @@ static void test3()
 
         constexpr auto zzz = 1_cm + convert_to<Centimeters>(1_in + 1_ft);
     }
+    {
+        constexpr auto xxx = 1_kg * 1_m / (1_s * 1_s);
+        constexpr auto yyy = 1_m / 1_s;
+        constexpr auto zzz = xxx / (1_m * 1_m);
+        constexpr auto aaa = xxx * 1_m;
+        constexpr auto bbb = aaa / 1_s;
+    }
 }
 
 #if 0
