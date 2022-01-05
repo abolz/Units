@@ -410,8 +410,8 @@ struct Unit final
 {
     static_assert(IsConversion<C>,
         "C must be a Conversion");
-    //static_assert(IsKind<K>,
-    //    "K must be a Kind");
+    static_assert(IsKind<K>,
+        "K must be a Kind");
 
     using conversion = typename C::type;
     using kind       = typename K::type;
