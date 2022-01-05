@@ -344,12 +344,12 @@ struct Conversion final
 
         if constexpr (num >= den)
         {
-            constexpr double scale = impl::F64FromRatio(num, den);
+            constexpr double scale = impl::F64FromPositiveRatio(num, den);
             return x * scale;
         }
         else
         {
-            constexpr double scale = impl::F64FromRatio(den, num);
+            constexpr double scale = impl::F64FromPositiveRatio(den, num);
             return x / scale;
         }
     }
@@ -853,25 +853,13 @@ namespace impl
     {
         if constexpr (IsRatio<T>)
         {
-            if constexpr (0 > T::num)
-            {
-                constexpr double value = impl::F64FromRatio(-T::num, T::den);
-                return -value;
-            }
-            else if constexpr (T::num > 0)
-            {
-                constexpr double value = impl::F64FromRatio( T::num, T::den);
-                return value;
-            }
-            else
-            {
-                return 0;
-            }
+            constexpr double value = impl::F64FromRatio(T::num, T::den);
+            return value;
         }
         else
         {
-            T gen;
-            return static_cast<double>(gen());
+            constexpr double value = static_cast<double>(T{}());
+            return value;
         }
     }
 
@@ -917,9 +905,9 @@ namespace impl
             // XXX:
             // Use same expression as above?!
 
-            using R = std::ratio_divide<typename C1::ratio, typename C2::ratio>;
+            using CR = std::ratio_divide<typename C1::ratio, typename C2::ratio>;
 
-            constexpr double a  = AsDouble<R>();
+            constexpr double a  = AsDouble<CR>();
             constexpr double z1 = AsDouble<Z1>();
             constexpr double z2 = AsDouble<Z2>();
 

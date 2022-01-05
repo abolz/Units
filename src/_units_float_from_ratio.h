@@ -65,7 +65,9 @@ constexpr DivModResult DivMod(uint128_t num, uint128_t den) noexcept
 //==================================================================================================
 
 // Converts num/den to the closest IEEE floating-point number x = f * 2^e.
-constexpr double F64FromRatio(int64_t num_, int64_t den_) noexcept
+// PRE: num > 0
+// PRE: den > 0
+constexpr double F64FromPositiveRatio(int64_t num_, int64_t den_) noexcept
 {
     assert(num_ >= 1);
     assert(den_ >= 1);
@@ -144,6 +146,22 @@ constexpr double F64FromRatio(int64_t num_, int64_t den_) noexcept
     return static_cast<double>(num_) / static_cast<double>(den_);
 
 #endif
+}
+
+// Converts num/den to the closest IEEE floating-point number x = f * 2^e.
+// PRE: den > 0
+constexpr double F64FromRatio(int64_t num, int64_t den) noexcept
+{
+    assert(num != INT64_MIN);
+    assert(den >= 1);
+
+    if (num == 0)
+        return 0;
+
+    if (num > 0)
+        return  F64FromPositiveRatio( num, den);
+    else
+        return -F64FromPositiveRatio(-num, den);
 }
 
 } // namespace uom::impl
