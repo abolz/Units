@@ -21,19 +21,11 @@ namespace uom {
 //
 //==================================================================================================
 
-template <typename R>
-inline constexpr bool IsReducedRatio = std::is_same_v<R, typename R::type>;
-
 template <typename T>
 inline constexpr bool IsRatio = false;
 
-#if 1
-template <int64_t Num, int64_t Den>
-inline constexpr bool IsRatio<std::ratio<Num, Den>> = IsReducedRatio<std::ratio<Num, Den>>;
-#else
 template <int64_t Num, int64_t Den>
 inline constexpr bool IsRatio<std::ratio<Num, Den>> = true;
-#endif
 
 //==================================================================================================
 // Dimension
