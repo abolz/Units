@@ -871,6 +871,10 @@ namespace impl
     template <Direction Dir, typename C1, typename Z1, typename C2, typename Z2>
     constexpr double Convert(double x) noexcept
     {
+        static_assert(IsConversion<C1>,
+            "C1 must be a conversion");
+        static_assert(IsConversion<C2>,
+            "C2 must be a conversion");
         static_assert(C1::exp == C2::exp,
             "sorry, not supported (yet)");
 
