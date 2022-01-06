@@ -192,7 +192,9 @@ static void test()
 
 template <typename R, typename A>
 using ScaledAbsolute
-    = Absolute<ScaledQuantity<Conversion<R>, typename A::relative_type>, std::ratio_divide<typename A::zero, R>>;
+    = typename Absolute<
+        typename ScaledQuantity<Conversion<R>, typename A::relative_type>::type,
+        typename std::ratio_divide<typename A::zero, R>::type>::type;
 
 static void test2()
 {

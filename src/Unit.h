@@ -851,16 +851,11 @@ namespace impl
     template <typename T>
     constexpr double AsDouble() noexcept
     {
-        if constexpr (IsRatio<T>)
-        {
-            constexpr double value = impl::F64FromRatio(T::num, T::den);
-            return value;
-        }
-        else
-        {
-            constexpr double value = static_cast<double>(T{}());
-            return value;
-        }
+        static_assert(IsRatio<T>,
+            "T must be a std::ratio");
+
+        constexpr double value = impl::F64FromRatio(T::num, T::den);
+        return value;
     }
 
     enum class Direction {

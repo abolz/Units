@@ -5,29 +5,32 @@
 using namespace uom;
 using namespace uom::literals;
 
-struct LocalHeight1Zero {
-    static constexpr double value = 200.0;
-    [[nodiscard]] constexpr double operator()() const noexcept {
-        return value;
-    }
-};
-
-#if 0
-struct LocalHeight2Zero {
-    static constexpr double value = 100.0;
-    [[nodiscard]] constexpr double operator()() const noexcept {
-        return value;
-    }
-};
-#else
-using LocalHeight2Zero = std::integral_constant<int32_t, 100>;
-#endif
+//struct LocalHeight1Zero {
+//    static constexpr double value = 200.0;
+//    //constexpr explicit operator double() const noexcept {
+//    //    return value;
+//    //}
+//    [[nodiscard]] constexpr double operator()() const noexcept {
+//        return value;
+//    }
+//};
+//
+//#if 0
+//struct LocalHeight2Zero {
+//    static constexpr double value = 100.0;
+//    [[nodiscard]] constexpr double operator()() const noexcept {
+//        return value;
+//    }
+//};
+//#else
+//using LocalHeight2Zero = std::integral_constant<int32_t, 100>;
+//#endif
 
 static void test1()
 {
     using GlobalHeight = Absolute<Meters>;
-    using LocalHeight1 = Absolute<Meters, LocalHeight1Zero>;
-    using LocalHeight2 = Absolute<Meters, LocalHeight2Zero>;
+    using LocalHeight1 = Absolute<Meters, Ratio<200>>;
+    using LocalHeight2 = Absolute<Meters, Ratio<100>>;
 
     constexpr LocalHeight1 h1(123.0);
     static_assert(h1.count_internal() == 123.0);
