@@ -1152,7 +1152,7 @@ using SquareMillimeters = decltype(Millimeters{} * Millimeters{});
 using SquareCentimeters = decltype(Centimeters{} * Centimeters{});
 using SquareDecimeters  = decltype(Decimeters{} * Decimeters{});
 using SquareMeters      = decltype(Meters{} * Meters{});
-using SquareKilometers  = Quantity<typename decltype(Kilometers{} * Kilometers{})::unit>;
+using SquareKilometers  = decltype(Kilometers{} * Kilometers{});
 
 //------------------------------------------------------------------------------
 // Volume
