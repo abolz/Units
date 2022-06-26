@@ -565,8 +565,7 @@ namespace impl
         }
         else
         {
-            using T = Scale;
-            return T( fn( convert_to<T>(x).count_internal() ) );
+            return Scale( fn( convert_to<Scale>(x).count_internal() ) );
         }
     }
 

@@ -255,7 +255,7 @@ namespace kinds::impl
     template <>
     struct MulTags<Untagged, Untagged> { using type = Untagged; };
 
-   // (reduce compile-time???)
+    // (reduce compile-time???)
     template <>
     struct DivTags<Untagged, Untagged> { using type = Untagged; };
 #endif
@@ -314,10 +314,6 @@ struct Conversion final
         "invalid argument - denominator must be positive");
     static_assert(den <= Max,
         "invalid argument - denominator too large");
-    static_assert(exp >= -4,
-        "argument out of range (sorry, not implemented...)");
-    static_assert(exp <= 4,
-        "argument out of range (sorry, not implemented...)");
 
     // Returns: (x * num / den) * pi^exp
     [[nodiscard]] constexpr double operator()(double x) const noexcept
@@ -357,6 +353,9 @@ struct Conversion final
     // Returns (x * pi^exp)
     [[nodiscard]] static constexpr double applyPi(double x) noexcept
     {
+        static_assert(-4 <= exp && exp <= 4,
+            "argument out of range (sorry, not implemented...)");
+
         constexpr double Powers[] = {
             1.0,                // pi^0
             3.141592653589793,  // pi^1 ==  884279719003555 / 2^48 (IEEE double)
@@ -1064,11 +1063,11 @@ namespace kinds
     using Temperature       = Kind< Dimension<  11,    1>, Untagged >;
     using AmountOfSubstance = Kind< Dimension<  13,    1>, Untagged >;
     using LuminousIntensity = Kind< Dimension<  17,    1>, Untagged >;
-    using PlaneAngle        = Kind< Dimension<  19,    1>, Untagged >;
-    using Bit               = Kind< Dimension<  23,    1>, Untagged >;
-    using Entity            = Kind< Dimension<  29,    1>, Untagged >;
-    using Event             = Kind< Dimension<  31,    1>, Untagged >;
-    using Cycle             = Kind< Dimension<  37,    1>, Untagged >;
+    using PlaneAngle        = Kind< Dimension<  19,    1>, Untagged >; // ~~
+    using Bit               = Kind< Dimension<  23,    1>, Untagged >; // ^^
+    using Entity            = Kind< Dimension<  29,    1>, Untagged >; // ^^
+    using Event             = Kind< Dimension<  31,    1>, Untagged >; // ^^
+    using Cycle             = Kind< Dimension<  37,    1>, Untagged >; // ^^
 
     using Area              = Kind< Dimension<   4,    1>, Untagged >;
     using Volume            = Kind< Dimension<   6,    1>, Untagged >;
@@ -1113,7 +1112,7 @@ namespace tags
 }
 
 //------------------------------------------------------------------------------
-// One
+// Dimensionless
 
 using Dimensionless     = Quantity<units::Dimensionless>;
 using Percent           = ScaledQuantity<Conversion<Ratio<1, 100>>, Dimensionless>;
