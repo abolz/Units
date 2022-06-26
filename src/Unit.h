@@ -9,8 +9,6 @@
 #include <ratio>
 #include <type_traits>
 
-#include "_units_float_from_ratio.h"
-
 #ifndef UNITS_ASSERT
 #define UNITS_ASSERT(X) assert(X)
 #endif
@@ -340,12 +338,12 @@ struct Conversion final
 
         if constexpr (num >= den)
         {
-            constexpr double scale = impl::F64FromPositiveRatio(num, den);
+            constexpr double scale = static_cast<double>(num) / static_cast<double>(den);
             return x * scale;
         }
         else
         {
-            constexpr double scale = impl::F64FromPositiveRatio(den, num);
+            constexpr double scale = static_cast<double>(den) / static_cast<double>(num);
             return x / scale;
         }
     }
@@ -853,7 +851,7 @@ namespace impl
         static_assert(IsRatio<T>,
             "T must be a std::ratio");
 
-        constexpr double value = impl::F64FromRatio(T::num, T::den);
+        constexpr double value = static_cast<double>(T::num) / static_cast<double>(T::den);
         return value;
     }
 
