@@ -17,7 +17,7 @@ using SphericalDistance
     = decltype(1_km * 1_rad);
 
 struct Position {
-    Latitude lat;
+    Latitude  lat;
     Longitude lon;
 };
 
@@ -36,10 +36,10 @@ static SphericalDistance spherical_distance_cosine(Position pos1, Position pos2)
 
 static SphericalDistance spherical_distance_haversine(Position pos1, Position pos2)
 {
-    const Radians lat1 = convert_to<Radians>(pos1.lat);
-    const Radians lat2 = convert_to<Radians>(pos2.lat);
-    const Radians lon1 = convert_to<Radians>(pos1.lon);
-    const Radians lon2 = convert_to<Radians>(pos2.lon);
+    const Radians lat1 = pos1.lat.convert_to<Radians>();
+    const Radians lat2 = pos2.lat.convert_to<Radians>();
+    const Radians lon1 = pos1.lon.convert_to<Radians>();
+    const Radians lon2 = pos2.lon.convert_to<Radians>();
 
     // Haversine formula
     const auto sin_lat = sin((lat2 - lat1) / 2);
@@ -51,10 +51,10 @@ static SphericalDistance spherical_distance_haversine(Position pos1, Position po
 
 TEST_CASE("Spherical distance - 1")
 {
-    const Latitude  lat1 = Degrees( 50.94130).convert_to<Latitude>();
-    const Longitude lon1 = Degrees(  6.95828).convert_to<Longitude>();
-    const Latitude  lat2 = Degrees( 52.51664).convert_to<Latitude>();
-    const Longitude lon2 = Degrees( 13.37760).convert_to<Longitude>();
+    const Latitude  lat1(Degrees( 50.94130));
+    const Longitude lon1(Degrees(  6.95828));
+    const Latitude  lat2(Degrees( 52.51664));
+    const Longitude lon2(Degrees( 13.37760));
 
     const Position pos1{lat1, lon1}; // Koelner Dom
     const Position pos2{lat2, lon2}; // Brandenbuger Tor

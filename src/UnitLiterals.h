@@ -10,6 +10,20 @@
 namespace uom::literals {
 
 //--------------------------------------------------------------------------------------------------
+// Scalar
+
+#if 0
+[[nodiscard]] constexpr auto operator""_scalar(long double x) noexcept
+{
+    return static_cast<Scalar>(x);
+}
+[[nodiscard]] constexpr auto operator""_scalar(unsigned long long x) noexcept
+{
+    return static_cast<Scalar>(x);
+}
+#endif
+
+//--------------------------------------------------------------------------------------------------
 // One
 
 [[nodiscard]] constexpr auto operator""_q(long double x) noexcept

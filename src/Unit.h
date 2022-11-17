@@ -6,6 +6,7 @@
 #pragma once
 
 #include <cassert>
+#include <limits>
 #include <ratio>
 #include <type_traits>
 
@@ -13,7 +14,31 @@
 #define UNITS_ASSERT(X) assert(X)
 #endif
 
+// Template meta-programming or type traits not working properly with Quantity's...?!
+// If non-zero, prefer static_assert over enable_if.
+#define UNITS_TMP_WHATEVER() 0
+
+// Enables operators for dimensionless quantities and scalars.
+#define UNITS_DIMENSIONLESS_SCALAR_INTEROP() 1
+
 namespace uom {
+
+// Internal representation.
+// This is NOT an option (yet).
+#if 0 // defined(UNITS_SCALAR_F32)
+using Scalar = float;
+#else
+using Scalar = double;
+#endif
+
+//==================================================================================================
+//
+//==================================================================================================
+
+namespace impl {
+    template <typename ...Ts>
+    inline constexpr bool AlwaysFalse = false;
+}
 
 //==================================================================================================
 //
@@ -67,15 +92,14 @@ namespace kinds
     struct Product {};
 
     template <typename T, int64_t Exponent>
-    struct Pow
+    struct Factor
     {
-        using type = Pow;
+        using type = Factor;
         using tag  = T;
         static constexpr int64_t exponent = Exponent;
     };
 
     // Dimensionless [1]
-//  using One           = Kind<Dimension<1>, Untagged>;
     using Dimensionless = Kind<Dimension<1>, Untagged>;
 }
 
@@ -178,7 +202,7 @@ namespace kinds::impl
 
                 if constexpr (e != 0)
                 {
-                    using F = Pow<T1, e>;
+                    using F = Factor<T1, e>;
                     return impl::Concat(Product<F>{}, impl::Merge(impl::Tail(lhs), impl::Tail(rhs)));
                 }
                 else
@@ -190,9 +214,9 @@ namespace kinds::impl
     }
 
     template <typename Tag, int64_t Exponent>
-    constexpr auto Rcp(Pow<Tag, Exponent>) noexcept
+    constexpr auto Rcp(Factor<Tag, Exponent>) noexcept
     {
-        return Pow<Tag, -Exponent>{};
+        return Factor<Tag, -Exponent>{};
     }
 
     template <typename ...Fs>
@@ -202,13 +226,13 @@ namespace kinds::impl
     }
 
     template <typename T>
-    struct WrapFactor { using type = Pow<T, 1>; };
+    struct WrapFactor { using type = Factor<T, 1>; };
 
     template <typename T, int64_t Exponent>
-    struct WrapFactor<Pow<T, Exponent>> { using type = Pow<T, Exponent>; };
+    struct WrapFactor<Factor<T, Exponent>> { using type = Factor<T, Exponent>; };
 
     template <typename T>
-    struct Wrap { using type = Product<Pow<T, 1>>; };
+    struct Wrap { using type = Product<Factor<T, 1>>; };
 
     template <typename ...Fs>
     struct Wrap<Product<Fs...>> { using type = Product<typename WrapFactor<Fs>::type...>; };
@@ -217,13 +241,13 @@ namespace kinds::impl
     struct Unwrap { using type = T; };
 
     template <typename T>
-    struct Unwrap<Pow<T, 1>> { using type = T; };
+    struct Unwrap<Factor<T, 1>> { using type = T; };
 
     template <>
     struct Unwrap<Product<>> { using type = Untagged; };
 
     template <typename T>
-    struct Unwrap<Product<Pow<T, 1>>> { using type = T; };
+    struct Unwrap<Product<Factor<T, 1>>> { using type = T; };
 
     template <typename ...Fs>
     struct Unwrap<Product<Fs...>> { using type = Product<typename Unwrap<Fs>::type...>; };
@@ -275,6 +299,20 @@ using DivKinds = typename Kind< typename DivDimensions<typename K1::dimension, t
                                 DivTags<typename K1::tag, typename K2::tag> >::type;
 
 //==================================================================================================
+//
+//==================================================================================================
+
+constexpr Scalar ScalarFromRatio(int64_t num, int64_t den)
+{
+    // UNITS_ASSERT(num != INT64_MIN);
+    // UNITS_ASSERT(den >= 1);
+
+    UNITS_ASSERT(den != 0);
+
+    return static_cast<Scalar>(static_cast<double>(num) / static_cast<double>(den));
+}
+
+//==================================================================================================
 // Conversion
 //==================================================================================================
 
@@ -291,15 +329,17 @@ struct Conversion final
     using ratio = typename R::type;
     using type = Conversion<ratio, PiExp>;
 
+    // Using 64-bit integers, the conversion factor has a range of approx.
+    //  [1.08 10^-19, 9.22 10^18]
+
     static constexpr int64_t num = ratio::num;
     static constexpr int64_t den = ratio::den;
     static constexpr int64_t exp = PiExp;
 
-    // All integers <= 2^53 are exactly representable as 'double'
-    static constexpr int64_t Two53 = 9007199254740992;
-
 #if 0
-    static constexpr int64_t Max = Two53;
+    // All integers <= 2^24 are exactly representable as 'float'.
+    // All integers <= 2^53 are exactly representable as 'double'.
+    static constexpr int64_t Max = int64_t{1} << std::numeric_limits<double>::digits;
 #else
     static constexpr int64_t Max = INT64_MAX;
 #endif
@@ -314,42 +354,38 @@ struct Conversion final
         "invalid argument - denominator too large");
 
     // Returns: (x * num / den) * pi^exp
-    [[nodiscard]] constexpr double operator()(double x) const noexcept
+    [[nodiscard]] constexpr Scalar operator()(Scalar x) const noexcept
     {
         return applyPi(applyRatio(x));
     }
 
     // Returns (x * num / den)
-    [[nodiscard]] static constexpr double applyRatio(double x) noexcept
+    [[nodiscard]] static constexpr Scalar applyRatio(Scalar x) noexcept
     {
-//      static_assert(__builtin_is_constant_evaluated());
-        static_assert(num >= 1);
+        static_assert(num >= 1); // conversion factors are always positive
         static_assert(den >= 1);
         static_assert(den == 1 || num % den != 0);
 
         if constexpr (num == 1 && den == 1)
-            return x;
-
-        if constexpr (num == 1 && den <= Two53)
-            return x / den;
-
-        if constexpr (den == 1 && num <= Two53)
-            return x * num;
-
-        if constexpr (num >= den)
         {
-            constexpr double scale = static_cast<double>(num) / static_cast<double>(den);
+            return x;
+        }
+        else if constexpr (num > den)
+        {
+            constexpr Scalar scale = ScalarFromRatio(num, den);
             return x * scale;
         }
         else
         {
-            constexpr double scale = static_cast<double>(den) / static_cast<double>(num);
+            static_assert(num != den);
+
+            constexpr Scalar scale = ScalarFromRatio(den, num);
             return x / scale;
         }
     }
 
     // Returns (x * pi^exp)
-    [[nodiscard]] static constexpr double applyPi(double x) noexcept
+    [[nodiscard]] static constexpr Scalar applyPi(Scalar x) noexcept
     {
         static_assert(-4 <= exp && exp <= 4,
             "argument out of range (sorry, not implemented...)");
@@ -365,9 +401,9 @@ struct Conversion final
         if constexpr (exp == 0)
             return x;
         else if constexpr (exp > 0)
-            return x * Powers[ exp];
+            return x * static_cast<Scalar>(Powers[ exp]);
         else
-            return x / Powers[-exp];
+            return x / static_cast<Scalar>(Powers[-exp]);
     }
 };
 
@@ -378,20 +414,17 @@ template <typename R, int64_t E>
 inline constexpr bool IsConversion<Conversion<R, E>> = true; // IsRatio<R>;
 
 template <typename C1, typename C2 /* = C1 */>
-using MulConversions = typename Conversion<typename std::ratio_multiply<typename C1::ratio, typename C2::ratio>::type, C1::exp + C2::exp>::type;
+using MulConversions
+    = typename Conversion<typename std::ratio_multiply<typename C1::ratio, typename C2::ratio>::type, C1::exp + C2::exp>::type;
 
 template <typename C1, typename C2>
-using DivConversions = typename Conversion<typename std::ratio_divide<typename C1::ratio, typename C2::ratio>::type, C1::exp - C2::exp>::type;
+using DivConversions
+    = typename Conversion<typename std::ratio_divide<typename C1::ratio, typename C2::ratio>::type, C1::exp - C2::exp>::type;
 
 namespace impl
 {
-#if 0
-    template <typename C1>
-    using IsIntegralConversion = std::bool_constant<(C1::den == 1 && C1::exp >= 0)>;
-#else
     template <typename C1>
     using IsIntegralConversion = std::bool_constant<(C1::den == 1 && C1::exp == 0)>;
-#endif
 
     template <typename C1, typename C2> // (C1 | C2)?
     using ConversionDivides = IsIntegralConversion<DivConversions<C2, C1>>;
@@ -433,8 +466,7 @@ using DivUnits = typename Unit< typename DivConversions<typename U1::conversion,
 
 namespace units
 {
-//  using One               = Unit<Conversion<Ratio<1>>, kinds::One>;
-    using Dimensionless     = Unit<Conversion<Ratio<1>>, kinds::Dimensionless>;
+    using Dimensionless = Unit<Conversion<Ratio<1>>, kinds::Dimensionless>;
 }
 
 template <typename U>
@@ -458,7 +490,7 @@ class Quantity final
         "U must be a Unit");
 
 public:
-    using scalar_type = double;
+    using scalar_type = Scalar;
     using unit        = typename U::type;
     using conversion  = typename unit::conversion;
     using kind        = typename unit::kind;
@@ -467,55 +499,101 @@ public:
     using zero        = Ratio<0>;
     using type        = Quantity<unit>;
 
-    using simplified_type
+    using untagged_type
         = typename Quantity<Unit<conversion, Kind<dimension, kinds::Untagged>>>::type;
+
+    // static constexpr Unit unit = {};
 
 private:
     scalar_type _count = 0;
 
 private:
-    // asymmetric
-    // PRE: To::dimension == From::dimension
-    template <typename ConvTo, typename ConvFrom, typename T = void>
-    using EnableImplicitConversion = std::enable_if_t<impl::ConversionDivides<ConvTo, ConvFrom>::value, T>;
+    static constexpr bool is_tagged = !std::is_same_v<tag, kinds::Untagged>;
 
     // asymmetric
+    template <typename UnitTo, typename UnitFrom>
+    using ImplicitlyConvertible
+        = std::conjunction<
+            // The dimensions must match!
+            std::is_same<typename UnitTo::dimension, typename UnitFrom::dimension>,
+            // The conversion factor must be an integer! 
+            impl::ConversionDivides<typename UnitTo::conversion, typename UnitFrom::conversion>,
+            // And either
+            std::disjunction<
+              // the tags must be the same,
+              std::is_same<typename UnitTo::tag, typename UnitFrom::tag>,
+              // or the right hand side must be a "simple" type (untagged).
+              std::is_same<kinds::Untagged, typename UnitFrom::tag>
+            >
+          >;
+
+    // asymmetric
+    template <typename UnitTo, typename UnitFrom>
+    using ExplicitlyConvertible
+        = std::conjunction<
+            // The dimensions must match!
+            std::is_same<typename UnitTo::dimension, typename UnitFrom::dimension>
+          >;
+
+    template <typename UnitType, typename T = void>
+    using EnableIfDimensionless = std::enable_if_t<IsDimensionlessUnit<UnitType>, T>;
+
+    template <typename ConvTo, typename ConvFrom, typename T = void>
+    using EnableImplicitConversion = std::enable_if_t<ImplicitlyConvertible<ConvTo, ConvFrom>::value, T>;
+
     template <typename KindTo, typename KindFrom, typename T = void>
-    using EnableExplicitConversion
-        = std::enable_if_t<
-            std::conjunction_v<
-              // The dimensions must match!
-              std::is_same<typename KindTo::dimension, typename KindFrom::dimension>,
-              // And either
-              std::disjunction<
-                // the tags must be the same,
-                std::is_same<typename KindTo::tag, typename KindFrom::tag>,
-                // or the right hand side must be a "simple" type (untagged).
-                std::is_same<typename KindFrom::tag, kinds::Untagged>
-              >
-            >,
-          T>;
+    using EnableExplicitConversion = std::enable_if_t<std::conjunction_v< std::negation<ImplicitlyConvertible<KindTo, KindFrom> >, ExplicitlyConvertible<KindTo, KindFrom>>, T>;
+
+#if UNITS_TMP_WHATEVER()
+    template <typename KindTo, typename KindFrom>
+    using IsTaggedConversion
+        = std::conjunction<
+            std::negation<std::is_same<typename KindTo::tag, kinds::Untagged>>,
+            std::negation<ExplicitlyConvertible<KindTo, KindFrom>>
+          >;
+
+    template <typename KindTo, typename KindFrom, typename T = void>
+    using EnableTaggedConversionFallback = std::enable_if_t<IsTaggedConversion<KindTo, KindFrom>::value, T>;
+#endif
 
 public:
     constexpr Quantity() noexcept = default;
     constexpr Quantity(const Quantity&) noexcept = default;
     constexpr Quantity& operator=(const Quantity&) noexcept = default;
 
+    // template <typename = std::enable_if_t<std::is_same_v<tag, kinds::Untagged>>>
     constexpr explicit Quantity(scalar_type c) noexcept
         : _count(c)
     {
     }
 
-    template <typename C2, EnableImplicitConversion<conversion, C2, int> = 0>
-    constexpr Quantity(Quantity<Unit<C2, kind>> q) noexcept
-        : _count(DivConversions<C2, conversion>{}(q.count_internal()))
+    template <typename U2, EnableImplicitConversion<unit, U2, int> = 0>
+    constexpr Quantity(Quantity<U2> q) noexcept
+        : _count(DivConversions<typename U2::conversion, conversion>{}(q.count_internal()))
     {
     }
 
-    template <typename C2, typename K2, EnableExplicitConversion<kind, K2, int> = 0>
-    constexpr explicit Quantity(Quantity<Unit<C2, K2>> q) noexcept
-        : _count(DivConversions<C2, conversion>{}(q.count_internal()))
+    template <typename U2, EnableExplicitConversion<unit, U2, int> = 0>
+    constexpr explicit Quantity(Quantity<U2> q) noexcept
+        : _count(DivConversions<typename U2::conversion, conversion>{}(q.count_internal()))
     {
+    }
+
+#if UNITS_TMP_WHATEVER()
+    template <typename C2, typename K2, EnableTaggedConversionFallback<kind, K2, int> = 0>
+    constexpr explicit Quantity(Quantity<Unit<C2, K2>> q) noexcept
+    {
+        static_assert(is_tagged,
+            "internal error");
+        static_assert(impl::AlwaysFalse<C2>,
+            "tagged quantities can only be constructed from their underlying quantity types or from scalars");
+    }
+#endif
+
+    template <typename _unit = unit, EnableIfDimensionless<_unit, int> = 0>
+    [[nodiscard]] constexpr explicit operator Scalar() const noexcept
+    {
+        return _count;
     }
 
     [[nodiscard]] constexpr scalar_type count_internal() const noexcept
@@ -523,9 +601,9 @@ public:
         return _count;
     }
 
-    [[nodiscard]] constexpr simplified_type value() const noexcept
+    [[nodiscard]] constexpr untagged_type untagged() const noexcept
     {
-        return simplified_type(_count);
+        return untagged_type(_count);
     }
 
     template <typename T>
@@ -547,40 +625,45 @@ public:
         return Quantity(-q.count_internal());
     }
 
+#if !UNITS_TMP_WHATEVER()
     [[nodiscard]] constexpr friend Quantity operator+(Quantity lhs, Quantity rhs) noexcept
     {
         return Quantity(lhs.count_internal() + rhs.count_internal());
-    }
-
-    template <typename _ = unit, std::enable_if_t<IsDimensionlessUnit<_>, int> = 0>
-    [[nodiscard]] constexpr friend Quantity operator+(Quantity lhs, scalar_type rhs) noexcept
-    {
-        return Quantity(lhs.count_internal() + rhs);
-    }
-
-    template <typename _ = unit, std::enable_if_t<IsDimensionlessUnit<_>, int> = 0>
-    [[nodiscard]] constexpr friend Quantity operator+(scalar_type lhs, Quantity rhs) noexcept
-    {
-        return Quantity(lhs + rhs.count_internal());
     }
 
     [[nodiscard]] constexpr friend Quantity operator-(Quantity lhs, Quantity rhs) noexcept
     {
         return Quantity(lhs.count_internal() - rhs.count_internal());
     }
+#endif
 
-    template <typename _ = unit, std::enable_if_t<IsDimensionlessUnit<_>, int> = 0>
+#if UNITS_DIMENSIONLESS_SCALAR_INTEROP()
+    template <typename _unit = unit, EnableIfDimensionless<_unit, int> = 0>
+    [[nodiscard]] constexpr friend Quantity operator+(Quantity lhs, scalar_type rhs) noexcept
+    {
+        return Quantity(lhs.count_internal() + rhs);
+    }
+
+    template <typename _unit = unit, EnableIfDimensionless<_unit, int> = 0>
     [[nodiscard]] constexpr friend Quantity operator-(Quantity lhs, scalar_type rhs) noexcept
     {
         return Quantity(lhs.count_internal() - rhs);
     }
 
-    template <typename _ = unit, std::enable_if_t<IsDimensionlessUnit<_>, int> = 0>
+    template <typename _unit = unit, EnableIfDimensionless<_unit, int> = 0>
+    [[nodiscard]] constexpr friend Quantity operator+(scalar_type lhs, Quantity rhs) noexcept
+    {
+        return Quantity(lhs + rhs.count_internal());
+    }
+
+    template <typename _unit = unit, EnableIfDimensionless<_unit, int> = 0>
     [[nodiscard]] constexpr friend Quantity operator-(scalar_type lhs, Quantity rhs) noexcept
     {
         return Quantity(lhs - rhs.count_internal());
     }
+#endif
 
+#if !UNITS_TMP_WHATEVER()
     template <typename U2>
     [[nodiscard]] constexpr friend auto operator*(Quantity lhs, Quantity<U2> rhs) noexcept
     {
@@ -594,6 +677,7 @@ public:
         using R = DivUnits<unit, U2>;
         return Quantity<Unit<typename R::conversion, typename R::kind>>(lhs.count_internal() / rhs.count_internal());
     }
+#endif
 
     [[nodiscard]] constexpr friend Quantity operator*(Quantity lhs, scalar_type rhs) noexcept
     {
@@ -612,19 +696,13 @@ public:
 
     [[nodiscard]] constexpr friend auto operator/(scalar_type lhs, Quantity rhs) noexcept
     {
-        return Quantity<units::Dimensionless>(lhs) / rhs;
+        using R = DivUnits<units::Dimensionless, unit>;
+        return Quantity<Unit<typename R::conversion, typename R::kind>>(lhs / rhs.count_internal());
     }
 
     constexpr friend Quantity& operator+=(Quantity& lhs, Quantity rhs) noexcept
     {
         lhs._count += rhs.count_internal();
-        return lhs;
-    }
-
-    template <typename _ = unit, std::enable_if_t<IsDimensionlessUnit<_>, int> = 0>
-    constexpr friend Quantity& operator+=(Quantity& lhs, scalar_type rhs) noexcept
-    {
-        lhs._count += rhs;
         return lhs;
     }
 
@@ -634,12 +712,21 @@ public:
         return lhs;
     }
 
-    template <typename _ = unit, std::enable_if_t<IsDimensionlessUnit<_>, int> = 0>
+#if UNITS_DIMENSIONLESS_SCALAR_INTEROP()
+    template <typename _unit = unit, EnableIfDimensionless<_unit, int> = 0>
+    constexpr friend Quantity& operator+=(Quantity& lhs, scalar_type rhs) noexcept
+    {
+        lhs._count += rhs;
+        return lhs;
+    }
+
+    template <typename _unit = unit, EnableIfDimensionless<_unit, int> = 0>
     constexpr friend Quantity& operator-=(Quantity& lhs, scalar_type rhs) noexcept
     {
         lhs._count -= rhs;
         return lhs;
     }
+#endif
 
     constexpr friend Quantity& operator*=(Quantity& lhs, scalar_type rhs) noexcept
     {
@@ -653,19 +740,21 @@ public:
         return lhs;
     }
 
-    template <typename _ = unit, std::enable_if_t<IsDimensionlessUnit<_>, int> = 0>
+#if 0 // UNITS_DIMENSIONSLESS_SCALAR_INTEROP()
+    template <typename _unit = unit, EnableIfDimensionless<_unit, int> = 0>
     constexpr friend Quantity& operator*=(Quantity& lhs, Quantity rhs) noexcept
     {
         lhs._count *= rhs.count_internal();
         return lhs;
     }
 
-    template <typename _ = unit, std::enable_if_t<IsDimensionlessUnit<_>, int> = 0>
+    template <typename _unit = unit, EnableIfDimensionless<_unit, int> = 0>
     constexpr friend Quantity& operator/=(Quantity& lhs, Quantity rhs) noexcept
     {
         lhs._count /= rhs.count_internal();
         return lhs;
     }
+#endif
 
     [[nodiscard]] constexpr friend bool operator==(Quantity lhs, Quantity rhs) noexcept
     {
@@ -697,6 +786,76 @@ public:
         return lhs.count_internal() >= rhs.count_internal();
     }
 };
+
+#if UNITS_TMP_WHATEVER()
+
+template <typename U1, typename U2>
+[[nodiscard]] constexpr auto operator+(Quantity<U1> lhs, Quantity<U2> rhs) noexcept
+{
+    using Q1 = Quantity<U1>;
+    using Q2 = Quantity<U2>;
+
+    if constexpr (std::is_convertible_v<Q1, Q2>)
+    {
+        return Q2( Q2(lhs).count_internal() + rhs.count_internal() );
+    }
+    else if constexpr (std::is_convertible_v<Q2, Q1>)
+    {
+        return Q1( lhs.count_internal() + Q1(rhs).count_internal() );
+    }
+    else
+    {
+        static_assert( uom::impl::AlwaysFalse<U1, U2>,
+            "invalid operation - "
+            "there is no common type for both the left and the right side of the expression - "
+            "you might need to explicitly convert one or both of the operands" );
+
+        struct InvalidBinaryOperation {};
+        return InvalidBinaryOperation{};
+    }
+}
+
+template <typename U1, typename U2>
+[[nodiscard]] constexpr auto operator-(Quantity<U1> lhs, Quantity<U2> rhs) noexcept
+{
+    using Q1 = Quantity<U1>;
+    using Q2 = Quantity<U2>;
+
+    if constexpr (std::is_convertible_v<Q1, Q2>)
+    {
+        return Q2( Q2(lhs).count_internal() - rhs.count_internal() );
+    }
+    else if constexpr (std::is_convertible_v<Q2, Q1>)
+    {
+        return Q1( lhs.count_internal() - Q1(rhs).count_internal() );
+    }
+    else
+    {
+        static_assert( uom::impl::AlwaysFalse<U1, U2>,
+            "invalid operation - "
+            "there is no common type for both the left and the right side of the expression - "
+            "you might need to explicitly convert one or both of the operands" );
+
+        struct InvalidBinaryOperation {};
+        return InvalidBinaryOperation{};
+    }
+}
+
+template <typename U1, typename U2>
+[[nodiscard]] constexpr auto operator*(Quantity<U1> lhs, Quantity<U2> rhs) noexcept
+{
+    using R = MulUnits<U1, U2>;
+    return Quantity<typename Unit<typename R::conversion, typename R::kind>::type>(lhs.count_internal() * rhs.count_internal());
+}
+
+template <typename U1, typename U2>
+[[nodiscard]] constexpr auto operator/(Quantity<U1> lhs, Quantity<U2> rhs) noexcept
+{
+    using R = DivUnits<U1, U2>;
+    return Quantity<typename Unit<typename R::conversion, typename R::kind>::type>(lhs.count_internal() / rhs.count_internal());
+}
+
+#endif
 
 template <typename T>
 inline constexpr bool IsQuantity = false;
@@ -840,18 +999,18 @@ template <typename Q, typename Z>
 inline constexpr bool IsAbsolute<Absolute<Q, Z>> = true;
 
 //==================================================================================================
-// convert_to / count_as
+// convert_to / count
 //==================================================================================================
 
 namespace impl
 {
     template <typename T>
-    constexpr double AsDouble() noexcept
+    constexpr Scalar AsScalar() noexcept
     {
         static_assert(IsRatio<T>,
             "T must be a std::ratio");
 
-        constexpr double value = static_cast<double>(T::num) / static_cast<double>(T::den);
+        constexpr Scalar value = ScalarFromRatio(T::num, T::den);
         return value;
     }
 
@@ -861,7 +1020,7 @@ namespace impl
     };
 
     template <Direction Dir, typename C1, typename Z1, typename C2, typename Z2>
-    constexpr double Convert(double x) noexcept
+    constexpr Scalar Convert(Scalar x) noexcept
     {
         static_assert(IsConversion<C1>,
             "C1 must be a conversion");
@@ -888,8 +1047,8 @@ namespace impl
             using R1 = std::ratio_divide<typename C1::ratio, typename C2::ratio>;
             using R2 = std::ratio_subtract<std::ratio_multiply<Z1, R1>, Z2>;
 
-            constexpr double a = AsDouble<R1>();
-            constexpr double b = AsDouble<R2>();
+            constexpr Scalar a = AsScalar<R1>();
+            constexpr Scalar b = AsScalar<R2>();
 
             if constexpr (Dir == Direction::forward)
                 return a * x + b;
@@ -903,9 +1062,9 @@ namespace impl
 
             using CR = std::ratio_divide<typename C1::ratio, typename C2::ratio>;
 
-            constexpr double a  = AsDouble<CR>();
-            constexpr double z1 = AsDouble<Z1>();
-            constexpr double z2 = AsDouble<Z2>();
+            constexpr Scalar a  = AsScalar<CR>();
+            constexpr Scalar z1 = AsScalar<Z1>();
+            constexpr Scalar z2 = AsScalar<Z2>();
 
             if constexpr (Dir == Direction::forward)
                 return (x + z1) * a - z2;
@@ -944,7 +1103,7 @@ constexpr Target convert_to(Quantity<SourceUnit> q) noexcept
 }
 
 template <typename T, typename U>
-constexpr double count_as(Quantity<U> q) noexcept
+constexpr Scalar count_as(Quantity<U> q) noexcept
 {
     return uom::convert_to<T>(q).count_internal();
 }
@@ -1008,7 +1167,7 @@ constexpr Target convert_to(Absolute<SourceQuantity, SourceZero> a) noexcept
 }
 
 template <typename T, typename Q, typename Z>
-constexpr double count_as(Absolute<Q, Z> q) noexcept
+constexpr Scalar count_as(Absolute<Q, Z> q) noexcept
 {
     return uom::convert_to<T>(q).count_internal();
 }
@@ -1054,6 +1213,20 @@ namespace kinds
     // 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, ...
     //                         ~~  ^^  ^^  ^^  ^^
 
+#if 0
+    using Length            = Kind< Dimension<   2,    1>, struct _length               >;
+    using Mass              = Kind< Dimension<   3,    1>, struct _mass                 >;
+    using Time              = Kind< Dimension<   5,    1>, struct _time                 >;
+    using ElectricCurrent   = Kind< Dimension<   7,    1>, struct _electric_current     >;
+    using Temperature       = Kind< Dimension<  11,    1>, struct _temperature          >;
+    using AmountOfSubstance = Kind< Dimension<  13,    1>, struct _amount_of_substance  >;
+    using LuminousIntensity = Kind< Dimension<  17,    1>, struct _luminous_intensity   >;
+    using PlaneAngle        = Kind< Dimension<  19,    1>, struct _plane_angle          >; // ~~
+    using Bit               = Kind< Dimension<  23,    1>, struct _bit                  >; // ^^
+    using Entity            = Kind< Dimension<  29,    1>, struct _entity               >; // ^^
+    using Event             = Kind< Dimension<  31,    1>, struct _event                >; // ^^
+    using Cycle             = Kind< Dimension<  37,    1>, struct _cycle                >; // ^^
+#else
     using Length            = Kind< Dimension<   2,    1>, Untagged >;
     using Mass              = Kind< Dimension<   3,    1>, Untagged >;
     using Time              = Kind< Dimension<   5,    1>, Untagged >;
@@ -1066,6 +1239,11 @@ namespace kinds
     using Entity            = Kind< Dimension<  29,    1>, Untagged >; // ^^
     using Event             = Kind< Dimension<  31,    1>, Untagged >; // ^^
     using Cycle             = Kind< Dimension<  37,    1>, Untagged >; // ^^
+
+    // EXPERIMENT:
+    //
+    // These typedef's are only used to generate slightly prettier error messages and IntelliSense hints.
+    // They are otherwise unused and useless.
 
     using Area              = Kind< Dimension<   4,    1>, Untagged >;
     using Volume            = Kind< Dimension<   6,    1>, Untagged >;
@@ -1082,6 +1260,7 @@ namespace kinds
     using Luminance         = Kind< Dimension<  17,    4>, Untagged >;
     using LuminousFlux      = Kind< Dimension<6137,    1>, Untagged >;
     using Illuminance       = Kind< Dimension<6137,    4>, Untagged >;
+#endif
 }
 
 namespace units
@@ -1141,6 +1320,16 @@ using Miles             = ScaledQuantity<Conversion<Ratio<1760>>, Yards>;       
 
 using AstronomicalUnits = ScaledQuantity<Conversion<Ratio<149597870700>>, Meters>;
 using Parsecs           = ScaledQuantity<Conversion<Ratio<648000>, /*pi^*/ -1>, AstronomicalUnits>;
+
+inline constexpr Meters         meters{};
+inline constexpr Millimeters    millimeters{};
+inline constexpr Centimeters    centimeters{};
+inline constexpr Decimeters     decimeters{};
+inline constexpr Kilometers     kilometers{};
+inline constexpr Inches         inches{};
+inline constexpr Feet           feet{};
+inline constexpr Yards          yards{};
+inline constexpr Miles          miles{};
 
 //------------------------------------------------------------------------------
 // Area

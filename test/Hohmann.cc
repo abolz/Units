@@ -58,8 +58,8 @@ public:
         : mu(_mu)
         , r_1(_r_1)
         , r_2(_r_2)
-        , dV_P(dVPer(_mu, _r_1, _r_2))
-        , dV_A(dVApo(_mu, _r_1, _r_2))
+        , dV_P(dVPer(mu, r_1, r_2))
+        , dV_A(dVApo(mu, r_1, r_2))
     {
     }
 };

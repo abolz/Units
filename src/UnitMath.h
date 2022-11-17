@@ -276,7 +276,7 @@ template <int64_t N, typename U>
     static_assert(N >= 1,
         "only positive exponents allowed");
     static_assert(std::is_same<typename kind::tag, kinds::Untagged>::value,
-        "operation not supported - instead of 'pow<N>(q)' you must use 'pow<N>(q.value())'");
+        "operation not supported - instead of 'pow<N>(q)' you must use 'pow<N>(q.untagged())'");
     //
     // TODO:
     // Complex-tags?
@@ -300,7 +300,7 @@ template <int64_t N, typename U>
     }
     else
     {
-        return Quantity<typename Unit<C, K>::type>(std::pow(q.count_internal(), static_cast<double>(N)));
+        return Quantity<typename Unit<C, K>::type>(std::pow(q.count_internal(), static_cast<Scalar>(N)));
     }
 }
 
@@ -333,7 +333,7 @@ template <int64_t N, typename U>
     static_assert(N >= 1,
         "only positive exponents allowed");
     static_assert(std::is_same<typename kind::tag, kinds::Untagged>::value,
-        "operation not supported - instead of 'nth_root<N>(q)' you must use 'nth_root<N>(q.value())'");
+        "operation not supported - instead of 'nth_root<N>(q)' you must use 'nth_root<N>(q.untagged())'");
     //
     // TODO:
     // Complex-tags?
@@ -368,7 +368,7 @@ template <int64_t N, typename U>
     }
     else
     {
-        return Quantity<typename Unit<C, K>::type>(std::pow(q.count_internal(), 1.0 / static_cast<double>(N)));
+        return Quantity<typename Unit<C, K>::type>(std::pow(q.count_internal(), 1.0 / static_cast<Scalar>(N)));
     }
 }
 
@@ -586,25 +586,25 @@ namespace impl
 template <typename Scale = Ratio<1>, typename U>
 [[nodiscard]] auto ceil(Quantity<U> x) noexcept
 {
-    return impl::ToInt<Scale>(x, [](const double t) { return std::ceil(t); } );
+    return impl::ToInt<Scale>(x, [](const Scalar t) { return std::ceil(t); } );
 }
 
 template <typename Scale = Ratio<1>, typename U>
 [[nodiscard]] auto floor(Quantity<U> x) noexcept
 {
-    return impl::ToInt<Scale>(x, [](const double t) { return std::floor(t); } );
+    return impl::ToInt<Scale>(x, [](const Scalar t) { return std::floor(t); } );
 }
 
 template <typename Scale = Ratio<1>, typename U>
 [[nodiscard]] auto trunc(Quantity<U> x) noexcept
 {
-    return impl::ToInt<Scale>(x, [](const double t) { return std::trunc(t); } );
+    return impl::ToInt<Scale>(x, [](const Scalar t) { return std::trunc(t); } );
 }
 
 template <typename Scale = Ratio<1>, typename U>
 [[nodiscard]] auto round(Quantity<U> x) noexcept
 {
-    return impl::ToInt<Scale>(x, [](const double t) { return std::round(t); } );
+    return impl::ToInt<Scale>(x, [](const Scalar t) { return std::round(t); } );
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -614,31 +614,43 @@ template <typename Scale = Ratio<1>, typename U>
 template <typename Scale = Ratio<1>, typename Q, typename Z>
 [[nodiscard]] Absolute<Q, Z> ceil(Absolute<Q, Z> x) noexcept
 {
-    return impl::ToInt<Scale>(x, [](const double t) { return std::ceil(t); } );
+    return impl::ToInt<Scale>(x, [](const Scalar t) { return std::ceil(t); } );
 }
 
 template <typename Scale = Ratio<1>, typename Q, typename Z>
 [[nodiscard]] Absolute<Q, Z> floor(Absolute<Q, Z> x) noexcept
 {
-    return impl::ToInt<Scale>(x, [](const double t) { return std::floor(t); } );
+    return impl::ToInt<Scale>(x, [](const Scalar t) { return std::floor(t); } );
 }
 
 template <typename Scale = Ratio<1>, typename Q, typename Z>
 [[nodiscard]] Absolute<Q, Z> trunc(Absolute<Q, Z> x) noexcept
 {
-    return impl::ToInt<Scale>(x, [](const double t) { return std::trunc(t); } );
+    return impl::ToInt<Scale>(x, [](const Scalar t) { return std::trunc(t); } );
 }
 
 template <typename Scale = Ratio<1>, typename Q, typename Z>
 [[nodiscard]] Absolute<Q, Z> round(Absolute<Q, Z> x) noexcept
 {
-    return impl::ToInt<Scale>(x, [](const double t) { return std::round(t); } );
+    return impl::ToInt<Scale>(x, [](const Scalar t) { return std::round(t); } );
 }
 
 //==================================================================================================
 //
 //==================================================================================================
 
+#if UNITS_TMP_WHATEVER()
+template <typename U1, typename U2, typename U3>
+[[nodiscard]] auto fma(Quantity<U1> x, Quantity<U2> y, Quantity<U3> z)
+{
+    static_assert(std::is_same_v<MulUnits<U1, U2>, U3>,
+        "The function signature of FMA is more restrictive than (x * y + z). "
+        "This is to avoid any implicit conversion taking place, which would defeat the purpose "
+        "the FMA instruction.");
+
+    return Quantity<U3>(std::fma(x.count_internal(), y.count_internal(), z.count_internal()));
+}
+#else
 template <typename U1, typename U2, typename U3, std::enable_if_t<std::is_same_v<MulUnits<U1, U2>, U3>, int> = 0>
 [[nodiscard]] auto fma(Quantity<U1> x, Quantity<U2> y, Quantity<U3> z)
 {
@@ -648,6 +660,7 @@ template <typename U1, typename U2, typename U3, std::enable_if_t<std::is_same_v
 
     return Quantity<U3>(std::fma(x.count_internal(), y.count_internal(), z.count_internal()));
 }
+#endif
 
 //==================================================================================================
 // midpoint
@@ -674,7 +687,7 @@ template <typename Q, typename Z>
 //==================================================================================================
 
 template <typename U>
-[[nodiscard]] Quantity<U> lerp(Quantity<U> x, Quantity<U> y, double t) noexcept
+[[nodiscard]] Quantity<U> lerp(Quantity<U> x, Quantity<U> y, Scalar t) noexcept
 {
     return Quantity<U>((1 - t) * x.count_internal() + t * y.count_internal());
 }
@@ -684,7 +697,7 @@ template <typename U>
 //--------------------------------------------------------------------------------------------------
 
 template <typename Q, typename Z>
-[[nodiscard]] Absolute<Q, Z> lerp(Absolute<Q, Z> x, Absolute<Q, Z> y, double t) noexcept
+[[nodiscard]] Absolute<Q, Z> lerp(Absolute<Q, Z> x, Absolute<Q, Z> y, Scalar t) noexcept
 {
     return Absolute<Q, Z>((1 - t) * x.count_internal() + t * y.count_internal());
 }
@@ -695,10 +708,10 @@ template <typename Q, typename Z>
 
 namespace impl
 {
-    inline constexpr double kPi    = 3.14159265358979323846264338328;
-    inline constexpr double kTwoPi = 6.28318530717958647692528676656;
+//  inline constexpr Scalar kPi    = static_cast<Scalar>(3.14159265358979323846264338328);
+    inline constexpr Scalar kTwoPi = static_cast<Scalar>(6.28318530717958647692528676656);
 
-    inline double Clamp(double x, double lo, double hi)
+    inline Scalar Clamp(Scalar x, Scalar lo, Scalar hi)
     {
         if (x < lo)
             return lo;
@@ -708,11 +721,11 @@ namespace impl
         return x;
     }
 
-    inline double NormalizePositive(double x, double range) noexcept
+    inline Scalar NormalizePositive(Scalar x, Scalar range) noexcept
     {
         // UNITS_ASSERT(std::isfinite(x));
 
-        double w = x;
+        Scalar w = x;
         if (w < 0 || w >= range)
         {
             w = std::fmod(w, range);
@@ -732,13 +745,13 @@ namespace impl
         return w;
     }
 
-    inline double NormalizeSymmetric(double x, double range) noexcept
+    inline Scalar NormalizeSymmetric(Scalar x, Scalar range) noexcept
     {
         // UNITS_ASSERT(std::isfinite(x));
 
-        const double half = range / 2.0;
+        const Scalar half = range / 2;
 
-        double w = x;
+        Scalar w = x;
         if (w < -half || w >= half)
         {
             w = std::fmod(x, range);
@@ -777,37 +790,37 @@ namespace impl
 // Reduce x to [0, 360)
 [[nodiscard]] inline Degrees normalize_positive(Degrees x) noexcept
 {
-    return Degrees(impl::NormalizePositive(x.count_internal(), 360.0));
+    return Degrees(impl::NormalizePositive(x.count_internal(), 360));
 }
 
 // Reduce x to [-180, 180)
 [[nodiscard]] inline Degrees normalize_symmetric(Degrees x) noexcept
 {
-    return Degrees(impl::NormalizeSymmetric(x.count_internal(), 360.0));
+    return Degrees(impl::NormalizeSymmetric(x.count_internal(), 360));
 }
 
 // Reduce x to [0, 400)
 [[nodiscard]] inline Gons normalize_positive(Gons x) noexcept
 {
-    return Gons(impl::NormalizePositive(x.count_internal(), 400.0));
+    return Gons(impl::NormalizePositive(x.count_internal(), 400));
 }
 
 // Reduce x to [-200, 200)
 [[nodiscard]] inline Gons normalize_symmetric(Gons x) noexcept
 {
-    return Gons(impl::NormalizeSymmetric(x.count_internal(), 400.0));
+    return Gons(impl::NormalizeSymmetric(x.count_internal(), 400));
 }
 
 // Reduce x to [0, 1)
 [[nodiscard]] inline Revolutions normalize_positive(Revolutions x) noexcept
 {
-    return Revolutions(impl::NormalizePositive(x.count_internal(), 1.0));
+    return Revolutions(impl::NormalizePositive(x.count_internal(), 1));
 }
 
 // Reduce x to [-1/2, 1/2)
 [[nodiscard]] inline Revolutions normalize_symmetric(Revolutions x) noexcept
 {
-    return Revolutions(impl::NormalizeSymmetric(x.count_internal(), 1.0));
+    return Revolutions(impl::NormalizeSymmetric(x.count_internal(), 1));
 }
 
 } // namespace uom

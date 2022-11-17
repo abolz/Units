@@ -183,13 +183,17 @@ static constexpr void test()
         static_assert(!std::is_convertible_v<Degrees, Revolutions>);
 
         static_assert( Compiles<Add, Radians, Radians>);
+#if !UNITS_TMP_WHATEVER()
         static_assert(!Compiles<Add, Radians, Degrees>);
         static_assert(!Compiles<Add, Radians, Gons>);
         static_assert(!Compiles<Add, Radians, Revolutions>);
+#endif
 
         static_assert( Compiles<Add, Degrees, Degrees>);
+#if !UNITS_TMP_WHATEVER()
         static_assert(!Compiles<Add, Degrees, Radians>);
         static_assert(!Compiles<Add, Degrees, Gons>);
+#endif
         static_assert( Compiles<Add, Degrees, Revolutions>);
         constexpr auto s0 = 1_deg; // + Degrees(1_gon);
         constexpr auto s1 = 1_deg + 1_rev;
@@ -197,8 +201,10 @@ static constexpr void test()
         constexpr auto s3 = s0 - s1;
 
         static_assert( Compiles<Add, Gons, Gons>);
+#if !UNITS_TMP_WHATEVER()
         static_assert(!Compiles<Add, Gons, Radians>);
         static_assert(!Compiles<Add, Gons, Degrees>);
+#endif
         static_assert( Compiles<Add, Gons, Revolutions>);
 
         //constexpr auto s4 = 1_deg + 1_gon;
@@ -218,7 +224,9 @@ static constexpr void test()
         //Incomplet<decltype(q1)>{};
 
         static_assert( Compiles<Add, Revolutions, Revolutions>);
+#if !UNITS_TMP_WHATEVER()
         static_assert(!Compiles<Add, Revolutions, Radians>);
+#endif
         static_assert( Compiles<Add, Revolutions, Degrees>);
         static_assert( Compiles<Add, Revolutions, Gons>);
     }
@@ -352,7 +360,9 @@ static void test2()
         using Width  = TaggedQuantity<Millimeters, class _width>;
         using Height = TaggedQuantity<Millimeters, class _height>;
 
+#if !UNITS_TMP_WHATEVER()
         static_assert(!Compiles<Add, Width, Millimeters>);
+#endif
 
         constexpr Width w1 = convert_to<Width>(1_cm);
         constexpr Height h1 = convert_to<Height>(1_cm + 1_mm);
