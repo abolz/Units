@@ -516,7 +516,7 @@ private:
         = std::conjunction<
             // The dimensions must match!
             std::is_same<typename UnitTo::dimension, typename UnitFrom::dimension>,
-            // The conversion factor must be an integer! 
+            // The conversion factor must be an integer!
             impl::ConversionDivides<typename UnitTo::conversion, typename UnitFrom::conversion>,
             // And either
             std::disjunction<
@@ -542,7 +542,7 @@ private:
     using EnableImplicitConversion = std::enable_if_t<ImplicitlyConvertible<ConvTo, ConvFrom>::value, T>;
 
     template <typename KindTo, typename KindFrom, typename T = void>
-    using EnableExplicitConversion = std::enable_if_t<std::conjunction_v< std::negation<ImplicitlyConvertible<KindTo, KindFrom> >, ExplicitlyConvertible<KindTo, KindFrom>>, T>;
+    using EnableExplicitConversion = std::enable_if_t<std::conjunction_v<std::negation<ImplicitlyConvertible<KindTo, KindFrom>>, ExplicitlyConvertible<KindTo, KindFrom>>, T>;
 
 #if UNITS_TMP_WHATEVER()
     template <typename KindTo, typename KindFrom>
@@ -1320,16 +1320,6 @@ using Miles             = ScaledQuantity<Conversion<Ratio<1760>>, Yards>;       
 
 using AstronomicalUnits = ScaledQuantity<Conversion<Ratio<149597870700>>, Meters>;
 using Parsecs           = ScaledQuantity<Conversion<Ratio<648000>, /*pi^*/ -1>, AstronomicalUnits>;
-
-inline constexpr Meters         meters{};
-inline constexpr Millimeters    millimeters{};
-inline constexpr Centimeters    centimeters{};
-inline constexpr Decimeters     decimeters{};
-inline constexpr Kilometers     kilometers{};
-inline constexpr Inches         inches{};
-inline constexpr Feet           feet{};
-inline constexpr Yards          yards{};
-inline constexpr Miles          miles{};
 
 //------------------------------------------------------------------------------
 // Area
