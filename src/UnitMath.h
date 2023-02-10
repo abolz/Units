@@ -639,18 +639,6 @@ template <typename Scale = Ratio<1>, typename Q, typename Z>
 //
 //==================================================================================================
 
-#if UNITS_TMP_WHATEVER()
-template <typename U1, typename U2, typename U3>
-[[nodiscard]] auto fma(Quantity<U1> x, Quantity<U2> y, Quantity<U3> z)
-{
-    static_assert(std::is_same_v<MulUnits<U1, U2>, U3>,
-        "The function signature of FMA is more restrictive than (x * y + z). "
-        "This is to avoid any implicit conversion taking place, which would defeat the purpose "
-        "the FMA instruction.");
-
-    return Quantity<U3>(std::fma(x.count_internal(), y.count_internal(), z.count_internal()));
-}
-#else
 template <typename U1, typename U2, typename U3, std::enable_if_t<std::is_same_v<MulUnits<U1, U2>, U3>, int> = 0>
 [[nodiscard]] auto fma(Quantity<U1> x, Quantity<U2> y, Quantity<U3> z)
 {
@@ -660,7 +648,6 @@ template <typename U1, typename U2, typename U3, std::enable_if_t<std::is_same_v
 
     return Quantity<U3>(std::fma(x.count_internal(), y.count_internal(), z.count_internal()));
 }
-#endif
 
 //==================================================================================================
 // midpoint

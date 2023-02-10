@@ -14,13 +14,6 @@
 #define UNITS_ASSERT(X) assert(X)
 #endif
 
-// Template meta-programming or type traits not working properly with Quantity's...?!
-// If non-zero, prefer static_assert over enable_if.
-#define UNITS_TMP_WHATEVER() 0
-
-// Enables operators for dimensionless quantities and scalars.
-#define UNITS_DIMENSIONLESS_SCALAR_INTEROP() 1
-
 namespace uom {
 
 // Internal representation.
@@ -30,15 +23,6 @@ using Scalar = float;
 #else
 using Scalar = double;
 #endif
-
-//==================================================================================================
-//
-//==================================================================================================
-
-namespace impl {
-    template <typename ...Ts>
-    inline constexpr bool AlwaysFalse = false;
-}
 
 //==================================================================================================
 //
@@ -86,7 +70,7 @@ inline constexpr bool IsKind<Kind<D, Tag>> = true;
 
 namespace kinds
 {
-    struct Untagged {};
+    using Untagged = void;
 
     template <typename ...Factors>
     struct Product {};
@@ -508,11 +492,9 @@ private:
     scalar_type _count = 0;
 
 private:
-    static constexpr bool is_tagged = !std::is_same_v<tag, kinds::Untagged>;
-
     // asymmetric
     template <typename UnitTo, typename UnitFrom>
-    using ImplicitlyConvertible
+    using IsImplicitlyConvertible
         = std::conjunction<
             // The dimensions must match!
             std::is_same<typename UnitTo::dimension, typename UnitFrom::dimension>,
@@ -521,40 +503,43 @@ private:
             // And either
             std::disjunction<
               // the tags must be the same,
-              std::is_same<typename UnitTo::tag, typename UnitFrom::tag>,
+              std::is_same<typename UnitFrom::tag, typename UnitTo::tag>,
               // or the right hand side must be a "simple" type (untagged).
-              std::is_same<kinds::Untagged, typename UnitFrom::tag>
+              std::is_same<typename UnitFrom::tag, kinds::Untagged>
             >
           >;
 
     // asymmetric
     template <typename UnitTo, typename UnitFrom>
-    using ExplicitlyConvertible
+    using IsExplicitlyConvertible
         = std::conjunction<
             // The dimensions must match!
             std::is_same<typename UnitTo::dimension, typename UnitFrom::dimension>
           >;
 
     template <typename UnitType, typename T = void>
-    using EnableIfDimensionless = std::enable_if_t<IsDimensionlessUnit<UnitType>, T>;
-
-    template <typename ConvTo, typename ConvFrom, typename T = void>
-    using EnableImplicitConversion = std::enable_if_t<ImplicitlyConvertible<ConvTo, ConvFrom>::value, T>;
-
-    template <typename KindTo, typename KindFrom, typename T = void>
-    using EnableExplicitConversion = std::enable_if_t<std::conjunction_v<std::negation<ImplicitlyConvertible<KindTo, KindFrom>>, ExplicitlyConvertible<KindTo, KindFrom>>, T>;
-
-#if UNITS_TMP_WHATEVER()
-    template <typename KindTo, typename KindFrom>
-    using IsTaggedConversion
-        = std::conjunction<
-            std::negation<std::is_same<typename KindTo::tag, kinds::Untagged>>,
-            std::negation<ExplicitlyConvertible<KindTo, KindFrom>>
+    using EnableIfDimensionless
+        = std::enable_if_t<
+            IsDimensionlessUnit<UnitType>,
+            T
           >;
 
-    template <typename KindTo, typename KindFrom, typename T = void>
-    using EnableTaggedConversionFallback = std::enable_if_t<IsTaggedConversion<KindTo, KindFrom>::value, T>;
-#endif
+    template <typename UnitTo, typename UnitFrom, typename T = void>
+    using EnableImplicitConversion
+        = std::enable_if_t<
+            IsImplicitlyConvertible<UnitTo, UnitFrom>::value,
+            T
+          >;
+
+    template <typename UnitTo, typename UnitFrom, typename T = void>
+    using EnableExplicitConversion
+        = std::enable_if_t<
+            std::conjunction_v<
+              std::negation<IsImplicitlyConvertible<UnitTo, UnitFrom>>,
+              IsExplicitlyConvertible<UnitTo, UnitFrom>
+            >,
+            T
+          >;
 
 public:
     constexpr Quantity() noexcept = default;
@@ -578,17 +563,6 @@ public:
         : _count(DivConversions<typename U2::conversion, conversion>{}(q.count_internal()))
     {
     }
-
-#if UNITS_TMP_WHATEVER()
-    template <typename C2, typename K2, EnableTaggedConversionFallback<kind, K2, int> = 0>
-    constexpr explicit Quantity(Quantity<Unit<C2, K2>> q) noexcept
-    {
-        static_assert(is_tagged,
-            "internal error");
-        static_assert(impl::AlwaysFalse<C2>,
-            "tagged quantities can only be constructed from their underlying quantity types or from scalars");
-    }
-#endif
 
     template <typename _unit = unit, EnableIfDimensionless<_unit, int> = 0>
     [[nodiscard]] constexpr explicit operator Scalar() const noexcept
@@ -625,7 +599,6 @@ public:
         return Quantity(-q.count_internal());
     }
 
-#if !UNITS_TMP_WHATEVER()
     [[nodiscard]] constexpr friend Quantity operator+(Quantity lhs, Quantity rhs) noexcept
     {
         return Quantity(lhs.count_internal() + rhs.count_internal());
@@ -635,9 +608,7 @@ public:
     {
         return Quantity(lhs.count_internal() - rhs.count_internal());
     }
-#endif
 
-#if UNITS_DIMENSIONLESS_SCALAR_INTEROP()
     template <typename _unit = unit, EnableIfDimensionless<_unit, int> = 0>
     [[nodiscard]] constexpr friend Quantity operator+(Quantity lhs, scalar_type rhs) noexcept
     {
@@ -661,9 +632,7 @@ public:
     {
         return Quantity(lhs - rhs.count_internal());
     }
-#endif
 
-#if !UNITS_TMP_WHATEVER()
     template <typename U2>
     [[nodiscard]] constexpr friend auto operator*(Quantity lhs, Quantity<U2> rhs) noexcept
     {
@@ -677,7 +646,6 @@ public:
         using R = DivUnits<unit, U2>;
         return Quantity<Unit<typename R::conversion, typename R::kind>>(lhs.count_internal() / rhs.count_internal());
     }
-#endif
 
     [[nodiscard]] constexpr friend Quantity operator*(Quantity lhs, scalar_type rhs) noexcept
     {
@@ -712,7 +680,6 @@ public:
         return lhs;
     }
 
-#if UNITS_DIMENSIONLESS_SCALAR_INTEROP()
     template <typename _unit = unit, EnableIfDimensionless<_unit, int> = 0>
     constexpr friend Quantity& operator+=(Quantity& lhs, scalar_type rhs) noexcept
     {
@@ -726,7 +693,6 @@ public:
         lhs._count -= rhs;
         return lhs;
     }
-#endif
 
     constexpr friend Quantity& operator*=(Quantity& lhs, scalar_type rhs) noexcept
     {
@@ -739,22 +705,6 @@ public:
         lhs._count /= rhs;
         return lhs;
     }
-
-#if 0 // UNITS_DIMENSIONSLESS_SCALAR_INTEROP()
-    template <typename _unit = unit, EnableIfDimensionless<_unit, int> = 0>
-    constexpr friend Quantity& operator*=(Quantity& lhs, Quantity rhs) noexcept
-    {
-        lhs._count *= rhs.count_internal();
-        return lhs;
-    }
-
-    template <typename _unit = unit, EnableIfDimensionless<_unit, int> = 0>
-    constexpr friend Quantity& operator/=(Quantity& lhs, Quantity rhs) noexcept
-    {
-        lhs._count /= rhs.count_internal();
-        return lhs;
-    }
-#endif
 
     [[nodiscard]] constexpr friend bool operator==(Quantity lhs, Quantity rhs) noexcept
     {
@@ -787,76 +737,6 @@ public:
     }
 };
 
-#if UNITS_TMP_WHATEVER()
-
-template <typename U1, typename U2>
-[[nodiscard]] constexpr auto operator+(Quantity<U1> lhs, Quantity<U2> rhs) noexcept
-{
-    using Q1 = Quantity<U1>;
-    using Q2 = Quantity<U2>;
-
-    if constexpr (std::is_convertible_v<Q1, Q2>)
-    {
-        return Q2( Q2(lhs).count_internal() + rhs.count_internal() );
-    }
-    else if constexpr (std::is_convertible_v<Q2, Q1>)
-    {
-        return Q1( lhs.count_internal() + Q1(rhs).count_internal() );
-    }
-    else
-    {
-        static_assert( uom::impl::AlwaysFalse<U1, U2>,
-            "invalid operation - "
-            "there is no common type for both the left and the right side of the expression - "
-            "you might need to explicitly convert one or both of the operands" );
-
-        struct InvalidBinaryOperation {};
-        return InvalidBinaryOperation{};
-    }
-}
-
-template <typename U1, typename U2>
-[[nodiscard]] constexpr auto operator-(Quantity<U1> lhs, Quantity<U2> rhs) noexcept
-{
-    using Q1 = Quantity<U1>;
-    using Q2 = Quantity<U2>;
-
-    if constexpr (std::is_convertible_v<Q1, Q2>)
-    {
-        return Q2( Q2(lhs).count_internal() - rhs.count_internal() );
-    }
-    else if constexpr (std::is_convertible_v<Q2, Q1>)
-    {
-        return Q1( lhs.count_internal() - Q1(rhs).count_internal() );
-    }
-    else
-    {
-        static_assert( uom::impl::AlwaysFalse<U1, U2>,
-            "invalid operation - "
-            "there is no common type for both the left and the right side of the expression - "
-            "you might need to explicitly convert one or both of the operands" );
-
-        struct InvalidBinaryOperation {};
-        return InvalidBinaryOperation{};
-    }
-}
-
-template <typename U1, typename U2>
-[[nodiscard]] constexpr auto operator*(Quantity<U1> lhs, Quantity<U2> rhs) noexcept
-{
-    using R = MulUnits<U1, U2>;
-    return Quantity<typename Unit<typename R::conversion, typename R::kind>::type>(lhs.count_internal() * rhs.count_internal());
-}
-
-template <typename U1, typename U2>
-[[nodiscard]] constexpr auto operator/(Quantity<U1> lhs, Quantity<U2> rhs) noexcept
-{
-    using R = DivUnits<U1, U2>;
-    return Quantity<typename Unit<typename R::conversion, typename R::kind>::type>(lhs.count_internal() / rhs.count_internal());
-}
-
-#endif
-
 template <typename T>
 inline constexpr bool IsQuantity = false;
 
@@ -868,14 +748,18 @@ using ScaledQuantity
     = typename Quantity<
         typename Unit<
           typename MulConversions<Conv, typename Q::conversion>::type,
-          typename Q::kind>::type>::type;
+          typename Q::kind
+        >::type
+      >::type;
 
 template <typename Q, typename Tag>
 using TaggedQuantity // a.k.a. Change-Kind
     = typename Quantity<
         typename Unit<
           typename Q::conversion,
-          typename Kind<typename Q::dimension, Tag>::type>::type>::type;
+          typename Kind<typename Q::dimension, Tag>::type
+        >::type
+      >::type;
 
 //==================================================================================================
 // Absolute
@@ -1373,11 +1257,15 @@ using Tons              = ScaledQuantity<Conversion<Ratio<1000>>, Kilograms>;
 //------------------------------------------------------------------------------
 // Density
 
-using KilogramsPerCubicMeter = decltype(Kilograms{} / CubicMeters{});
-using TonsPerCubicMeters     = decltype(Tons{}      / CubicMeters{});
+using KilogramsPerCubicMeter
+                        = decltype(Kilograms{} / CubicMeters{});
+using TonsPerCubicMeters
+                        = decltype(Tons{}      / CubicMeters{});
 
-using SquareCentimetersPerMeter = TaggedQuantity<decltype(SquareCentimeters{} / Meters{}), tags::AreaPerLength>;
-using SquareMetersPerMeter      = TaggedQuantity<decltype(SquareMeters{}      / Meters{}), tags::AreaPerLength>;
+using SquareCentimetersPerMeter 
+                        = TaggedQuantity<decltype(SquareCentimeters{} / Meters{}), tags::AreaPerLength>;
+using SquareMetersPerMeter
+                        = TaggedQuantity<decltype(SquareMeters{}      / Meters{}), tags::AreaPerLength>;
 
 //------------------------------------------------------------------------------
 // Time
@@ -1409,12 +1297,14 @@ using MilesPerHour      = decltype(Miles{} / Hours{});
 //------------------------------------------------------------------------------
 // Flow (volume)
 
-using CubicMetersPerSecond = decltype(CubicMeters() / Seconds());
+using CubicMetersPerSecond
+                        = decltype(CubicMeters() / Seconds());
 
 //------------------------------------------------------------------------------
 // Acceleration
 
-using MetersPerSecondSquared = decltype(Meters{} / (Seconds{} * Seconds{}));
+using MetersPerSecondSquared
+                        = decltype(Meters{} / (Seconds{} * Seconds{}));
 
 //--------------------------------------------------------------------------
 // Force
@@ -1461,7 +1351,8 @@ using PascalSeconds     = decltype(Pascals{} * Seconds{});
 //------------------------------------------------------------------------------
 // Kinematic viscosity
 
-using SquareMetersPerSeconds = decltype(SquareMeters{} / Seconds{});
+using SquareMetersPerSeconds
+                        = decltype(SquareMeters{} / Seconds{});
 
 //------------------------------------------------------------------------------
 // Electric current
