@@ -41,11 +41,15 @@ inline constexpr bool IsRatio<std::ratio<Num, Den>> = true;
 template <int64_t Num = 1, int64_t Den = 1>
 using Dimension = typename std::ratio<Num, Den>::type;
 
-template <typename D1, typename D2>
-using MulDimensions = typename std::ratio_multiply<D1, D2>::type;
+namespace impl
+{
+    template <typename D1, typename D2>
+    using MulDimensions = typename std::ratio_multiply<D1, D2>::type;
 
-template <typename D1, typename D2>
-using DivDimensions = typename std::ratio_divide<D1, D2>::type;
+    template <typename D1, typename D2>
+    using DivDimensions = typename std::ratio_divide<D1, D2>::type;
+
+} // namespace impl
 
 //==================================================================================================
 // Kind
@@ -268,33 +272,41 @@ namespace kinds::impl
 
 } // namespace kinds::impl
 
-template <typename T1, typename T2>
-using MulTags = typename kinds::impl::MulTags<T1, T2>::type;
+namespace impl
+{
+    template <typename T1, typename T2>
+    using MulTags = typename kinds::impl::MulTags<T1, T2>::type;
 
-template <typename T1, typename T2>
-using DivTags = typename kinds::impl::DivTags<T1, T2>::type;
+    template <typename T1, typename T2>
+    using DivTags = typename kinds::impl::DivTags<T1, T2>::type;
 
-template <typename K1, typename K2>
-using MulKinds = typename Kind< typename MulDimensions<typename K1::dimension, typename K2::dimension>::type,
-                                MulTags<typename K1::tag, typename K2::tag> >::type;
+    template <typename K1, typename K2>
+    using MulKinds = typename Kind< typename MulDimensions<typename K1::dimension, typename K2::dimension>::type,
+                                    MulTags<typename K1::tag, typename K2::tag> >::type;
 
-template <typename K1, typename K2>
-using DivKinds = typename Kind< typename DivDimensions<typename K1::dimension, typename K2::dimension>::type,
-                                DivTags<typename K1::tag, typename K2::tag> >::type;
+    template <typename K1, typename K2>
+    using DivKinds = typename Kind< typename DivDimensions<typename K1::dimension, typename K2::dimension>::type,
+                                    DivTags<typename K1::tag, typename K2::tag> >::type;
+
+} // namespace impl
 
 //==================================================================================================
 //
 //==================================================================================================
 
-constexpr Scalar ScalarFromRatio(int64_t num, int64_t den)
-{
-    // UNITS_ASSERT(num != INT64_MIN);
-    // UNITS_ASSERT(den >= 1);
+// namespace impl
+// {
+    constexpr Scalar ScalarFromRatio(int64_t num, int64_t den)
+    {
+        // UNITS_ASSERT(num != INT64_MIN);
+        // UNITS_ASSERT(den >= 1);
 
-    UNITS_ASSERT(den != 0);
+        UNITS_ASSERT(den != 0);
 
-    return static_cast<Scalar>(static_cast<double>(num) / static_cast<double>(den));
-}
+        return static_cast<Scalar>(static_cast<double>(num) / static_cast<double>(den));
+    }
+
+// } // namespace impl
 
 //==================================================================================================
 // Conversion
@@ -397,16 +409,16 @@ inline constexpr bool IsConversion = false;
 template <typename R, int64_t E>
 inline constexpr bool IsConversion<Conversion<R, E>> = true; // IsRatio<R>;
 
-template <typename C1, typename C2 /* = C1 */>
-using MulConversions
-    = typename Conversion<typename std::ratio_multiply<typename C1::ratio, typename C2::ratio>::type, C1::exp + C2::exp>::type;
-
-template <typename C1, typename C2>
-using DivConversions
-    = typename Conversion<typename std::ratio_divide<typename C1::ratio, typename C2::ratio>::type, C1::exp - C2::exp>::type;
-
 namespace impl
 {
+    template <typename C1, typename C2 /* = C1 */>
+    using MulConversions
+        = typename Conversion<typename std::ratio_multiply<typename C1::ratio, typename C2::ratio>::type, C1::exp + C2::exp>::type;
+
+    template <typename C1, typename C2>
+    using DivConversions
+        = typename Conversion<typename std::ratio_divide<typename C1::ratio, typename C2::ratio>::type, C1::exp - C2::exp>::type;
+
     template <typename C1>
     using IsIntegralConversion = std::bool_constant<(C1::den == 1 && C1::exp == 0)>;
 
@@ -440,13 +452,17 @@ inline constexpr bool IsUnit = false;
 template <typename C, typename K>
 inline constexpr bool IsUnit<Unit<C, K>> = true;
 
-template <typename U1, typename U2>
-using MulUnits = typename Unit< typename MulConversions<typename U1::conversion, typename U2::conversion>::type,
-                                typename MulKinds<typename U1::kind, typename U2::kind>::type >::type;
+namespace impl
+{
+    template <typename U1, typename U2>
+    using MulUnits = typename Unit< typename MulConversions<typename U1::conversion, typename U2::conversion>::type,
+                                    typename MulKinds<typename U1::kind, typename U2::kind>::type >::type;
 
-template <typename U1, typename U2>
-using DivUnits = typename Unit< typename DivConversions<typename U1::conversion, typename U2::conversion>::type,
-                                typename DivKinds<typename U1::kind, typename U2::kind>::type >::type;
+    template <typename U1, typename U2>
+    using DivUnits = typename Unit< typename DivConversions<typename U1::conversion, typename U2::conversion>::type,
+                                    typename DivKinds<typename U1::kind, typename U2::kind>::type >::type;
+
+} // namespace impl
 
 namespace units
 {
@@ -546,7 +562,6 @@ public:
     constexpr Quantity(const Quantity&) noexcept = default;
     constexpr Quantity& operator=(const Quantity&) noexcept = default;
 
-    // template <typename = std::enable_if_t<std::is_same_v<tag, kinds::Untagged>>>
     constexpr explicit Quantity(scalar_type c) noexcept
         : _count(c)
     {
@@ -554,13 +569,13 @@ public:
 
     template <typename U2, EnableImplicitConversion<unit, U2, int> = 0>
     constexpr Quantity(Quantity<U2> q) noexcept
-        : _count(DivConversions<typename U2::conversion, conversion>{}(q.count_internal()))
+        : _count(impl::DivConversions<typename U2::conversion, conversion>{}(q.count_internal()))
     {
     }
 
     template <typename U2, EnableExplicitConversion<unit, U2, int> = 0>
     constexpr explicit Quantity(Quantity<U2> q) noexcept
-        : _count(DivConversions<typename U2::conversion, conversion>{}(q.count_internal()))
+        : _count(impl::DivConversions<typename U2::conversion, conversion>{}(q.count_internal()))
     {
     }
 
@@ -570,6 +585,8 @@ public:
         return _count;
     }
 
+    // These are not the droids you're looking for!
+    // Use `count_as` to convert this `Quantity` into a scalar.
     [[nodiscard]] constexpr scalar_type count_internal() const noexcept
     {
         return _count;
@@ -636,14 +653,14 @@ public:
     template <typename U2>
     [[nodiscard]] constexpr friend auto operator*(Quantity lhs, Quantity<U2> rhs) noexcept
     {
-        using R = MulUnits<unit, U2>;
+        using R = impl::MulUnits<unit, U2>;
         return Quantity<Unit<typename R::conversion, typename R::kind>>(lhs.count_internal() * rhs.count_internal());
     }
 
     template <typename U2>
     [[nodiscard]] constexpr friend auto operator/(Quantity lhs, Quantity<U2> rhs) noexcept
     {
-        using R = DivUnits<unit, U2>;
+        using R = impl::DivUnits<unit, U2>;
         return Quantity<Unit<typename R::conversion, typename R::kind>>(lhs.count_internal() / rhs.count_internal());
     }
 
@@ -664,7 +681,7 @@ public:
 
     [[nodiscard]] constexpr friend auto operator/(scalar_type lhs, Quantity rhs) noexcept
     {
-        using R = DivUnits<units::Dimensionless, unit>;
+        using R = impl::DivUnits<units::Dimensionless, unit>;
         return Quantity<Unit<typename R::conversion, typename R::kind>>(lhs / rhs.count_internal());
     }
 
@@ -747,7 +764,7 @@ template <typename Conv, typename Q>
 using ScaledQuantity
     = typename Quantity<
         typename Unit<
-          typename MulConversions<Conv, typename Q::conversion>::type,
+          typename impl::MulConversions<Conv, typename Q::conversion>::type,
           typename Q::kind
         >::type
       >::type;
@@ -799,6 +816,8 @@ public:
     {
     }
 
+    // These are not the droids you're looking for!
+    // Use `count_as` to convert this `Absolute` into a scalar.
     [[nodiscard]] constexpr scalar_type count_internal() const noexcept
     {
         return _count;
@@ -891,11 +910,24 @@ namespace impl
     template <typename T>
     constexpr Scalar AsScalar() noexcept
     {
-        static_assert(IsRatio<T>,
-            "T must be a std::ratio");
+        // static_assert(IsRatio<T>,
+        //     "T must be a std::ratio");
 
-        constexpr Scalar value = ScalarFromRatio(T::num, T::den);
-        return value;
+        if constexpr (IsRatio<T>)
+        {
+            constexpr Scalar value = uom::ScalarFromRatio(T::num, T::den);
+            return value;
+        }
+        // else
+        // {
+        //     constexpr Scalar value = static_cast<Scalar>(T::value);
+        //     return value;
+        // }
+        // else
+        // {
+        //     constexpr Scalar value = static_cast<Scalar>(T{});
+        //     return value;
+        // }
     }
 
     enum class Direction {
@@ -931,8 +963,8 @@ namespace impl
             using R1 = std::ratio_divide<typename C1::ratio, typename C2::ratio>;
             using R2 = std::ratio_subtract<std::ratio_multiply<Z1, R1>, Z2>;
 
-            constexpr Scalar a = AsScalar<R1>();
-            constexpr Scalar b = AsScalar<R2>();
+            constexpr Scalar a = ScalarFromRatio(R1::num, R1::den);
+            constexpr Scalar b = ScalarFromRatio(R2::num, R2::den);
 
             if constexpr (Dir == Direction::forward)
                 return a * x + b;
@@ -946,9 +978,9 @@ namespace impl
 
             using CR = std::ratio_divide<typename C1::ratio, typename C2::ratio>;
 
-            constexpr Scalar a  = AsScalar<CR>();
-            constexpr Scalar z1 = AsScalar<Z1>();
-            constexpr Scalar z2 = AsScalar<Z2>();
+            constexpr Scalar a  = uom::impl::AsScalar<CR>();
+            constexpr Scalar z1 = uom::impl::AsScalar<Z1>();
+            constexpr Scalar z2 = uom::impl::AsScalar<Z2>();
 
             if constexpr (Dir == Direction::forward)
                 return (x + z1) * a - z2;
@@ -1091,26 +1123,34 @@ constexpr typename Absolute<Q, Z>::scalar_type Absolute<Q, Z>::count_as() const 
 // SI
 //==================================================================================================
 
+namespace tags
+{
+    // struct Length;
+    // struct Mass;
+    // struct Time;
+    // struct ElectricCurrent;
+    // struct Temperature;
+    // struct AmountOfSubstance;
+    // struct LuminousIntensity;
+    // struct PlaneAngle;
+    // struct Bit;
+    // struct Entity;
+    // struct Event;
+    // struct Cycle;
+
+    struct ApparentPower;
+    struct AreaPerLength;
+    struct Radians;
+    struct ReactivePower;
+    struct SolidAngle;
+}
+
 namespace kinds
 {
     // Some prime numbers:
     // 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, ...
     //                         ~~  ^^  ^^  ^^  ^^
 
-#if 0
-    using Length            = Kind< Dimension<   2,    1>, struct _length               >;
-    using Mass              = Kind< Dimension<   3,    1>, struct _mass                 >;
-    using Time              = Kind< Dimension<   5,    1>, struct _time                 >;
-    using ElectricCurrent   = Kind< Dimension<   7,    1>, struct _electric_current     >;
-    using Temperature       = Kind< Dimension<  11,    1>, struct _temperature          >;
-    using AmountOfSubstance = Kind< Dimension<  13,    1>, struct _amount_of_substance  >;
-    using LuminousIntensity = Kind< Dimension<  17,    1>, struct _luminous_intensity   >;
-    using PlaneAngle        = Kind< Dimension<  19,    1>, struct _plane_angle          >; // ~~
-    using Bit               = Kind< Dimension<  23,    1>, struct _bit                  >; // ^^
-    using Entity            = Kind< Dimension<  29,    1>, struct _entity               >; // ^^
-    using Event             = Kind< Dimension<  31,    1>, struct _event                >; // ^^
-    using Cycle             = Kind< Dimension<  37,    1>, struct _cycle                >; // ^^
-#else
     using Length            = Kind< Dimension<   2,    1>, Untagged >;
     using Mass              = Kind< Dimension<   3,    1>, Untagged >;
     using Time              = Kind< Dimension<   5,    1>, Untagged >;
@@ -1144,7 +1184,6 @@ namespace kinds
     using Luminance         = Kind< Dimension<  17,    4>, Untagged >;
     using LuminousFlux      = Kind< Dimension<6137,    1>, Untagged >;
     using Illuminance       = Kind< Dimension<6137,    4>, Untagged >;
-#endif
 }
 
 namespace units
@@ -1161,15 +1200,6 @@ namespace units
     using Entity            = Unit<Conversion<Ratio<1>>, kinds::Entity>;
     using Event             = Unit<Conversion<Ratio<1>>, kinds::Event>;
     using Cycle             = Unit<Conversion<Ratio<1>>, kinds::Cycle>;
-}
-
-namespace tags
-{
-    class ApparentPower;
-    class AreaPerLength;
-    class Radians;
-    class ReactivePower;
-    class SolidAngle;
 }
 
 //------------------------------------------------------------------------------
@@ -1262,7 +1292,7 @@ using KilogramsPerCubicMeter
 using TonsPerCubicMeters
                         = decltype(Tons{}      / CubicMeters{});
 
-using SquareCentimetersPerMeter 
+using SquareCentimetersPerMeter
                         = TaggedQuantity<decltype(SquareCentimeters{} / Meters{}), tags::AreaPerLength>;
 using SquareMetersPerMeter
                         = TaggedQuantity<decltype(SquareMeters{}      / Meters{}), tags::AreaPerLength>;
