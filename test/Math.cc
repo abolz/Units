@@ -29,31 +29,31 @@ TEST_CASE("Math - trigonometric")
         const auto sin_x = sin(x);
         const auto cos_x = cos(x);
         const auto tan_x = tan(x);
-        CHECK(sin_x.count_internal() == 0.0);
-        CHECK(cos_x.count_internal() == 1.0);
-        CHECK(tan_x.count_internal() == 0.0);
+        CHECK(sin_x._count_internal() == 0.0);
+        CHECK(cos_x._count_internal() == 1.0);
+        CHECK(tan_x._count_internal() == 0.0);
     }
     {
         const auto x = Revolutions(1.0);
         const auto sin_x = sin(Radians(x));
         const auto cos_x = cos(Radians(x));
         const auto tan_x = tan(Radians(x));
-        CHECK(almost_equal(sin_x.count_internal(), 0.0));
-        CHECK(almost_equal(cos_x.count_internal(), 1.0));
-        CHECK(almost_equal(tan_x.count_internal(), 0.0));
+        CHECK(almost_equal(sin_x._count_internal(), 0.0));
+        CHECK(almost_equal(cos_x._count_internal(), 1.0));
+        CHECK(almost_equal(tan_x._count_internal(), 0.0));
     }
     {
         const auto x = Radians(1.0);
         const auto sin_x = sin(x);
         const auto cos_x = cos(x);
         const auto tan_x = tan(x);
-        CHECK(sin_x.count_internal() == 0.84147098480789650);
-        CHECK(cos_x.count_internal() == 0.54030230586813977);
-        CHECK(tan_x.count_internal() == 1.5574077246549023);
+        CHECK(sin_x._count_internal() == 0.84147098480789650);
+        CHECK(cos_x._count_internal() == 0.54030230586813977);
+        CHECK(tan_x._count_internal() == 1.5574077246549023);
     }
     {
         const auto x = Degrees(Radians(1.0));
-        CHECK(x.count_internal() == 57.295779513082323);
+        CHECK(x._count_internal() == 57.295779513082323);
 #if 0
         const auto sin_x = sin(x);
         const auto cos_x = cos(x);
@@ -93,16 +93,16 @@ TEST_CASE("Math - atan2")
 TEST_CASE("Math - round absolute")
 {
     constexpr auto t00 = convert_to<DegCelsius>(0_mK);
-    constexpr auto x00 = t00.count_internal();
+    constexpr auto x00 = t00._count_internal();
     constexpr auto v00 = -273.15;
     static_assert(x00 == v00);
 
     const DegCelsius r00 = round(t00);
-    CHECK(r00.count_internal() == -273.0);
+    CHECK(r00._count_internal() == -273.0);
 
     const DegCelsius r01 = round<Ratio<10>>(t00);
-    CHECK(r01.count_internal() == -270.0);
+    CHECK(r01._count_internal() == -270.0);
 
     const DegCelsius r02 = round<Ratio<1,10>>(t00);
-    CHECK(r02.count_internal() == -273.2);
+    CHECK(r02._count_internal() == -273.2);
 }

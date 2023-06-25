@@ -573,13 +573,13 @@ public:
 
     template <typename U2, EnableImplicitConversion<unit, U2, int> = 0>
     constexpr Quantity(Quantity<U2> q) noexcept
-        : _count(impl::DivConversions<typename U2::conversion, conversion>{}(q.count_internal()))
+        : _count(impl::DivConversions<typename U2::conversion, conversion>{}(q._count_internal()))
     {
     }
 
     template <typename U2, EnableExplicitConversion<unit, U2, int> = 0>
     constexpr explicit Quantity(Quantity<U2> q) noexcept
-        : _count(impl::DivConversions<typename U2::conversion, conversion>{}(q.count_internal()))
+        : _count(impl::DivConversions<typename U2::conversion, conversion>{}(q._count_internal()))
     {
     }
 
@@ -591,7 +591,7 @@ public:
 
     // These are not the droids you're looking for!
     // Use `count_as` to convert this `Quantity` into a scalar.
-    [[nodiscard]] constexpr scalar_type count_internal() const noexcept
+    [[nodiscard]] constexpr scalar_type _count_internal() const noexcept
     {
         return _count;
     }
@@ -617,87 +617,87 @@ public:
 
     [[nodiscard]] constexpr friend Quantity operator-(Quantity q) noexcept
     {
-        return Quantity(-q.count_internal());
+        return Quantity(-q._count_internal());
     }
 
     [[nodiscard]] constexpr friend Quantity operator+(Quantity lhs, Quantity rhs) noexcept
     {
-        return Quantity(lhs.count_internal() + rhs.count_internal());
+        return Quantity(lhs._count_internal() + rhs._count_internal());
     }
 
     [[nodiscard]] constexpr friend Quantity operator-(Quantity lhs, Quantity rhs) noexcept
     {
-        return Quantity(lhs.count_internal() - rhs.count_internal());
+        return Quantity(lhs._count_internal() - rhs._count_internal());
     }
 
     template <typename _unit = unit, EnableIfDimensionless<_unit, int> = 0>
     [[nodiscard]] constexpr friend Quantity operator+(Quantity lhs, scalar_type rhs) noexcept
     {
-        return Quantity(lhs.count_internal() + rhs);
+        return Quantity(lhs._count_internal() + rhs);
     }
 
     template <typename _unit = unit, EnableIfDimensionless<_unit, int> = 0>
     [[nodiscard]] constexpr friend Quantity operator-(Quantity lhs, scalar_type rhs) noexcept
     {
-        return Quantity(lhs.count_internal() - rhs);
+        return Quantity(lhs._count_internal() - rhs);
     }
 
     template <typename _unit = unit, EnableIfDimensionless<_unit, int> = 0>
     [[nodiscard]] constexpr friend Quantity operator+(scalar_type lhs, Quantity rhs) noexcept
     {
-        return Quantity(lhs + rhs.count_internal());
+        return Quantity(lhs + rhs._count_internal());
     }
 
     template <typename _unit = unit, EnableIfDimensionless<_unit, int> = 0>
     [[nodiscard]] constexpr friend Quantity operator-(scalar_type lhs, Quantity rhs) noexcept
     {
-        return Quantity(lhs - rhs.count_internal());
+        return Quantity(lhs - rhs._count_internal());
     }
 
     template <typename U2>
     [[nodiscard]] constexpr friend auto operator*(Quantity lhs, Quantity<U2> rhs) noexcept
     {
         using R = impl::MulUnits<unit, U2>;
-        return Quantity<Unit<typename R::conversion, typename R::kind>>(lhs.count_internal() * rhs.count_internal());
+        return Quantity<Unit<typename R::conversion, typename R::kind>>(lhs._count_internal() * rhs._count_internal());
     }
 
     template <typename U2>
     [[nodiscard]] constexpr friend auto operator/(Quantity lhs, Quantity<U2> rhs) noexcept
     {
         using R = impl::DivUnits<unit, U2>;
-        return Quantity<Unit<typename R::conversion, typename R::kind>>(lhs.count_internal() / rhs.count_internal());
+        return Quantity<Unit<typename R::conversion, typename R::kind>>(lhs._count_internal() / rhs._count_internal());
     }
 
     [[nodiscard]] constexpr friend Quantity operator*(Quantity lhs, scalar_type rhs) noexcept
     {
-        return Quantity(lhs.count_internal() * rhs);
+        return Quantity(lhs._count_internal() * rhs);
     }
 
     [[nodiscard]] constexpr friend Quantity operator/(Quantity lhs, scalar_type rhs) noexcept
     {
-        return Quantity(lhs.count_internal() / rhs);
+        return Quantity(lhs._count_internal() / rhs);
     }
 
     [[nodiscard]] constexpr friend Quantity operator*(scalar_type lhs, Quantity rhs) noexcept
     {
-        return Quantity(lhs * rhs.count_internal());
+        return Quantity(lhs * rhs._count_internal());
     }
 
     [[nodiscard]] constexpr friend auto operator/(scalar_type lhs, Quantity rhs) noexcept
     {
         using R = impl::DivUnits<units::Dimensionless, unit>;
-        return Quantity<Unit<typename R::conversion, typename R::kind>>(lhs / rhs.count_internal());
+        return Quantity<Unit<typename R::conversion, typename R::kind>>(lhs / rhs._count_internal());
     }
 
     constexpr friend Quantity& operator+=(Quantity& lhs, Quantity rhs) noexcept
     {
-        lhs._count += rhs.count_internal();
+        lhs._count += rhs._count_internal();
         return lhs;
     }
 
     constexpr friend Quantity& operator-=(Quantity& lhs, Quantity rhs) noexcept
     {
-        lhs._count -= rhs.count_internal();
+        lhs._count -= rhs._count_internal();
         return lhs;
     }
 
@@ -729,32 +729,32 @@ public:
 
     [[nodiscard]] constexpr friend bool operator==(Quantity lhs, Quantity rhs) noexcept
     {
-        return lhs.count_internal() == rhs.count_internal();
+        return lhs._count_internal() == rhs._count_internal();
     }
 
     [[nodiscard]] constexpr friend bool operator!=(Quantity lhs, Quantity rhs) noexcept
     {
-        return lhs.count_internal() != rhs.count_internal();
+        return lhs._count_internal() != rhs._count_internal();
     }
 
     [[nodiscard]] constexpr friend bool operator<(Quantity lhs, Quantity rhs) noexcept
     {
-        return lhs.count_internal() < rhs.count_internal();
+        return lhs._count_internal() < rhs._count_internal();
     }
 
     [[nodiscard]] constexpr friend bool operator>(Quantity lhs, Quantity rhs) noexcept
     {
-        return lhs.count_internal() > rhs.count_internal();
+        return lhs._count_internal() > rhs._count_internal();
     }
 
     [[nodiscard]] constexpr friend bool operator<=(Quantity lhs, Quantity rhs) noexcept
     {
-        return lhs.count_internal() <= rhs.count_internal();
+        return lhs._count_internal() <= rhs._count_internal();
     }
 
     [[nodiscard]] constexpr friend bool operator>=(Quantity lhs, Quantity rhs) noexcept
     {
-        return lhs.count_internal() >= rhs.count_internal();
+        return lhs._count_internal() >= rhs._count_internal();
     }
 };
 
@@ -822,7 +822,7 @@ public:
 
     // These are not the droids you're looking for!
     // Use `count_as` to convert this `Absolute` into a scalar.
-    [[nodiscard]] constexpr scalar_type count_internal() const noexcept
+    [[nodiscard]] constexpr scalar_type _count_internal() const noexcept
     {
         return _count;
     }
@@ -838,64 +838,64 @@ public:
 
     [[nodiscard]] constexpr friend Absolute operator+(Absolute lhs, relative_type rhs) noexcept
     {
-        return Absolute(lhs.count_internal() + rhs.count_internal());
+        return Absolute(lhs._count_internal() + rhs._count_internal());
     }
 
     [[nodiscard]] constexpr friend Absolute operator+(relative_type lhs, Absolute rhs) noexcept
     {
-        return Absolute(lhs.count_internal() + rhs.count_internal());
+        return Absolute(lhs._count_internal() + rhs._count_internal());
     }
 
     [[nodiscard]] constexpr friend relative_type operator-(Absolute lhs, Absolute rhs) noexcept
     {
-        return relative_type(lhs.count_internal() - rhs.count_internal());
+        return relative_type(lhs._count_internal() - rhs._count_internal());
     }
 
     [[nodiscard]] constexpr friend Absolute operator-(Absolute lhs, relative_type rhs) noexcept
     {
-        return Absolute(lhs.count_internal() - rhs.count_internal());
+        return Absolute(lhs._count_internal() - rhs._count_internal());
     }
 
     friend Absolute& operator+=(Absolute& lhs, relative_type rhs) noexcept
     {
-        lhs._count += rhs.count_internal();
+        lhs._count += rhs._count_internal();
         return lhs;
     }
 
     friend Absolute& operator-=(Absolute& lhs, relative_type rhs) noexcept
     {
-        lhs._count -= rhs.count_internal();
+        lhs._count -= rhs._count_internal();
         return lhs;
     }
 
     [[nodiscard]] constexpr friend bool operator==(Absolute lhs, Absolute rhs) noexcept
     {
-        return lhs.count_internal() == rhs.count_internal();
+        return lhs._count_internal() == rhs._count_internal();
     }
 
     [[nodiscard]] constexpr friend bool operator!=(Absolute lhs, Absolute rhs) noexcept
     {
-        return lhs.count_internal() != rhs.count_internal();
+        return lhs._count_internal() != rhs._count_internal();
     }
 
     [[nodiscard]] constexpr friend bool operator<(Absolute lhs, Absolute rhs) noexcept
     {
-        return lhs.count_internal() < rhs.count_internal();
+        return lhs._count_internal() < rhs._count_internal();
     }
 
     [[nodiscard]] constexpr friend bool operator>(Absolute lhs, Absolute rhs) noexcept
     {
-        return lhs.count_internal() > rhs.count_internal();
+        return lhs._count_internal() > rhs._count_internal();
     }
 
     [[nodiscard]] constexpr friend bool operator<=(Absolute lhs, Absolute rhs) noexcept
     {
-        return lhs.count_internal() <= rhs.count_internal();
+        return lhs._count_internal() <= rhs._count_internal();
     }
 
     [[nodiscard]] constexpr friend bool operator>=(Absolute lhs, Absolute rhs) noexcept
     {
-        return lhs.count_internal() >= rhs.count_internal();
+        return lhs._count_internal() >= rhs._count_internal();
     }
 };
 
@@ -1012,20 +1012,20 @@ constexpr Target convert_to(Quantity<SourceUnit> q) noexcept
     if constexpr (IsQuantity<Target>)
     {
         // (backward)
-        return Target(impl::DivConversions<CS, CT>{}(q.count_internal()));
+        return Target(impl::DivConversions<CS, CT>{}(q._count_internal()));
     }
     else
     {
         using ZS = typename Source::zero;
         using ZT = typename Target::zero;
-        return Target(impl::Convert<impl::Direction::forward, CS, ZS, CT, ZT>(q.count_internal()));
+        return Target(impl::Convert<impl::Direction::forward, CS, ZS, CT, ZT>(q._count_internal()));
     }
 }
 
 template <typename T, typename U>
 constexpr Scalar count_as(Quantity<U> q) noexcept
 {
-    return uom::convert_to<T>(q).count_internal();
+    return uom::convert_to<T>(q)._count_internal();
 }
 
 template <typename U>
@@ -1056,7 +1056,7 @@ template <typename U>
 template <typename T>
 constexpr typename Quantity<U>::scalar_type Quantity<U>::count_as() const noexcept
 {
-    return uom::convert_to<T>(*this).count_internal();
+    return uom::convert_to<T>(*this)._count_internal();
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1078,18 +1078,18 @@ constexpr Target convert_to(Absolute<SourceQuantity, SourceZero> a) noexcept
 
     if constexpr (IsQuantity<Target>)
     {
-        return Target(impl::Convert<impl::Direction::backward, CT, ZT, CS, ZS>(a.count_internal()));
+        return Target(impl::Convert<impl::Direction::backward, CT, ZT, CS, ZS>(a._count_internal()));
     }
     else
     {
-        return Target(impl::Convert<impl::Direction::forward, CS, ZS, CT, ZT>(a.count_internal()));
+        return Target(impl::Convert<impl::Direction::forward, CS, ZS, CT, ZT>(a._count_internal()));
     }
 }
 
 template <typename T, typename Q, typename Z>
 constexpr Scalar count_as(Absolute<Q, Z> q) noexcept
 {
-    return uom::convert_to<T>(q).count_internal();
+    return uom::convert_to<T>(q)._count_internal();
 }
 
 template <typename Q, typename Z>
@@ -1120,7 +1120,7 @@ template <typename Q, typename Z>
 template <typename T>
 constexpr typename Absolute<Q, Z>::scalar_type Absolute<Q, Z>::count_as() const noexcept
 {
-    return uom::convert_to<T>(*this).count_internal();
+    return uom::convert_to<T>(*this)._count_internal();
 }
 
 //==================================================================================================

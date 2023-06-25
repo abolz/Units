@@ -32,7 +32,7 @@ TEST_CASE("Xkcd")
 
     constexpr Scalar expected_answer = 193.9538756997824294;
 
-    static_assert(answer.count_internal() == expected_answer);
+    static_assert(answer._count_internal() == expected_answer);
 
     CHECK(round<Ratio<5>>(answer) == Years(195));
     CHECK(round<Weeks>(answer) == Weeks(10120));

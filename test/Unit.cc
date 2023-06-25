@@ -95,18 +95,18 @@ static constexpr void test()
         static_assert(count_as<Millimeters>(t1) == 20.0);
         constexpr auto t2 = 1_cm + 1_mm;
         static_assert(IsSame<Millimeters, decltype(t2)>);
-        static_assert(t2.count_internal() == 11.0);
+        static_assert(t2._count_internal() == 11.0);
         constexpr auto t3 = 1_mm + 1_cm;
         static_assert(IsSame<Millimeters, decltype(t3)>);
-        static_assert(t3.count_internal() == 11.0);
+        static_assert(t3._count_internal() == 11.0);
         static_assert(t2 == t3);
         constexpr auto t4 = 1_mm - 1_cm;
         static_assert(IsSame<Millimeters, decltype(t4)>);
-        static_assert(t4.count_internal() == -9.0);
+        static_assert(t4._count_internal() == -9.0);
         static_assert(t4 < t3);
         constexpr auto t5 = 1_cm - 1_mm;
         static_assert(IsSame<Millimeters, decltype(t5)>);
-        static_assert(t5.count_internal() == 9.0);
+        static_assert(t5._count_internal() == 9.0);
         static_assert(t5 < 1_cm);
     }
     {
@@ -164,9 +164,9 @@ static constexpr void test()
     {
 //      constexpr Revolutions r0 = 1_gon;
         constexpr Gons r1 = 1_rev;
-        static_assert(r1.count_internal() == 400.0);
+        static_assert(r1._count_internal() == 400.0);
         constexpr Degrees r2 = 1_rev;
-        static_assert(r2.count_internal() == 360.0);
+        static_assert(r2._count_internal() == 360.0);
         static_assert(!std::is_convertible_v<Gons, Revolutions>);
         ////static_assert( std::is_constructible_v<Revolutions, Gons>);
 
@@ -235,21 +235,21 @@ static constexpr void test()
         static_assert(!std::is_convertible_v<Centimeters, Feet>);
         static_assert(!std::is_convertible_v<Meters, Miles>);
         constexpr auto tx = convert_to<Centimeters>(1_in);
-        static_assert(tx.count_internal() == 2.54);
+        static_assert(tx._count_internal() == 2.54);
 
         //static_assert(compare(1_m, 1_m) == 0);
         //static_assert(compare(1_in, 1_cm) > 0);
         //static_assert(compare(1_mm, 1_ft) < 0);
 
         constexpr auto s0 = 1_yd;
-        static_assert(s0.count_internal() == 1.0);
+        static_assert(s0._count_internal() == 1.0);
         constexpr Feet x0 = s0;
         constexpr auto s1 = 1_yd + 1_ft;
-        static_assert(s1.count_internal() == 4.0);
+        static_assert(s1._count_internal() == 4.0);
         constexpr Inches x1 = 1_ft;
-        static_assert(x1.count_internal() == 12.0);
+        static_assert(x1._count_internal() == 12.0);
         constexpr auto s2 = 1_yd + 1_ft + 1_in;
-        static_assert(s2.count_internal() == 49.0);
+        static_assert(s2._count_internal() == 49.0);
         static_assert(!std::is_convertible_v<Inches, Yards>);
         //static_assert( std::is_constructible_v<Yards, Inches>);
         constexpr Yards x2 = convert_to<Yards>(1_in);
@@ -288,18 +288,18 @@ static constexpr void test()
         //static_assert(!std::is_convertible_v<decltype(1_cm2/1_m), SquareCentimetersPerMeter>);
         //static_assert( std::is_constructible_v<SquareCentimetersPerMeter, decltype(1_cm2/1_m)>);
         constexpr decltype(1_cm2 / 1_m) t44 = convert_to<decltype(1_cm2/1_m)>(t4);
-        static_assert(t4.count_internal() == 1.0);
+        static_assert(t4._count_internal() == 1.0);
         //static_assert(!std::is_assignable_v<SquareCentimetersPerMeter, decltype((1_cm / 1_m) * 1_cm)>);
         //static_assert( std::is_assignable_v<ReinfCont, decltype((1_cm / 1_m) * 1_cm)>);
         static_assert(!std::is_assignable_v<decltype(t1), Meters>);
 
         constexpr SquareCentimetersPerMeter t5 = convert_to<SquareCentimetersPerMeter>(1_m2 / 1_cm);
-        static_assert(t5.count_internal() == 1'000'000.0);
+        static_assert(t5._count_internal() == 1'000'000.0);
     }
     {
         static_assert( Compiles<AssignAdd, Millimeters, Centimeters>);
         static_assert(!Compiles<AssignAdd, Centimeters, Millimeters>);
-        static_assert((1_cm + 1_mm).count_internal() == 11.0);
+        static_assert((1_cm + 1_mm)._count_internal() == 11.0);
     }
     {
         constexpr auto energy = 1_J;          // J
@@ -346,7 +346,7 @@ static void test2()
     {
         Millimeters mm{1.0};
         mm += 1_cm;
-        assert(mm.count_internal() == 11.0);
+        assert(mm._count_internal() == 11.0);
     }
     {
         using Width  = TaggedQuantity<Millimeters, class _width>;
