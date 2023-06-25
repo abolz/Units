@@ -13,13 +13,13 @@ TEST_CASE("Math - sqrt")
 {
     const SquareMeters m2 = 1_m2 + 1_m * 1_m;
     const Meters m = sqrt(m2);
-    CHECK(count_as<Meters>(m) == 1.4142135623730951);
+    CHECK(m.in<Meters>() == 1.4142135623730951);
 
     const SquareCentimeters cm2 = m2;
     const Centimeters cm = sqrt(cm2);
-    CHECK(count_as<Centimeters>(cm) == 141.42135623730951);
+    CHECK(cm.in<Centimeters>() == 141.42135623730951);
 
-    CHECK(count_as<Meters>(cm) == 1.4142135623730951);
+    CHECK(cm.in<Meters>() == 1.4142135623730951);
 }
 
 TEST_CASE("Math - trigonometric")

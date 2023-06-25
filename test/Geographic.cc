@@ -23,10 +23,10 @@ struct Position {
 
 static SphericalDistance spherical_distance_cosine(Position pos1, Position pos2)
 {
-    const Radians lat1 = pos1.lat.convert_to<Radians>();
-    const Radians lat2 = pos2.lat.convert_to<Radians>();
-    const Radians lon1 = pos1.lon.convert_to<Radians>();
-    const Radians lon2 = pos2.lon.convert_to<Radians>();
+    const Radians lat1 = pos1.lat.as<Radians>();
+    const Radians lat2 = pos2.lat.as<Radians>();
+    const Radians lon1 = pos1.lon.as<Radians>();
+    const Radians lon2 = pos2.lon.as<Radians>();
 
     // Spherical law of cosines
     const auto central_angle = acos(sin(lat1) * sin(lat2) + cos(lat1) * cos(lat2) * cos(lon2 - lon1));
@@ -36,10 +36,10 @@ static SphericalDistance spherical_distance_cosine(Position pos1, Position pos2)
 
 static SphericalDistance spherical_distance_haversine(Position pos1, Position pos2)
 {
-    const Radians lat1 = pos1.lat.convert_to<Radians>();
-    const Radians lat2 = pos2.lat.convert_to<Radians>();
-    const Radians lon1 = pos1.lon.convert_to<Radians>();
-    const Radians lon2 = pos2.lon.convert_to<Radians>();
+    const Radians lat1 = pos1.lat.as<Radians>();
+    const Radians lat2 = pos2.lat.as<Radians>();
+    const Radians lon1 = pos1.lon.as<Radians>();
+    const Radians lon2 = pos2.lon.as<Radians>();
 
     // Haversine formula
     const auto sin_lat = sin((lat2 - lat1) / 2);
@@ -62,8 +62,8 @@ TEST_CASE("Spherical distance - 1")
     const SphericalDistance dist_1 = round(spherical_distance_cosine(pos1, pos2));
     const SphericalDistance dist_2 = round(spherical_distance_haversine(pos1, pos2));
 
-    const double km_1 = (dist_1 / 1_rad).count_as<Kilometers>();
-    const double km_2 = (dist_2 / 1_rad).count_as<Kilometers>();
+    const double km_1 = (dist_1 / 1_rad).in<Kilometers>();
+    const double km_2 = (dist_2 / 1_rad).in<Kilometers>();
     CHECK(km_1 == 475);
     CHECK(km_2 == 475);
 }
@@ -81,8 +81,8 @@ TEST_CASE("Spherical distance - 2")
     const SphericalDistance dist_1 = round(spherical_distance_cosine(pos1, pos2));
     const SphericalDistance dist_2 = round(spherical_distance_haversine(pos1, pos2));
 
-    const double km_1 = count_as<Kilometers>(dist_1 / 1_rad);
-    const double km_2 = count_as<Kilometers>(dist_2 / 1_rad);
+    const double km_1 = (dist_1 / 1_rad).in<Kilometers>();
+    const double km_2 = (dist_2 / 1_rad).in<Kilometers>();
     CHECK(km_1 == 10250);
     CHECK(km_2 == 10250);
 }

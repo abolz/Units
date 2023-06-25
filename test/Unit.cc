@@ -90,9 +90,9 @@ static constexpr void test()
 {
     {
         constexpr auto t0 = 1_m + 1_m;
-        static_assert(count_as<Meters>(t0) == 2.0);
+        static_assert(t0.in<Meters>() == 2.0);
         constexpr auto t1 = 1_cm + 1_cm;
-        static_assert(count_as<Millimeters>(t1) == 20.0);
+        static_assert(t1.in<Millimeters>() == 20.0);
         constexpr auto t2 = 1_cm + 1_mm;
         static_assert(IsSame<Millimeters, decltype(t2)>);
         static_assert(t2._count_internal() == 11.0);

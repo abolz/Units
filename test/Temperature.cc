@@ -9,7 +9,7 @@ static void test0()
 {
     {
         constexpr auto t00 = 0_degC + 1_K;
-        constexpr auto v00 = count_as<DegCelsius>(t00);
+        constexpr auto v00 = t00.in<DegCelsius>();
         static_assert(v00 == 1.0);
         static_assert(t00._count_internal() == 1.0);
 
@@ -18,7 +18,7 @@ static void test0()
         static_assert(1_K + 1_degC == 2_degC);
         static_assert(1_degC - 1_degC == 0_K);
 
-        constexpr auto v01 = count_as<Kelvin>(0_degC);
+        constexpr auto v01 = (0_degC).in<Kelvin>();
         static_assert(v01 == 273.15);
 
         // should not compile:
@@ -28,7 +28,7 @@ static void test0()
 //      static_assert(2 * 1_degC == 2_degC);
 //      static_assert(1_K * 1_degC == 1_degC);
 
-        constexpr auto v02 = count_as<DegFahrenheit>(0_K);
+        constexpr auto v02 = (0_K).in<DegFahrenheit>();
         static_assert(v02 == -459.67);
     }
 }
@@ -64,7 +64,7 @@ static void test()
         static_assert(x00 == v00);
 
         constexpr auto t01 = convert_to<DegFahrenheit>(0_degC);
-        constexpr auto x01 = count_as<DegFahrenheit>(0_degC);
+        constexpr auto x01 = (0_degC).in<DegFahrenheit>();
         constexpr auto v01 = 32.0;
         static_assert(x01 == v01);
 
@@ -81,7 +81,7 @@ static void test()
 
     {
         constexpr auto t00 = convert_to<Kelvin>(100_degC);
-        constexpr auto x00 = count_as<Kelvin>(t00);
+        constexpr auto x00 = t00.in<Kelvin>();
         constexpr auto v00 = 373.15;
         static_assert(x00 == v00);
 

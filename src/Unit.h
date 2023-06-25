@@ -590,7 +590,7 @@ public:
     }
 
     // These are not the droids you're looking for!
-    // Use `count_as` to convert this `Quantity` into a scalar.
+    // Use `in` to convert this `Quantity` into a scalar.
     [[nodiscard]] constexpr scalar_type _count_internal() const noexcept
     {
         return _count;
@@ -604,11 +604,20 @@ public:
     template <typename T>
     [[nodiscard]] constexpr bool is_convertible_to() const noexcept;
 
-    template <typename T>
-    [[nodiscard]] constexpr T convert_to() const noexcept;
+    // template <typename T>
+    // [[nodiscard]] constexpr T convert_to() const noexcept;
 
     template <typename T>
-    [[nodiscard]] constexpr scalar_type count_as() const noexcept;
+    [[nodiscard]] constexpr T as() const noexcept;
+
+    template <typename T>
+    [[nodiscard]] constexpr T as(T) const noexcept;
+
+    template <typename T>
+    [[nodiscard]] constexpr scalar_type in() const noexcept;
+
+    template <typename T>
+    [[nodiscard]] constexpr scalar_type in(T) const noexcept;
 
     [[nodiscard]] constexpr friend Quantity operator+(Quantity q) noexcept
     {
@@ -821,7 +830,7 @@ public:
     }
 
     // These are not the droids you're looking for!
-    // Use `count_as` to convert this `Absolute` into a scalar.
+    // Use `in` to convert this `Absolute` into a scalar.
     [[nodiscard]] constexpr scalar_type _count_internal() const noexcept
     {
         return _count;
@@ -830,11 +839,20 @@ public:
     template <typename T>
     [[nodiscard]] constexpr bool is_convertible_to() const noexcept;
 
-    template <typename T>
-    [[nodiscard]] constexpr T convert_to() const noexcept;
+    // template <typename T>
+    // [[nodiscard]] constexpr T convert_to() const noexcept;
 
     template <typename T>
-    [[nodiscard]] constexpr scalar_type count_as() const noexcept;
+    [[nodiscard]] constexpr T as() const noexcept;
+
+    template <typename T>
+    [[nodiscard]] constexpr T as(T) const noexcept;
+
+    template <typename T>
+    [[nodiscard]] constexpr scalar_type in() const noexcept;
+
+    template <typename T>
+    [[nodiscard]] constexpr scalar_type in(T) const noexcept;
 
     [[nodiscard]] constexpr friend Absolute operator+(Absolute lhs, relative_type rhs) noexcept
     {
@@ -1023,7 +1041,7 @@ constexpr Target convert_to(Quantity<SourceUnit> q) noexcept
 }
 
 template <typename T, typename U>
-constexpr Scalar count_as(Quantity<U> q) noexcept
+constexpr Scalar in(Quantity<U> q) noexcept
 {
     return uom::convert_to<T>(q)._count_internal();
 }
@@ -1045,16 +1063,37 @@ constexpr bool Quantity<U>::is_convertible_to() const noexcept
         return false;
 }
 
+// template <typename U>
+// template <typename T>
+// constexpr T Quantity<U>::convert_to() const noexcept
+// {
+//     return uom::convert_to<T>(*this);
+// }
+
 template <typename U>
 template <typename T>
-constexpr T Quantity<U>::convert_to() const noexcept
+constexpr T Quantity<U>::as() const noexcept
 {
     return uom::convert_to<T>(*this);
 }
 
 template <typename U>
 template <typename T>
-constexpr typename Quantity<U>::scalar_type Quantity<U>::count_as() const noexcept
+constexpr T Quantity<U>::as(T) const noexcept
+{
+    return uom::convert_to<T>(*this);
+}
+
+template <typename U>
+template <typename T>
+constexpr typename Quantity<U>::scalar_type Quantity<U>::in() const noexcept
+{
+    return uom::convert_to<T>(*this)._count_internal();
+}
+
+template <typename U>
+template <typename T>
+constexpr typename Quantity<U>::scalar_type Quantity<U>::in(T) const noexcept
 {
     return uom::convert_to<T>(*this)._count_internal();
 }
@@ -1087,7 +1126,7 @@ constexpr Target convert_to(Absolute<SourceQuantity, SourceZero> a) noexcept
 }
 
 template <typename T, typename Q, typename Z>
-constexpr Scalar count_as(Absolute<Q, Z> q) noexcept
+constexpr Scalar in(Absolute<Q, Z> q) noexcept
 {
     return uom::convert_to<T>(q)._count_internal();
 }
@@ -1109,16 +1148,37 @@ constexpr bool Absolute<Q, Z>::is_convertible_to() const noexcept
         return false;
 }
 
+// template <typename Q, typename Z>
+// template <typename T>
+// constexpr T Absolute<Q, Z>::convert_to() const noexcept
+// {
+//     return uom::convert_to<T>(*this);
+// }
+
 template <typename Q, typename Z>
 template <typename T>
-constexpr T Absolute<Q, Z>::convert_to() const noexcept
+constexpr T Absolute<Q, Z>::as() const noexcept
 {
     return uom::convert_to<T>(*this);
 }
 
 template <typename Q, typename Z>
 template <typename T>
-constexpr typename Absolute<Q, Z>::scalar_type Absolute<Q, Z>::count_as() const noexcept
+constexpr T Absolute<Q, Z>::as(T) const noexcept
+{
+    return uom::convert_to<T>(*this);
+}
+
+template <typename Q, typename Z>
+template <typename T>
+constexpr typename Absolute<Q, Z>::scalar_type Absolute<Q, Z>::in() const noexcept
+{
+    return uom::convert_to<T>(*this)._count_internal();
+}
+
+template <typename Q, typename Z>
+template <typename T>
+constexpr typename Absolute<Q, Z>::scalar_type Absolute<Q, Z>::in(T) const noexcept
 {
     return uom::convert_to<T>(*this)._count_internal();
 }
