@@ -639,7 +639,7 @@ template <typename Scale = Ratio<1>, typename Q, typename Z>
 //
 //==================================================================================================
 
-template <typename U1, typename U2, typename U3, std::enable_if_t<std::is_same_v<MulUnits<U1, U2>, U3>, int> = 0>
+template <typename U1, typename U2, typename U3, std::enable_if_t<std::is_same_v<uom::impl::MulUnits<U1, U2>, U3>, int> = 0>
 [[nodiscard]] auto fma(Quantity<U1> x, Quantity<U2> y, Quantity<U3> z)
 {
     // The function signature is more restrictive than (x * y + z).

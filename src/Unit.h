@@ -20,8 +20,12 @@ namespace uom {
 // This is NOT an option (yet).
 #if 0 // defined(UNITS_SCALAR_F32)
 using Scalar = float;
+#define UNITS_SCALAR_F32() 1
+#define UNITS_SCALAR_F64() 0
 #else
 using Scalar = double;
+#define UNITS_SCALAR_F32() 0
+#define UNITS_SCALAR_F64() 1
 #endif
 
 //==================================================================================================
@@ -294,8 +298,8 @@ namespace impl
 //
 //==================================================================================================
 
-// namespace impl
-// {
+namespace impl
+{
     constexpr Scalar ScalarFromRatio(int64_t num, int64_t den)
     {
         // UNITS_ASSERT(num != INT64_MIN);
@@ -306,7 +310,7 @@ namespace impl
         return static_cast<Scalar>(static_cast<double>(num) / static_cast<double>(den));
     }
 
-// } // namespace impl
+} // namespace impl
 
 //==================================================================================================
 // Conversion
@@ -368,14 +372,14 @@ struct Conversion final
         }
         else if constexpr (num > den)
         {
-            constexpr Scalar scale = ScalarFromRatio(num, den);
+            constexpr Scalar scale = impl::ScalarFromRatio(num, den);
             return x * scale;
         }
         else
         {
             static_assert(num != den);
 
-            constexpr Scalar scale = ScalarFromRatio(den, num);
+            constexpr Scalar scale = impl::ScalarFromRatio(den, num);
             return x / scale;
         }
     }
@@ -915,7 +919,7 @@ namespace impl
 
         if constexpr (IsRatio<T>)
         {
-            constexpr Scalar value = uom::ScalarFromRatio(T::num, T::den);
+            constexpr Scalar value = impl::ScalarFromRatio(T::num, T::den);
             return value;
         }
         // else
@@ -978,9 +982,9 @@ namespace impl
 
             using CR = std::ratio_divide<typename C1::ratio, typename C2::ratio>;
 
-            constexpr Scalar a  = uom::impl::AsScalar<CR>();
-            constexpr Scalar z1 = uom::impl::AsScalar<Z1>();
-            constexpr Scalar z2 = uom::impl::AsScalar<Z2>();
+            constexpr Scalar a  = impl::AsScalar<CR>();
+            constexpr Scalar z1 = impl::AsScalar<Z1>();
+            constexpr Scalar z2 = impl::AsScalar<Z2>();
 
             if constexpr (Dir == Direction::forward)
                 return (x + z1) * a - z2;
@@ -1008,7 +1012,7 @@ constexpr Target convert_to(Quantity<SourceUnit> q) noexcept
     if constexpr (IsQuantity<Target>)
     {
         // (backward)
-        return Target(DivConversions<CS, CT>{}(q.count_internal()));
+        return Target(impl::DivConversions<CS, CT>{}(q.count_internal()));
     }
     else
     {
@@ -1164,8 +1168,8 @@ namespace kinds
     using Event             = Kind< Dimension<  31,    1>, Untagged >; // ^^
     using Cycle             = Kind< Dimension<  37,    1>, Untagged >; // ^^
 
+#if 1 // #ifdef __INTELLISENSE__
     // EXPERIMENT:
-    //
     // These typedef's are only used to generate slightly prettier error messages and IntelliSense hints.
     // They are otherwise unused and useless.
 
@@ -1184,6 +1188,7 @@ namespace kinds
     using Luminance         = Kind< Dimension<  17,    4>, Untagged >;
     using LuminousFlux      = Kind< Dimension<6137,    1>, Untagged >;
     using Illuminance       = Kind< Dimension<6137,    4>, Untagged >;
+#endif
 }
 
 namespace units

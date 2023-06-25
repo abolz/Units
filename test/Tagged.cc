@@ -33,6 +33,7 @@ static void test()
 static void test2()
 {
     // static_assert( !std::is_constructible_v<SquareCentimetersPerMeter, Kilonewtons> );
+    //static_assert( std::is_same_v<SquareCentimetersPerMeter::parent_tag_type, uom::kinds::Untagged>);
 
     constexpr SquareCentimetersPerMeter as(SquareCentimeters(2.5) / Meters(1));
     //constexpr SquareCentimetersPerMeter as2 = SquareCentimeters(2.5) / Meters(1);
@@ -55,6 +56,20 @@ static void test2()
     // constexpr Millimeters yyy(as);
     constexpr Millimeters yyy(as.untagged());
 }
+
+#if 0
+static void test3()
+{
+    using ASH = TaggedQuantity<SquareCentimetersPerMeter, struct _ash>;
+    using ASV = TaggedQuantity<SquareCentimetersPerMeter, struct _asv>;
+
+    constexpr ASH h01 = ASH(1.0);
+    constexpr ASH h02 = h01 + SquareCentimetersPerMeter(2);
+
+    constexpr ASH h03 = ASH(SquareCentimeters(2) / Meters(1));
+    //constexpr ASH h04 =     SquareCentimeters(2) / Meters(1);
+}
+#endif
 
 //static void test2()
 //{
