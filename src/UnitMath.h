@@ -275,7 +275,7 @@ template <int64_t N, typename U>
 
     static_assert(N >= 1,
         "only positive exponents allowed");
-    static_assert(std::is_same<typename kind::tag, kinds::Untagged>::value,
+    static_assert(std::is_same_v<typename kind::tag, kinds::Untagged>,
         "operation not supported - instead of 'pow<N>(q)' you must use 'pow<N>(q.untagged())'");
     //
     // TODO:
@@ -332,7 +332,7 @@ template <int64_t N, typename U>
 
     static_assert(N >= 1,
         "only positive exponents allowed");
-    static_assert(std::is_same<typename kind::tag, kinds::Untagged>::value,
+    static_assert(std::is_same_v<typename kind::tag, kinds::Untagged>,
         "operation not supported - instead of 'nth_root<N>(q)' you must use 'nth_root<N>(q.untagged())'");
     //
     // TODO:
@@ -368,7 +368,7 @@ template <int64_t N, typename U>
     }
     else
     {
-        return Quantity<typename Unit<C, K>::type>(std::pow(q._count_internal(), 1.0 / static_cast<Scalar>(N)));
+        return Quantity<typename Unit<C, K>::type>(std::pow(q._count_internal(), 1 / static_cast<Scalar>(N)));
     }
 }
 
@@ -561,11 +561,11 @@ namespace impl
         if constexpr (IsRatio<Scale>)
         {
             using T = ScaledQuantity<Conversion<Scale>, Quantity<U>>;
-            return convert_to<Quantity<U>>( T( fn( convert_to<T>(x)._count_internal() ) ) );
+            return ( T( fn( x.as(T{})._count_internal() ) ) ).as(Quantity<U>{});
         }
         else
         {
-            return Scale( fn( convert_to<Scale>(x)._count_internal() ) );
+            return Scale( fn( x.as(Scale{})._count_internal() ) );
         }
     }
 

@@ -36,11 +36,11 @@ static void test1()
     static_assert(h1._count_internal() == 123.0);
     static_assert(h1.in<GlobalHeight>() == 323.0);
 
-    constexpr LocalHeight2 h2 = convert_to<LocalHeight2>(h1);
+    constexpr LocalHeight2 h2 = h1.as<LocalHeight2>();
     static_assert(h2._count_internal() == 223.0);
     static_assert(h2.in<GlobalHeight>() == 323.0);
 
-    constexpr GlobalHeight hg = convert_to<GlobalHeight>(h1);
+    constexpr GlobalHeight hg = h1.as<GlobalHeight>();
     static_assert(hg._count_internal() == 323.0);
     static_assert(hg.in<LocalHeight1>() == 123.0);
     static_assert(hg.in<LocalHeight2>() == 223.0);

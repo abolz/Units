@@ -65,7 +65,7 @@ static void test_round()
 
 static void test_force()
 {
-    constexpr Kilonewtons kf = convert_to<Kilonewtons>( 1_kg * 9.81_m_per_s2 );
+    constexpr Kilonewtons kf = ( 1_kg * 9.81_m_per_s2 ).as<Kilonewtons>();
     constexpr Newtons f      = 1_t  * 9.81_m_per_s2;
 }
 
@@ -108,6 +108,12 @@ static constexpr void test()
         static_assert(IsSame<Millimeters, decltype(t5)>);
         static_assert(t5._count_internal() == 9.0);
         static_assert(t5 < 1_cm);
+
+        if (t5 > 1)
+        {
+        }
+
+        //static_assert(t5 > 0);
     }
     {
         constexpr auto t0 = 1_m * 1_s;
@@ -174,7 +180,7 @@ static constexpr void test()
         constexpr auto t1 = 1_deg;
         //static_assert( std::is_constructible_v<Radians, Degrees>);
         static_assert(!std::is_convertible_v<Degrees, Radians>);
-        constexpr auto t2 = convert_to<Radians>(1_deg);
+        constexpr auto t2 = (1_deg).as<Radians>();
         constexpr auto t3 = 1_gon;
         constexpr auto t4 = 1_rev;
         ////static_assert( std::is_constructible_v<Gons, Degrees>);
@@ -234,7 +240,7 @@ static constexpr void test()
         static_assert(!std::is_convertible_v<Centimeters, Inches>);
         static_assert(!std::is_convertible_v<Centimeters, Feet>);
         static_assert(!std::is_convertible_v<Meters, Miles>);
-        constexpr auto tx = convert_to<Centimeters>(1_in);
+        constexpr auto tx = (1_in).as<Centimeters>();
         static_assert(tx._count_internal() == 2.54);
 
         //static_assert(compare(1_m, 1_m) == 0);
@@ -252,7 +258,7 @@ static constexpr void test()
         static_assert(s2._count_internal() == 49.0);
         static_assert(!std::is_convertible_v<Inches, Yards>);
         //static_assert( std::is_constructible_v<Yards, Inches>);
-        constexpr Yards x2 = convert_to<Yards>(1_in);
+        constexpr Yards x2 = (1_in).as<Yards>();
         constexpr Inches x3 = 1_yd;
     }
 
@@ -284,16 +290,16 @@ static constexpr void test()
         //using ReinfCont = decltype(quantity_kind_cast<kinds::ReinforcementContent>(1_cm2 / 1_m));
         //constexpr ReinfCont t3(t2);
         //constexpr ReinfCont t3(quantity_kind_cast<ReinfCont>(t2));
-        constexpr SquareCentimetersPerMeter t4 = convert_to<SquareCentimetersPerMeter>(1_cm2 / 1_m);
+        constexpr SquareCentimetersPerMeter t4 = (1_cm2 / 1_m).as<SquareCentimetersPerMeter>();
         //static_assert(!std::is_convertible_v<decltype(1_cm2/1_m), SquareCentimetersPerMeter>);
         //static_assert( std::is_constructible_v<SquareCentimetersPerMeter, decltype(1_cm2/1_m)>);
-        constexpr decltype(1_cm2 / 1_m) t44 = convert_to<decltype(1_cm2/1_m)>(t4);
+        constexpr decltype(1_cm2 / 1_m) t44 = t4.as<decltype(1_cm2/1_m)>();
         static_assert(t4._count_internal() == 1.0);
         //static_assert(!std::is_assignable_v<SquareCentimetersPerMeter, decltype((1_cm / 1_m) * 1_cm)>);
         //static_assert( std::is_assignable_v<ReinfCont, decltype((1_cm / 1_m) * 1_cm)>);
         static_assert(!std::is_assignable_v<decltype(t1), Meters>);
 
-        constexpr SquareCentimetersPerMeter t5 = convert_to<SquareCentimetersPerMeter>(1_m2 / 1_cm);
+        constexpr SquareCentimetersPerMeter t5 = (1_m2 / 1_cm).as<SquareCentimetersPerMeter>();
         static_assert(t5._count_internal() == 1'000'000.0);
     }
     {
@@ -315,10 +321,10 @@ static constexpr void test()
         constexpr Grams     m0 = w * 1_m3;
         constexpr Kilograms m1 = w * 1_m3;
         constexpr Tons      m2 = w * 1_m3;
-        constexpr Tons      m3 = convert_to<Tons>(w * 1_dm3);
+        constexpr Tons      m3 = (w * 1_dm3).as<Tons>();
         constexpr Kilograms m4 = w * 1_dm3;
         constexpr Kilograms m5 = GramsPerCubicDecimeter(1.0) * 1_m3;
-        constexpr Tons      m6 = convert_to<Tons>(GramsPerCubicDecimeter(1.0) * 1_m3);
+        constexpr Tons      m6 = (GramsPerCubicDecimeter(1.0) * 1_m3).as<Tons>();
     }
 }
 
@@ -354,15 +360,15 @@ static void test2()
 
         // static_assert(!Compiles<Add, Width, Millimeters>);
 
-        constexpr Width w1 = convert_to<Width>(1_cm);
-        constexpr Height h1 = convert_to<Height>(1_cm + 1_mm);
+        constexpr Width w1 = (1_cm).as<Width>();
+        constexpr Height h1 = (1_cm + 1_mm).as<Height>();
         Width w;
         w *= 2.0;
         //w += 1_m;
         //w += h1;
 
         Height h;
-        h += convert_to<Height>(1_cm);
+        h += (1_cm).as<Height>();
         //h += 1_cm;
       //h += w;
         //h += w.value();
@@ -384,12 +390,12 @@ static void test2()
         Length x;
         Position y;
         y += x;
-        x += convert_to<Length>(h);
+        x += h.as<Length>();
         //x += h;
         //y += y;
         x += x;
         //x += y;
-        const auto t = convert_to<Millimeters>(x);
+        const auto t = x.as<Millimeters>();
         const auto z = x + y;
         const auto w = y + x;
         x = y - y;
@@ -408,7 +414,7 @@ static void test2()
         constexpr Height h2(20.0);
         constexpr Width w2(30.0);
         constexpr auto p = h2 * w2;
-        constexpr auto p2 = convert_to<SquareCentimeters>(p);
+        constexpr auto p2 = p.as<SquareCentimeters>();
         assert(p2 == 6_cm2);
     }
     {
@@ -419,12 +425,12 @@ static void test2()
     {
         using ReinfCont = TaggedQuantity<decltype(1_cm2/1_m), class AreaPerLength>;
 
-        ReinfCont r = convert_to<ReinfCont>(3.1415_cm2 / 1_m);
+        ReinfCont r = (3.1415_cm2 / 1_m).as<ReinfCont>();
         // r = 3.1415_cm2 / 1_m;
         r += r;
         r += r / 2.0;
 
-        constexpr auto x = convert_to<ReinfCont>(3.1415_cm2 / 1_m);
+        constexpr auto x = (3.1415_cm2 / 1_m).as<ReinfCont>();
 //      constexpr auto y = x * 1_m;
         constexpr auto z = x * 1_m;
     }
@@ -451,7 +457,7 @@ static void test3()
         constexpr auto t02 = 1_cm2;
         const auto xxx = fma(1_cm, 1_cm, 1_cm2);
 
-        constexpr auto zzz = 1_cm + convert_to<Centimeters>(1_in + 1_ft);
+        constexpr auto zzz = 1_cm + (1_in + 1_ft).as<Centimeters>();
     }
     {
         constexpr auto xxx = 1_kg * 1_m / (1_s * 1_s);

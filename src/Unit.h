@@ -39,6 +39,33 @@ template <int64_t Num, int64_t Den>
 inline constexpr bool IsRatio<std::ratio<Num, Den>> = true;
 
 //==================================================================================================
+//
+//==================================================================================================
+
+#if 0
+using LiteralZero = std::nullptr_t;
+#elif 0
+struct LiteralZero
+{
+};
+#else
+struct LiteralZero
+{
+    static void /* NOT constexpr */ expected_literal_zero()
+    {
+        // Ok, SonarLint, I'm not going to explain why this method is empty
+    }
+
+    template <typename T, std::enable_if_t<std::is_same_v<T, int>, int> = 0>
+    consteval explicit(false) LiteralZero(const T value) noexcept
+    {
+        if (value != 0)
+            expected_literal_zero();
+    }
+};
+#endif
+
+//==================================================================================================
 // Dimension
 //==================================================================================================
 
@@ -300,14 +327,14 @@ namespace impl
 
 namespace impl
 {
-    constexpr Scalar ScalarFromRatio(int64_t num, int64_t den)
+    constexpr Scalar ScalarFromRatio(int64_t p, int64_t q)
     {
-        // UNITS_ASSERT(num != INT64_MIN);
-        // UNITS_ASSERT(den >= 1);
+        // UNITS_ASSERT(p != INT64_MIN);
+        // UNITS_ASSERT(q >= 1);
 
-        UNITS_ASSERT(den != 0);
+        UNITS_ASSERT(q != 0);
 
-        return static_cast<Scalar>(static_cast<double>(num) / static_cast<double>(den));
+        return static_cast<Scalar>(static_cast<double>(p) / static_cast<double>(q));
     }
 
 } // namespace impl
@@ -529,7 +556,7 @@ private:
             >
           >;
 
-    // asymmetric
+    // symmetric
     template <typename UnitTo, typename UnitFrom>
     using IsExplicitlyConvertible
         = std::conjunction<
@@ -572,7 +599,7 @@ public:
     }
 
     template <typename U2, EnableImplicitConversion<unit, U2, int> = 0>
-    constexpr Quantity(Quantity<U2> q) noexcept
+    constexpr explicit(false) Quantity(Quantity<U2> q) noexcept
         : _count(impl::DivConversions<typename U2::conversion, conversion>{}(q._count_internal()))
     {
     }
@@ -605,7 +632,7 @@ public:
     [[nodiscard]] constexpr bool is_convertible_to() const noexcept;
 
     // template <typename T>
-    // [[nodiscard]] constexpr T convert_to() const noexcept;
+    // [[nodiscard]] constexpr T _convert_to() const noexcept;
 
     template <typename T>
     [[nodiscard]] constexpr T as() const noexcept;
@@ -765,6 +792,68 @@ public:
     {
         return lhs._count_internal() >= rhs._count_internal();
     }
+
+#if 1
+    [[nodiscard]] constexpr friend bool operator==(Quantity lhs, LiteralZero /*rhs*/) noexcept
+    {
+        return lhs._count_internal() == static_cast<scalar_type>(0);
+    }
+
+    [[nodiscard]] constexpr friend bool operator!=(Quantity lhs, LiteralZero /*rhs*/) noexcept
+    {
+        return lhs._count_internal() != static_cast<scalar_type>(0);
+    }
+
+    [[nodiscard]] constexpr friend bool operator<(Quantity lhs, LiteralZero /*rhs*/) noexcept
+    {
+        return lhs._count_internal() < static_cast<scalar_type>(0);
+    }
+
+    [[nodiscard]] constexpr friend bool operator>(Quantity lhs, LiteralZero /*rhs*/) noexcept
+    {
+        return lhs._count_internal() > static_cast<scalar_type>(0);
+    }
+
+    [[nodiscard]] constexpr friend bool operator<=(Quantity lhs, LiteralZero /*rhs*/) noexcept
+    {
+        return lhs._count_internal() <= static_cast<scalar_type>(0);
+    }
+
+    [[nodiscard]] constexpr friend bool operator>=(Quantity lhs, LiteralZero /*rhs*/) noexcept
+    {
+        return lhs._count_internal() >= static_cast<scalar_type>(0);
+    }
+
+    [[nodiscard]] constexpr friend bool operator==(LiteralZero /*lhs*/, Quantity rhs) noexcept
+    {
+        return static_cast<scalar_type>(0) == rhs._count_internal();
+    }
+
+    [[nodiscard]] constexpr friend bool operator!=(LiteralZero /*lhs*/, Quantity rhs) noexcept
+    {
+        return static_cast<scalar_type>(0) != rhs._count_internal();
+    }
+
+    [[nodiscard]] constexpr friend bool operator<(LiteralZero /*lhs*/, Quantity rhs) noexcept
+    {
+        return static_cast<scalar_type>(0) < rhs._count_internal();
+    }
+
+    [[nodiscard]] constexpr friend bool operator>(LiteralZero /*lhs*/, Quantity rhs) noexcept
+    {
+        return static_cast<scalar_type>(0) > rhs._count_internal();
+    }
+
+    [[nodiscard]] constexpr friend bool operator<=(LiteralZero /*lhs*/, Quantity rhs) noexcept
+    {
+        return static_cast<scalar_type>(0) <= rhs._count_internal();
+    }
+
+    [[nodiscard]] constexpr friend bool operator>=(LiteralZero /*lhs*/, Quantity rhs) noexcept
+    {
+        return static_cast<scalar_type>(0) >= rhs._count_internal();
+    }
+#endif
 };
 
 template <typename T>
@@ -840,7 +929,7 @@ public:
     [[nodiscard]] constexpr bool is_convertible_to() const noexcept;
 
     // template <typename T>
-    // [[nodiscard]] constexpr T convert_to() const noexcept;
+    // [[nodiscard]] constexpr T _convert_to() const noexcept;
 
     template <typename T>
     [[nodiscard]] constexpr T as() const noexcept;
@@ -924,7 +1013,7 @@ template <typename Q, typename Z>
 inline constexpr bool IsAbsolute<Absolute<Q, Z>> = true;
 
 //==================================================================================================
-// convert_to / count
+// _convert_to / count
 //==================================================================================================
 
 namespace impl
@@ -1016,34 +1105,37 @@ namespace impl
 //
 //--------------------------------------------------------------------------------------------------
 
-template <typename Target, typename SourceUnit>
-constexpr Target convert_to(Quantity<SourceUnit> q) noexcept
+namespace impl
 {
-    using Source = Quantity<SourceUnit>;
-
-    static_assert(q.is_convertible_to<Target>(),
-        "invalid conversion between unrelated quantities");
-
-    using CS = typename Source::conversion;
-    using CT = typename Target::conversion;
-
-    if constexpr (IsQuantity<Target>)
+    template <typename Target, typename SourceUnit>
+    constexpr Target convert_to(Quantity<SourceUnit> q) noexcept
     {
-        // (backward)
-        return Target(impl::DivConversions<CS, CT>{}(q._count_internal()));
-    }
-    else
-    {
-        using ZS = typename Source::zero;
-        using ZT = typename Target::zero;
-        return Target(impl::Convert<impl::Direction::forward, CS, ZS, CT, ZT>(q._count_internal()));
+        using Source = Quantity<SourceUnit>;
+
+        static_assert(q.is_convertible_to<Target>(),
+            "invalid conversion between unrelated quantities");
+
+        using CS = typename Source::conversion;
+        using CT = typename Target::conversion;
+
+        if constexpr (IsQuantity<Target>)
+        {
+            // (backward)
+            return Target(impl::DivConversions<CS, CT>{}(q._count_internal()));
+        }
+        else
+        {
+            using ZS = typename Source::zero;
+            using ZT = typename Target::zero;
+            return Target(impl::Convert<impl::Direction::forward, CS, ZS, CT, ZT>(q._count_internal()));
+        }
     }
 }
 
 template <typename T, typename U>
 constexpr Scalar in(Quantity<U> q) noexcept
 {
-    return uom::convert_to<T>(q)._count_internal();
+    return uom::impl::convert_to<T>(q)._count_internal();
 }
 
 template <typename U>
@@ -1065,70 +1157,73 @@ constexpr bool Quantity<U>::is_convertible_to() const noexcept
 
 // template <typename U>
 // template <typename T>
-// constexpr T Quantity<U>::convert_to() const noexcept
+// constexpr T Quantity<U>::_convert_to() const noexcept
 // {
-//     return uom::convert_to<T>(*this);
+//     return uom::impl::convert_to<T>(*this);
 // }
 
 template <typename U>
 template <typename T>
 constexpr T Quantity<U>::as() const noexcept
 {
-    return uom::convert_to<T>(*this);
+    return uom::impl::convert_to<T>(*this);
 }
 
 template <typename U>
 template <typename T>
 constexpr T Quantity<U>::as(T) const noexcept
 {
-    return uom::convert_to<T>(*this);
+    return uom::impl::convert_to<T>(*this);
 }
 
 template <typename U>
 template <typename T>
 constexpr typename Quantity<U>::scalar_type Quantity<U>::in() const noexcept
 {
-    return uom::convert_to<T>(*this)._count_internal();
+    return uom::impl::convert_to<T>(*this)._count_internal();
 }
 
 template <typename U>
 template <typename T>
 constexpr typename Quantity<U>::scalar_type Quantity<U>::in(T) const noexcept
 {
-    return uom::convert_to<T>(*this)._count_internal();
+    return uom::impl::convert_to<T>(*this)._count_internal();
 }
 
 //--------------------------------------------------------------------------------------------------
 //
 //--------------------------------------------------------------------------------------------------
 
-template <typename Target, typename SourceQuantity, typename SourceZero>
-constexpr Target convert_to(Absolute<SourceQuantity, SourceZero> a) noexcept
+namespace impl
 {
-    using Source = Absolute<SourceQuantity, SourceZero>;
-
-    static_assert(a.is_convertible_to<Target>(),
-        "invalid conversion between unrelated quantities");
-
-    using CS = typename Source::conversion;
-    using ZS = typename Source::zero;
-    using CT = typename Target::conversion;
-    using ZT = typename Target::zero;
-
-    if constexpr (IsQuantity<Target>)
+    template <typename Target, typename SourceQuantity, typename SourceZero>
+    constexpr Target convert_to(Absolute<SourceQuantity, SourceZero> a) noexcept
     {
-        return Target(impl::Convert<impl::Direction::backward, CT, ZT, CS, ZS>(a._count_internal()));
-    }
-    else
-    {
-        return Target(impl::Convert<impl::Direction::forward, CS, ZS, CT, ZT>(a._count_internal()));
+        using Source = Absolute<SourceQuantity, SourceZero>;
+
+        static_assert(a.is_convertible_to<Target>(),
+            "invalid conversion between unrelated quantities");
+
+        using CS = typename Source::conversion;
+        using ZS = typename Source::zero;
+        using CT = typename Target::conversion;
+        using ZT = typename Target::zero;
+
+        if constexpr (IsQuantity<Target>)
+        {
+            return Target(impl::Convert<impl::Direction::backward, CT, ZT, CS, ZS>(a._count_internal()));
+        }
+        else
+        {
+            return Target(impl::Convert<impl::Direction::forward, CS, ZS, CT, ZT>(a._count_internal()));
+        }
     }
 }
 
 template <typename T, typename Q, typename Z>
 constexpr Scalar in(Absolute<Q, Z> q) noexcept
 {
-    return uom::convert_to<T>(q)._count_internal();
+    return uom::impl::convert_to<T>(q)._count_internal();
 }
 
 template <typename Q, typename Z>
@@ -1150,37 +1245,37 @@ constexpr bool Absolute<Q, Z>::is_convertible_to() const noexcept
 
 // template <typename Q, typename Z>
 // template <typename T>
-// constexpr T Absolute<Q, Z>::convert_to() const noexcept
+// constexpr T Absolute<Q, Z>::_convert_to() const noexcept
 // {
-//     return uom::convert_to<T>(*this);
+//     return uom::impl::convert_to<T>(*this);
 // }
 
 template <typename Q, typename Z>
 template <typename T>
 constexpr T Absolute<Q, Z>::as() const noexcept
 {
-    return uom::convert_to<T>(*this);
+    return uom::impl::convert_to<T>(*this);
 }
 
 template <typename Q, typename Z>
 template <typename T>
 constexpr T Absolute<Q, Z>::as(T) const noexcept
 {
-    return uom::convert_to<T>(*this);
+    return uom::impl::convert_to<T>(*this);
 }
 
 template <typename Q, typename Z>
 template <typename T>
 constexpr typename Absolute<Q, Z>::scalar_type Absolute<Q, Z>::in() const noexcept
 {
-    return uom::convert_to<T>(*this)._count_internal();
+    return uom::impl::convert_to<T>(*this)._count_internal();
 }
 
 template <typename Q, typename Z>
 template <typename T>
 constexpr typename Absolute<Q, Z>::scalar_type Absolute<Q, Z>::in(T) const noexcept
 {
-    return uom::convert_to<T>(*this)._count_internal();
+    return uom::impl::convert_to<T>(*this)._count_internal();
 }
 
 //==================================================================================================

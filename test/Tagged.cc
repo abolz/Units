@@ -14,7 +14,8 @@ static void test()
     Width  w(1.0);
     Width  w2(1.0_cm);
     Width  w3(w2);
-    Height h = convert_to<Height>(2.0_cm);
+    Height h = (2.0_cm).as<Height>();
+    Height h2 = w.as<Centimeters>();
 
 #if 0
     w = h; // will not compile
@@ -27,7 +28,7 @@ static void test()
     h = area / w; // works
     const auto value = area.in<SquareCentimeters>();
 
-    const auto a = convert_to<SquareMillimeters>(area); // explicit cast works
+    const auto a = area.as<SquareMillimeters>(); // explicit cast works
 }
 
 static void test2()

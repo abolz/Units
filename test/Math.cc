@@ -68,19 +68,19 @@ TEST_CASE("Math - atan2")
         const auto x = 1_m;
         const auto y = 1_m;
         const auto phi = atan2(y, x);
-        CHECK(phi == convert_to<Radians>(Degrees(45.0)));
+        CHECK(phi == Degrees(45.0).as<Radians>());
     }
     {
         const auto x = -100_cm;
         const auto y = -1_m;
         const auto phi = atan2(y, Meters(x));
-        CHECK(phi == convert_to<Radians>(Degrees(-135.0)));
+        CHECK(phi == Degrees(-135.0).as<Radians>());
     }
     {
         const auto x = 1_m;
         const auto y = -100_cm;
         const auto phi = atan2(y, Centimeters(x));
-        CHECK(phi == convert_to<Radians>(Degrees(-45.0)));
+        CHECK(phi == Degrees(-45.0).as<Radians>());
     }
     //{
     //    const auto x = 1_kg;
@@ -92,7 +92,7 @@ TEST_CASE("Math - atan2")
 
 TEST_CASE("Math - round absolute")
 {
-    constexpr auto t00 = convert_to<DegCelsius>(0_mK);
+    constexpr auto t00 = (0_mK).as<DegCelsius>();
     constexpr auto x00 = t00._count_internal();
     constexpr auto v00 = -273.15;
     static_assert(x00 == v00);
